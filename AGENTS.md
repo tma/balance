@@ -6,7 +6,7 @@ Personal finance budgeting app built with Ruby on Rails 8.x, SQLite, and Tailwin
 ## Development Principles
 
 ### Always
-- Run `rails test` before and after changes
+- Run `rails test` and `rubocop` before and after changes
 - Follow Rails conventions and best practices
 - Use RESTful routes and resourceful controllers
 - Keep controllers thin, models fat
@@ -150,8 +150,8 @@ rails db: reset             # Drop, create, migrate, seed
 ## Validation Checklist
 Before completing any task: 
 - [ ] All tests pass (`rails test`)
+- [ ] No rubocop offenses (`rubocop`)
 - [ ] New code has test coverage
-- [ ] No rubocop/linting errors
 - [ ] `SPEC.md` updated if features changed
 - [ ] Migrations are reversible
 - [ ] No hardcoded values (use seeds/config)
