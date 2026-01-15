@@ -15,12 +15,12 @@
     
     <div class="mb-4">
       <p class="text-sm text-slate-500">Budget</p>
-      <p class="text-2xl font-bold"><%= number_to_currency(@budget.amount) %> <%= @budget.period_label %></p>
+      <p class="text-2xl font-bold"><%= format_currency(@budget.amount) %> <%= @budget.period_label %></p>
     </div>
     
     <div class="mb-4">
       <p class="text-sm text-slate-500">Spent (<%= @budget.monthly? ? "#{Date::MONTHNAMES[@month]} #{@year}" : @year %>)</p>
-      <p class="text-2xl font-bold text-rose-500"><%= number_to_currency(@budget.spent(@year, @month)) %></p>
+      <p class="text-2xl font-bold text-rose-500"><%= format_currency(@budget.spent(@year, @month)) %></p>
     </div>
     
     <div class="w-full bg-slate-200 rounded-full h-3 mb-2">
@@ -31,7 +31,7 @@
     
     <% remaining = @budget.remaining(@year, @month) %>
     <p class="text-sm <%= remaining >= 0 ? 'text-emerald-500' : 'text-rose-500' %>">
-      <%= remaining >= 0 ? "#{number_to_currency(remaining)} remaining" : "#{number_to_currency(remaining.abs)} over budget" %>
+      <%= remaining >= 0 ? "#{format_currency(remaining)} remaining" : "#{format_currency(remaining.abs)} over budget" %>
       (<%= @budget.percentage_used(@year, @month) %>%)
     </p>
   </div>

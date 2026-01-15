@@ -51,10 +51,10 @@
                 </div>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-slate-500">
-                <%= number_to_currency(budget.spent(@year, @month), unit: "") %> / <%= number_to_currency(budget.amount, unit: "") %>
+                <%= format_currency(budget.spent(@year, @month)) %> / <%= format_currency(budget.amount) %>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-right <%= remaining >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-                <%= remaining >= 0 ? number_to_currency(remaining, unit: "") : "-#{number_to_currency(remaining.abs, unit: "")}" %>
+                <%= remaining >= 0 ? format_currency(remaining) : "-#{format_currency(remaining.abs)}" %>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2 w-24">
                 <%= link_to "Edit", edit_budget_path(budget), class: "text-cyan-600 hover:text-cyan-700" %>
@@ -101,10 +101,10 @@
                 </div>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-slate-500">
-                <%= number_to_currency(budget.spent(@year, nil), unit: "") %> / <%= number_to_currency(budget.amount, unit: "") %>
+                <%= format_currency(budget.spent(@year, nil)) %> / <%= format_currency(budget.amount) %>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-right <%= remaining >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-                <%= remaining >= 0 ? number_to_currency(remaining, unit: "") : "-#{number_to_currency(remaining.abs, unit: "")}" %>
+                <%= remaining >= 0 ? format_currency(remaining) : "-#{format_currency(remaining.abs)}" %>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2 w-24">
                 <%= link_to "Edit", edit_budget_path(budget), class: "text-cyan-600 hover:text-cyan-700" %>

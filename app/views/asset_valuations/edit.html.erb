@@ -74,7 +74,7 @@
             <div class="text-right">
               <% group.net_value_by_currency.each do |currency, value| %>
                 <span class="<%= value >= 0 ? 'text-emerald-500' : 'text-rose-400' %> font-medium">
-                  <%= number_to_currency(value, unit: currency + " ", precision: 2) %>
+                  <%= format_currency(value, currency: currency) %>
                 </span>
               <% end %>
             </div>

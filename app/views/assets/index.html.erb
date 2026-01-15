@@ -32,7 +32,7 @@
               <td class="px-4 py-1.5 text-right">
                 <% net_value = group.net_value_in_default_currency %>
                 <span class="text-xs font-bold text-slate-700">
-                  <%= number_to_currency(net_value, unit: Currency.default&.code || "USD", format: "%u %n") %>
+                  <%= format_currency(net_value) %>
                 </span>
               </td>
               <td class="px-4 py-1.5 text-right">
@@ -54,7 +54,7 @@
                   <%= asset.currency %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-slate-700">
-                  <%= asset.asset_type.is_liability? ? "-" : "" %><%= number_to_currency(asset.value, unit: "") %>
+                  <%= asset.asset_type.is_liability? ? "-" : "" %><%= format_currency(asset.value) %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
                   <%= link_to "Edit", edit_asset_path(asset), class: "text-cyan-600 hover:text-cyan-700" %>

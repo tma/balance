@@ -7,7 +7,7 @@
     <div class="flex items-center justify-between mb-4">
       <span class="text-4xl"><%= @transaction.transaction_type == 'income' ? '💰' : '💸' %></span>
       <span class="text-3xl font-bold <%= @transaction.transaction_type == 'income' ? 'text-emerald-500' : 'text-rose-500' %>">
-        <%= @transaction.transaction_type == 'income' ? '+' : '-' %><%= number_to_currency(@transaction.amount) %>
+        <%= @transaction.transaction_type == 'income' ? '+' : '-' %><%= format_currency(@transaction.amount) %>
       </span>
     </div>
     

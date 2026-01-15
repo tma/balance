@@ -119,16 +119,16 @@
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Income</p>
-        <p class="text-xl font-semibold text-emerald-500">+<%= number_to_currency(@total_income) %></p>
+        <p class="text-xl font-semibold text-emerald-500">+<%= format_currency(@total_income) %></p>
       </div>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Expenses</p>
-        <p class="text-xl font-semibold text-rose-400">-<%= number_to_currency(@total_expenses) %></p>
+        <p class="text-xl font-semibold text-rose-400">-<%= format_currency(@total_expenses) %></p>
       </div>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Net</p>
         <p class="text-xl font-semibold <%= net >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-          <%= net >= 0 ? '+' : '' %><%= number_to_currency(net) %>
+          <%= net >= 0 ? '+' : '' %><%= format_currency(net) %>
         </p>
       </div>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
@@ -177,7 +177,7 @@
                   <%= transaction.account.name %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-right font-medium <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
-                  <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
+                  <%= transaction.income? ? '+' : '-' %><%= format_currency(transaction.amount) %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
                   <%= link_to "Edit", edit_transaction_path(transaction), class: "text-cyan-600 hover:text-cyan-700" %>

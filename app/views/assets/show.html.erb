@@ -21,7 +21,7 @@
   <div class="bg-white rounded-xl border border-slate-200 p-4 mb-4">
     <p class="text-sm text-slate-500">Current Value</p>
     <p class="text-2xl font-bold text-slate-800">
-      <%= @asset.asset_type.is_liability? ? "-" : "" %><%= number_to_currency(@asset.value, unit: @asset.currency + " ") %>
+      <%= @asset.asset_type.is_liability? ? "-" : "" %><%= format_currency(@asset.value) %>
     </p>
     <% if @asset.notes.present? %>
       <p class="mt-2 text-sm text-slate-600"><%= @asset.notes %></p>
@@ -45,7 +45,7 @@
                 <%= valuation.date.strftime("%b %d, %Y") %>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-slate-700">
-                <%= @asset.asset_type.is_liability? ? "-" : "" %><%= number_to_currency(valuation.value, unit: "") %>
+                <%= @asset.asset_type.is_liability? ? "-" : "" %><%= format_currency(valuation.value) %>
               </td>
               <td class="px-4 py-2 whitespace-nowrap text-right text-sm">
                 <%= button_to "Delete", asset_valuation_path(@asset, valuation), method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>

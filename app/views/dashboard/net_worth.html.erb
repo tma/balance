@@ -8,38 +8,35 @@
   </div>
 
   <!-- Net Worth Summary -->
-  <div class="bg-white rounded-xl border border-slate-200 p-6">
-    <h2 class="text-lg font-semibold text-slate-800 mb-4">Summary</h2>
-    <% if @net_worth[:net_worth] == 0 && @net_worth[:cash] == 0 && @net_worth[:assets] == 0 %>
+  <% if @net_worth[:net_worth] == 0 && @net_worth[:cash] == 0 && @net_worth[:assets] == 0 %>
+    <div class="bg-white rounded-xl border border-slate-200 p-6">
       <p class="text-slate-500">No financial data yet. Add accounts or assets to get started.</p>
-    <% else %>
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-        <div>
-          <p class="text-2xl font-bold text-cyan-500"><%= number_to_currency(@net_worth[:cash], unit: @default_currency + " ") %></p>
-          <p class="text-sm text-slate-500">Cash (Accounts)</p>
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-emerald-500"><%= number_to_currency(@net_worth[:assets], unit: @default_currency + " ") %></p>
-          <p class="text-sm text-slate-500">Assets</p>
-        </div>
-        <div>
-          <p class="text-2xl font-bold text-rose-400"><%= number_to_currency(@net_worth[:liabilities], unit: @default_currency + " ") %></p>
-          <p class="text-sm text-slate-500">Liabilities</p>
-        </div>
-        <div>
-          <p class="text-2xl font-bold <%= @net_worth[:net_worth] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-            <%= number_to_currency(@net_worth[:net_worth], unit: @default_currency + " ") %>
-          </p>
-          <p class="text-sm text-slate-500">Net Worth</p>
-        </div>
+    </div>
+  <% else %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Cash (Accounts)</p>
+        <p class="text-xl font-semibold text-slate-700"><%= format_currency(@net_worth[:cash]) %></p>
       </div>
-    <% end %>
-  </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Assets</p>
+        <p class="text-xl font-semibold text-slate-700"><%= format_currency(@net_worth[:assets]) %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Liabilities</p>
+        <p class="text-xl font-semibold text-slate-700">-<%= format_currency(@net_worth[:liabilities]) %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Net Worth</p>
+        <p class="text-xl font-semibold text-slate-800"><%= format_currency(@net_worth[:net_worth]) %></p>
+      </div>
+    </div>
+  <% end %>
 
   <!-- Asset Groups Breakdown -->
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <div class="p-4 border-b border-slate-200 flex justify-between items-center">
-      <h2 class="text-lg font-semibold text-slate-800">Assets by Group</h2>
+      <h2 class="text-lg font-semibold text-slate-800">Assets</h2>
       <%= link_to "Update Values", update_valuations_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
     </div>
 
@@ -62,9 +59,7 @@
               </div>
               <div class="text-right">
                 <% net_value = group.net_value_in_default_currency %>
-                <p class="font-semibold <%= net_value >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-                  <%= @default_currency %> <%= number_to_currency(net_value, unit: "") %>
-                </p>
+                <p class="font-bold text-slate-700"><%= format_currency(net_value) %></p>
               </div>
             </div>
 
@@ -72,18 +67,20 @@
               <% group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name).each do |asset| %>
                 <%= link_to asset, class: "flex justify-between items-center p-2 rounded-lg hover:bg-slate-50 transition" do %>
                   <div class="flex items-center space-x-2">
-                    <span class="w-2 h-2 rounded-full <%= asset.asset_type.is_liability ? 'bg-rose-400' : 'bg-emerald-400' %>"></span>
                     <div>
                       <p class="text-sm font-medium text-slate-700"><%= asset.name %></p>
                       <p class="text-xs text-slate-400"><%= asset.asset_type.name %></p>
                     </div>
+                    <% if asset.asset_type.is_liability %>
+                      <span class="px-1.5 py-0.5 rounded text-xs bg-rose-100 text-rose-600">Liability</span>
+                    <% end %>
                   </div>
                   <div class="text-right">
-                    <span class="text-sm font-medium <%= asset.asset_type.is_liability ? 'text-rose-400' : 'text-emerald-500' %>">
-                      <%= asset.asset_type.is_liability ? '-' : '' %><%= @default_currency %> <%= number_to_currency(asset.value_in_default_currency || 0, unit: "") %>
+                    <span class="text-sm text-slate-700">
+                      <%= asset.asset_type.is_liability ? '-' : '' %><%= format_currency(asset.value_in_default_currency || 0) %>
                     </span>
                     <% if asset.currency != @default_currency %>
-                      <p class="text-xs text-slate-300"><%= asset.currency %> <%= number_to_currency(asset.value, unit: "") %></p>
+                      <p class="text-xs text-slate-400"><%= asset.currency %> <%= format_amount(asset.value) %></p>
                     <% end %>
                   </div>
                 <% end %>
@@ -99,11 +96,9 @@
           <span class="font-semibold text-slate-700">Total Assets (excluding cash)</span>
           <div class="text-right">
             <div class="flex items-center justify-end space-x-4 text-sm">
-              <span class="text-emerald-500">+<%= number_to_currency(@totals[:assets], unit: @default_currency + " ") %></span>
-              <span class="text-rose-400">-<%= number_to_currency(@totals[:liabilities], unit: @default_currency + " ") %></span>
-              <span class="font-semibold <%= @totals[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-                = <%= number_to_currency(@totals[:net], unit: @default_currency + " ") %>
-              </span>
+              <span class="text-slate-600"><%= format_currency(@totals[:assets]) %></span>
+              <span class="text-slate-600">- <%= format_currency(@totals[:liabilities]) %></span>
+              <span class="font-bold text-slate-700">= <%= format_currency(@totals[:net]) %></span>
             </div>
           </div>
         </div>
