@@ -44,7 +44,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
    export RAILS_MASTER_KEY=your_master_key_here
    ```
    
-   > **Note:** If you don't have a master key, contact the repository maintainer or generate new credentials by cloning the repo and running `EDITOR=nano rails credentials:edit`
+   > **Note:** The Rails master key is required to decrypt encrypted credentials. If deploying your own instance, you'll need to generate your own credentials by cloning the repository and running `EDITOR=nano rails credentials:edit`, which creates a `config/master.key` file.
 
 3. Start the application:
    ```bash
