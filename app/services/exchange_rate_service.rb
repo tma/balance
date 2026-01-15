@@ -6,23 +6,27 @@ class ExchangeRateService
   BASE_URL = "https://api.frankfurter.app"
 
   class << self
-    def rate(from_currency, to_currency)
+    # Fetch exchange rate, optionally for a specific date
+    # date: nil for latest rate, or a Date object for historical rate
+    def rate(from_currency, to_currency, date: nil)
       return 1.0 if from_currency == to_currency
 
-      fetch_rate(from_currency, to_currency)
+      fetch_rate(from_currency, to_currency, date)
     end
 
-    def convert(amount, from_currency, to_currency)
+    def convert(amount, from_currency, to_currency, date: nil)
       return amount if from_currency == to_currency
 
-      exchange_rate = rate(from_currency, to_currency)
+      exchange_rate = rate(from_currency, to_currency, date: date)
       (amount * exchange_rate).round(2)
     end
 
     private
 
-    def fetch_rate(from_currency, to_currency)
-      uri = URI("#{BASE_URL}/latest?from=#{from_currency}&to=#{to_currency}")
+    def fetch_rate(from_currency, to_currency, date = nil)
+      # Use historical endpoint if date provided, otherwise latest
+      endpoint = date ? date.strftime("%Y-%m-%d") : "latest"
+      uri = URI("#{BASE_URL}/#{endpoint}?from=#{from_currency}&to=#{to_currency}")
 
       response = Net::HTTP.get_response(uri)
 

@@ -35,7 +35,8 @@ class Transaction < ApplicationRecord
       self.exchange_rate = 1.0
       self.amount_in_default_currency = amount
     else
-      self.exchange_rate = ExchangeRateService.rate(account_currency, default_curr)
+      # Use historical exchange rate for the transaction date
+      self.exchange_rate = ExchangeRateService.rate(account_currency, default_curr, date: date)
       self.amount_in_default_currency = (amount * exchange_rate).round(2)
     end
   end

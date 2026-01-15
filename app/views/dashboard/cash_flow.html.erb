@@ -125,7 +125,8 @@
           <% if @monthly_budgets.any? %>
             <div class="divide-y divide-slate-100">
               <% @monthly_budgets.each do |budget| %>
-                <div class="px-4 py-2">
+                <% monthly_transactions_path = transactions_path(month: Date.current.strftime("%Y-%m"), category_id: budget.category_id) %>
+                <%= link_to monthly_transactions_path, class: "block px-4 py-2 hover:bg-slate-50 transition" do %>
                   <div class="flex justify-between text-sm mb-1">
                     <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
                     <span class="text-slate-500">
@@ -137,7 +138,7 @@
                     <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
                     <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
                   </div>
-                </div>
+                <% end %>
               <% end %>
             </div>
           <% else %>
@@ -152,7 +153,8 @@
           <% if @yearly_budgets.any? %>
             <div class="divide-y divide-slate-100">
               <% @yearly_budgets.each do |budget| %>
-                <div class="px-4 py-2">
+                <% yearly_transactions_path = transactions_path(start_date: "#{current_year}-01-01", end_date: "#{current_year}-12-31", category_id: budget.category_id) %>
+                <%= link_to yearly_transactions_path, class: "block px-4 py-2 hover:bg-slate-50 transition" do %>
                   <div class="flex justify-between text-sm mb-1">
                     <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
                     <span class="text-slate-500">
@@ -164,7 +166,7 @@
                     <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
                     <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
                   </div>
-                </div>
+                <% end %>
               <% end %>
             </div>
           <% else %>
