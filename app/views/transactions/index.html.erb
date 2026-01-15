@@ -87,56 +87,48 @@
     </div>
   <% end %>
 
-  <!-- Transactions grouped by date -->
-  <div class="space-y-4">
-    <% if @transactions_by_date.any? %>
-      <% @transactions_by_date.keys.sort.reverse.each do |date| %>
-        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-          <div class="bg-slate-50 px-4 py-2 border-b border-slate-200">
-            <div class="flex justify-between items-center">
-              <h3 class="font-medium text-slate-600"><%= date.strftime("%A, %B %d, %Y") %></h3>
-              <% day_transactions = @transactions_by_date[date] %>
-              <% day_income = day_transactions.select(&:income?).sum(&:amount) %>
-              <% day_expenses = day_transactions.select(&:expense?).sum(&:amount) %>
-              <div class="text-sm space-x-3">
-                <% if day_income > 0 %>
-                  <span class="text-emerald-500">+<%= number_to_currency(day_income) %></span>
-                <% end %>
-                <% if day_expenses > 0 %>
-                  <span class="text-rose-400">-<%= number_to_currency(day_expenses) %></span>
-                <% end %>
-              </div>
-            </div>
-          </div>
-          <div class="divide-y divide-slate-100">
-            <% @transactions_by_date[date].each do |transaction| %>
-              <div class="p-4 hover:bg-slate-50 flex justify-between items-center transition">
-                <div class="flex-1">
-                  <div class="flex items-center space-x-3">
-                    <div>
-                      <p class="font-medium text-slate-700"><%= transaction.description.presence || transaction.category.name.titleize %></p>
-                      <p class="text-sm text-slate-400">
-                        <%= transaction.category.name.titleize %> &middot; <%= transaction.account.name %>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <p class="font-semibold text-lg <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
-                    <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
-                  </p>
-                  <div class="flex space-x-2 text-sm justify-end mt-1">
-                    <%= link_to "Edit", edit_transaction_path(transaction), class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
-                    <%= button_to "Delete", transaction, method: :delete, class: "text-rose-500 hover:text-rose-600 hover:underline", form: { data: { turbo_confirm: "Are you sure?" } } %>
-                  </div>
-                </div>
-              </div>
-            <% end %>
-          </div>
-        </div>
-      <% end %>
+  <!-- Transactions Table -->
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <% if @transactions.any? %>
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Account</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-slate-100">
+          <% @transactions.order(date: :desc, created_at: :desc).each do |transaction| %>
+            <tr class="hover:bg-slate-50 transition">
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
+                <%= transaction.date.strftime("%b %d") %>
+              </td>
+              <td class="px-4 py-2 text-sm text-slate-700">
+                <%= transaction.description.presence || "-" %>
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
+                <%= transaction.category.name.titleize %>
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
+                <%= transaction.account.name %>
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm text-right font-medium <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
+                <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
+              </td>
+              <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
+                <%= link_to "Edit", edit_transaction_path(transaction), class: "text-cyan-600 hover:text-cyan-700" %>
+                <%= button_to "Delete", transaction, method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
     <% else %>
-      <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
+      <div class="p-8 text-center">
         <p class="text-slate-500 mb-4">No transactions for this period.</p>
         <%= link_to "Add a transaction", new_transaction_path, class: "text-cyan-600 hover:underline" %>
       </div>

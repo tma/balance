@@ -137,33 +137,4 @@
       </div>
     <% end %>
   </div>
-
-  <!-- Recent Transactions -->
-  <div class="bg-white rounded-xl border border-slate-200 p-6">
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-slate-800">Recent Transactions</h2>
-      <%= link_to "View all", transactions_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
-    </div>
-    <% if @recent_transactions.empty? %>
-      <p class="text-slate-500">No transactions yet. <%= link_to "Add one", new_transaction_path, class: "text-cyan-600 hover:underline" %>.</p>
-    <% else %>
-      <div class="divide-y divide-slate-100">
-        <% @recent_transactions.each do |transaction| %>
-          <%= link_to transaction, class: "block py-3 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition" do %>
-            <div class="flex justify-between items-center">
-              <div>
-                <p class="font-medium text-slate-700"><%= transaction.description.presence || transaction.category.name.titleize %></p>
-                <p class="text-xs text-slate-400">
-                  <%= transaction.account.name %> &middot; <%= transaction.date.strftime("%b %d") %>
-                </p>
-              </div>
-              <p class="font-semibold <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
-                <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
-              </p>
-            </div>
-          <% end %>
-        <% end %>
-      </div>
-    <% end %>
-  </div>
 </div>
