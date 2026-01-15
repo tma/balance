@@ -8,8 +8,9 @@ class CurrencyTest < ActiveSupport::TestCase
   end
 
   test "validates uniqueness of code" do
-    Currency.create!(code: "USD")
-    duplicate = Currency.new(code: "USD")
+    # Use a code that doesn't exist in fixtures
+    Currency.create!(code: "GBP")
+    duplicate = Currency.new(code: "GBP")
     assert_not duplicate.valid?
     assert_includes duplicate.errors[:code], "has already been taken"
   end
@@ -28,24 +29,26 @@ class CurrencyTest < ActiveSupport::TestCase
   end
 
   test "only one currency can be default" do
-    usd = Currency.create!(code: "USD", default: true)
-    eur = Currency.create!(code: "EUR", default: true)
+    # Use codes not in fixtures
+    gbp = Currency.create!(code: "GBP", default: true)
+    chf = Currency.create!(code: "CHF", default: true)
 
-    usd.reload
-    assert_not usd.default?, "USD should no longer be default"
-    assert eur.default?, "EUR should now be default"
+    gbp.reload
+    assert_not gbp.default?, "GBP should no longer be default"
+    assert chf.default?, "CHF should now be default"
   end
 
   test "Currency.default returns the default currency" do
-    Currency.create!(code: "USD", default: false)
-    eur = Currency.create!(code: "EUR", default: true)
+    # Use codes not in fixtures
+    Currency.create!(code: "GBP", default: false)
+    chf = Currency.create!(code: "CHF", default: true)
 
-    assert_equal eur, Currency.default
+    assert_equal chf, Currency.default
   end
 
   test "Currency.default falls back to first currency if no default set" do
-    Currency.create!(code: "USD", default: false)
-    Currency.create!(code: "EUR", default: false)
+    # Clear any defaults from fixtures
+    Currency.update_all(default: false)
 
     assert_equal Currency.first, Currency.default
   end
