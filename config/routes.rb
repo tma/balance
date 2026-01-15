@@ -19,6 +19,10 @@ Rails.application.routes.draw do
   resources :transactions
   resources :budgets
 
+  # Bulk update valuations for all assets
+  get "valuations", to: "asset_valuations#edit", as: :update_valuations
+  patch "valuations", to: "asset_valuations#update"
+
   # Admin namespace for master data
   namespace :admin do
     resources :currencies
