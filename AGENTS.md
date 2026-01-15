@@ -3,6 +3,39 @@
 ## Project Overview
 Personal finance budgeting app built with Ruby on Rails 8.x, SQLite, and Tailwind CSS. See `SPEC.md` for full specification.
 
+## Development Environment
+
+**IMPORTANT: Always use the devcontainer for running Rails commands.**
+
+The project uses a devcontainer for consistent development. The system Ruby is outdated and will not work.
+
+### Starting the Devcontainer
+```bash
+# Check if devcontainer is running
+docker ps | grep balance-devcontainer
+
+# If not running, start it (from project root)
+docker compose -f .devcontainer/docker-compose.yml up -d
+
+# Or use VS Code: Cmd+Shift+P -> "Dev Containers: Reopen in Container"
+```
+
+### Running Commands in Devcontainer
+```bash
+# All Rails commands must be run via docker exec
+docker exec balance-devcontainer bin/rails generate model Foo
+docker exec balance-devcontainer bin/rails db:migrate
+docker exec balance-devcontainer bin/rails test
+docker exec balance-devcontainer rubocop
+
+# Interactive shell in container
+docker exec -it balance-devcontainer bash
+```
+
+### Never
+- Run `rails`, `ruby`, or `bundle` commands directly on the host machine
+- Use system Ruby (it's outdated and incompatible)
+
 ## Development Principles
 
 ### Always

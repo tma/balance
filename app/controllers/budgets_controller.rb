@@ -4,14 +4,26 @@ class BudgetsController < ApplicationController
   def index
     @year = params[:year]&.to_i || Date.current.year
     @month = params[:month]&.to_i || Date.current.month
-    @budgets = Budget.includes(:category).for_month(@year, @month).order("categories.name")
+    @current_date = Date.new(@year, @month, 1)
+
+    all_budgets = Budget.includes(:category)
+
+    @monthly_budgets = all_budgets.monthly
+                                  .select { |b| b.active_for?(@current_date) }
+                                  .sort_by { |b| b.category.name }
+
+    @yearly_budgets = all_budgets.yearly
+                                 .select { |b| b.active_for?(@current_date) }
+                                 .sort_by { |b| b.category.name }
   end
 
   def show
+    @year = params[:year]&.to_i || Date.current.year
+    @month = params[:month]&.to_i || Date.current.month
   end
 
   def new
-    @budget = Budget.new(month: Date.current.month, year: Date.current.year)
+    @budget = Budget.new(period: "monthly")
   end
 
   def edit
@@ -47,6 +59,6 @@ class BudgetsController < ApplicationController
   end
 
   def budget_params
-    params.expect(budget: [ :category_id, :amount, :month, :year ])
+    params.expect(budget: [ :category_id, :amount, :period, :start_date ])
   end
 end

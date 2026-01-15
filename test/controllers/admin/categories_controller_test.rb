@@ -17,7 +17,7 @@ class Admin::CategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should create category" do
     assert_difference("Category.count") do
-      post admin_categories_url, params: { category: { category_type: "expense", name: "entertainment" } }
+      post admin_categories_url, params: { category: { category_type: "expense", name: "travel" } }
     end
 
     assert_redirected_to admin_category_url(Category.last)
@@ -40,7 +40,7 @@ class Admin::CategoriesControllerTest < ActionDispatch::IntegrationTest
 
   test "should destroy category" do
     # Create a new category to destroy (not used by transactions/budgets)
-    category = Category.create!(name: "travel", category_type: "expense")
+    category = Category.create!(name: "unused_category", category_type: "expense")
     assert_difference("Category.count", -1) do
       delete admin_category_url(category)
     end

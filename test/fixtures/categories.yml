@@ -7,3 +7,7 @@ salary:
 groceries:
   name: groceries
   category_type: expense
+
+entertainment:
+  name: entertainment
+  category_type: expense

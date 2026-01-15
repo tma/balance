@@ -4,32 +4,41 @@
   <h1 class="text-2xl font-bold text-slate-800 mb-6">Budget: <%= @budget.category.name.capitalize %></h1>
 
   <div class="bg-white rounded-lg shadow p-6 mb-6">
-    <p class="text-sm text-slate-500 mb-2"><%= Date::MONTHNAMES[@budget.month] %> <%= @budget.year %></p>
+    <div class="flex justify-between items-center mb-4">
+      <span class="text-sm font-medium px-2 py-1 rounded-full <%= @budget.monthly? ? 'bg-cyan-100 text-cyan-700' : 'bg-purple-100 text-purple-700' %>">
+        <%= @budget.monthly? ? "Monthly" : "Yearly" %>
+      </span>
+      <% if @budget.start_date %>
+        <span class="text-sm text-slate-500">Since <%= @budget.start_date.strftime("%b %Y") %></span>
+      <% end %>
+    </div>
     
     <div class="mb-4">
       <p class="text-sm text-slate-500">Budget</p>
-      <p class="text-2xl font-bold"><%= number_to_currency(@budget.amount) %></p>
+      <p class="text-2xl font-bold"><%= number_to_currency(@budget.amount) %> <%= @budget.period_label %></p>
     </div>
     
     <div class="mb-4">
-      <p class="text-sm text-slate-500">Spent</p>
-      <p class="text-2xl font-bold text-rose-500"><%= number_to_currency(@budget.spent) %></p>
+      <p class="text-sm text-slate-500">Spent (<%= @budget.monthly? ? "#{Date::MONTHNAMES[@month]} #{@year}" : @year %>)</p>
+      <p class="text-2xl font-bold text-rose-500"><%= number_to_currency(@budget.spent(@year, @month)) %></p>
     </div>
     
     <div class="w-full bg-slate-200 rounded-full h-3 mb-2">
-      <% percentage = [@budget.percentage_used, 100].min %>
+      <% percentage = [@budget.percentage_used(@year, @month), 100].min %>
       <% bar_color = percentage >= 100 ? 'bg-red-600' : percentage >= 80 ? 'bg-yellow-500' : 'bg-emerald-400' %>
       <div class="<%= bar_color %> h-3 rounded-full" style="width: <%= percentage %>%"></div>
     </div>
     
-    <p class="text-sm <%= @budget.remaining >= 0 ? 'text-emerald-500' : 'text-rose-500' %>">
-      <%= @budget.remaining >= 0 ? "#{number_to_currency(@budget.remaining)} remaining" : "#{number_to_currency(@budget.remaining.abs)} over budget" %>
+    <% remaining = @budget.remaining(@year, @month) %>
+    <p class="text-sm <%= remaining >= 0 ? 'text-emerald-500' : 'text-rose-500' %>">
+      <%= remaining >= 0 ? "#{number_to_currency(remaining)} remaining" : "#{number_to_currency(remaining.abs)} over budget" %>
+      (<%= @budget.percentage_used(@year, @month) %>%)
     </p>
   </div>
 
   <div class="flex space-x-4">
-    <%= link_to "Edit", edit_budget_path(@budget), class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
-    <%= link_to "Back", budgets_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+    <%= link_to "Edit", edit_budget_path(@budget), class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium" %>
+    <%= link_to "Back", budgets_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-200 font-medium" %>
     <%= button_to "Delete", @budget, method: :delete, class: "rounded-md px-4 py-2 bg-red-600 hover:bg-rose-400 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

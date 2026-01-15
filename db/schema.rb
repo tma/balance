@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_15_214844) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_15_221022) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -73,10 +73,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_214844) do
     t.decimal "amount"
     t.integer "category_id", null: false
     t.datetime "created_at", null: false
-    t.integer "month"
+    t.string "period", default: "monthly", null: false
+    t.date "start_date"
     t.datetime "updated_at", null: false
-    t.integer "year"
-    t.index ["category_id"], name: "index_budgets_on_category_id"
+    t.index ["category_id"], name: "index_budgets_on_category_id", unique: true
   end
 
   create_table "categories", force: :cascade do |t|

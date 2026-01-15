@@ -4,47 +4,67 @@
   <div class="flex justify-between items-center mb-6">
     <div>
       <h1 class="text-2xl font-bold text-slate-800">Budgets</h1>
-      <p class="text-slate-500"><%= Date::MONTHNAMES[@month] %> <%= @year %></p>
+      <p class="text-slate-500">Viewing: <%= Date::MONTHNAMES[@month] %> <%= @year %></p>
     </div>
     <%= link_to "New Budget", new_budget_path, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
   </div>
 
-  <% if @budgets.any? %>
-    <div class="bg-white rounded-xl border border-slate-200">
-      <div class="divide-y divide-slate-100">
-        <% @budgets.each do |budget| %>
-          <div class="p-6">
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                <h3 class="font-semibold text-slate-700"><%= budget.category.name.capitalize %></h3>
-                <p class="text-sm text-slate-500">
-                  <%= number_to_currency(budget.spent) %> of <%= number_to_currency(budget.amount) %> spent
-                </p>
-              </div>
-              <div class="flex space-x-3 text-sm">
-                <%= link_to "Edit", edit_budget_path(budget), class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
-                <%= button_to "Delete", budget, method: :delete, class: "text-rose-500 hover:text-rose-600 hover:underline", data: { turbo_confirm: "Are you sure?" } %>
-              </div>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-3">
-              <% percentage = [budget.percentage_used, 100].min %>
-              <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
-              <div class="<%= bar_color %> h-3 rounded-full transition-all" style="width: <%= percentage %>%"></div>
-            </div>
-            <div class="flex justify-between mt-1 text-sm">
-              <span class="<%= budget.remaining >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
-                <%= budget.remaining >= 0 ? "#{number_to_currency(budget.remaining)} remaining" : "#{number_to_currency(budget.remaining.abs)} over budget" %>
-              </span>
-              <span class="text-slate-400"><%= budget.percentage_used %>%</span>
-            </div>
-          </div>
-        <% end %>
+  <!-- Month/Year Navigation -->
+  <div class="bg-white rounded-xl border border-slate-200 p-4 mb-6">
+    <div class="flex items-center justify-between">
+      <%
+        prev_month = @current_date.prev_month
+        next_month = @current_date.next_month
+      %>
+      <%= link_to budgets_path(year: prev_month.year, month: prev_month.month), class: "text-cyan-600 hover:text-cyan-700" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+        </svg>
+      <% end %>
+      <span class="font-medium text-slate-700"><%= Date::MONTHNAMES[@month] %> <%= @year %></span>
+      <%= link_to budgets_path(year: next_month.year, month: next_month.month), class: "text-cyan-600 hover:text-cyan-700" do %>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+        </svg>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Monthly Budgets Section -->
+  <div class="mb-8">
+    <h2 class="text-lg font-semibold text-slate-700 mb-4">Monthly Budgets</h2>
+    <% if @monthly_budgets.any? %>
+      <div class="bg-white rounded-xl border border-slate-200">
+        <div class="divide-y divide-slate-100">
+          <% @monthly_budgets.each do |budget| %>
+            <%= render "budget_card", budget: budget, year: @year, month: @month %>
+          <% end %>
+        </div>
       </div>
-    </div>
-  <% else %>
-    <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
-      <p class="text-slate-500 mb-4">No budgets set for <%= Date::MONTHNAMES[@month] %> <%= @year %>.</p>
-      <%= link_to "Create your first budget", new_budget_path, class: "text-cyan-600 hover:underline" %>
-    </div>
-  <% end %>
+    <% else %>
+      <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
+        <p class="text-slate-500">No monthly budgets set.</p>
+        <%= link_to "Create one", new_budget_path(period: "monthly"), class: "text-cyan-600 hover:underline" %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Yearly Budgets Section -->
+  <div>
+    <h2 class="text-lg font-semibold text-slate-700 mb-4">Yearly Budgets (<%= @year %>)</h2>
+    <% if @yearly_budgets.any? %>
+      <div class="bg-white rounded-xl border border-slate-200">
+        <div class="divide-y divide-slate-100">
+          <% @yearly_budgets.each do |budget| %>
+            <%= render "budget_card", budget: budget, year: @year, month: nil %>
+          <% end %>
+        </div>
+      </div>
+    <% else %>
+      <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
+        <p class="text-slate-500">No yearly budgets set.</p>
+        <%= link_to "Create one", new_budget_path(period: "yearly"), class: "text-cyan-600 hover:underline" %>
+      </div>
+    <% end %>
+  </div>
 </div>

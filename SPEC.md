@@ -34,9 +34,14 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Edit/delete transactions
 
 ### 4. Budgets
-- Set monthly budgets per category
-- Track spending vs budget
-- Visual progress indicators
+- Set recurring budgets per expense category
+- Two budget periods:
+  - **Monthly:** Track spending per calendar month (e.g., $500/month for groceries)
+  - **Yearly:** Track spending per calendar year (e.g., $3000/year for vacation)
+- Optional start date to apply budget from a specific month forward
+- One budget per category (no duplicates)
+- Track spending vs budget with visual progress indicators
+- View budget status for any month/year
 
 ### 5. Dashboard
 - **Net Worth Summary:**
@@ -111,8 +116,8 @@ Transaction
 Budget
 - category_id:references
 - amount:decimal
-- month: integer
-- year:integer
+- period:string (monthly, yearly)
+- start_date:date (optional)
 ```
 
 ## UI Requirements
