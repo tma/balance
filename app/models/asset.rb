@@ -1,5 +1,6 @@
 class Asset < ApplicationRecord
   belongs_to :asset_type
+  belongs_to :asset_group
   has_many :asset_valuations, dependent: :destroy
 
   validates :name, presence: true

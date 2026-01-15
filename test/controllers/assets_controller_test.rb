@@ -3,6 +3,7 @@ require "test_helper"
 class AssetsControllerTest < ActionDispatch::IntegrationTest
   setup do
     @asset = assets(:house)
+    @asset_group = asset_groups(:real_estate)
   end
 
   test "should get index" do
@@ -17,7 +18,7 @@ class AssetsControllerTest < ActionDispatch::IntegrationTest
 
   test "should create asset" do
     assert_difference("Asset.count") do
-      post assets_url, params: { asset: { asset_type_id: @asset.asset_type_id, currency: @asset.currency, name: "New Asset", notes: "Test notes", value: 10000.00 } }
+      post assets_url, params: { asset: { asset_type_id: @asset.asset_type_id, asset_group_id: @asset_group.id, currency: @asset.currency, name: "New Asset", notes: "Test notes", value: 10000.00 } }
     end
 
     assert_redirected_to asset_url(Asset.last)
@@ -34,7 +35,7 @@ class AssetsControllerTest < ActionDispatch::IntegrationTest
   end
 
   test "should update asset" do
-    patch asset_url(@asset), params: { asset: { asset_type_id: @asset.asset_type_id, currency: @asset.currency, name: @asset.name, notes: @asset.notes, value: @asset.value } }
+    patch asset_url(@asset), params: { asset: { asset_type_id: @asset.asset_type_id, asset_group_id: @asset_group.id, currency: @asset.currency, name: @asset.name, notes: @asset.notes, value: @asset.value } }
     assert_redirected_to asset_url(@asset)
   end
 

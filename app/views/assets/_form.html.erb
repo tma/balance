@@ -11,6 +11,11 @@
   <% end %>
 
   <div class="mb-4">
+    <%= form.label :asset_group_id, "Group", class: "block text-sm font-medium text-gray-700" %>
+    <%= form.collection_select :asset_group_id, AssetGroup.order(:name), :id, :name, { prompt: "Select group" }, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2" %>
+  </div>
+
+  <div class="mb-4">
     <%= form.label :name, class: "block text-sm font-medium text-gray-700" %>
     <%= form.text_field :name, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2", placeholder: "My House" %>
   </div>

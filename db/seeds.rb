@@ -50,4 +50,15 @@ end
   Category.find_or_create_by!(name: name, category_type: "expense")
 end
 
+# Asset Groups (examples)
+[
+  { name: "Real Estate", description: "Properties and related mortgages" },
+  { name: "Investments", description: "Stocks, bonds, and other investments" },
+  { name: "Vehicles", description: "Cars and related loans" }
+].each do |attrs|
+  AssetGroup.find_or_create_by!(name: attrs[:name]) do |group|
+    group.description = attrs[:description]
+  end
+end
+
 puts "Seed data loaded successfully!"

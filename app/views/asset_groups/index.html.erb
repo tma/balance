@@ -1,12 +1,9 @@
-<% content_for :title, "Assets & Liabilities" %>
+<% content_for :title, "Asset Groups" %>
 
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">Assets & Liabilities</h1>
-    <div class="flex space-x-2">
-      <%= link_to "New Group", new_asset_group_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
-      <%= link_to "New Asset", new_asset_path, class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
-    </div>
+    <h1 class="text-2xl font-bold text-gray-900">Asset Groups</h1>
+    <%= link_to "New Group", new_asset_group_path, class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
   </div>
 
   <% if @asset_groups.any? %>
@@ -16,16 +13,15 @@
           <div class="p-6">
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h2 class="text-xl font-semibold text-gray-900">
-                  <%= link_to group.name, asset_group_path(group), class: "hover:text-blue-600" %>
-                </h2>
+                <h2 class="text-xl font-semibold text-gray-900"><%= group.name %></h2>
                 <% if group.description.present? %>
                   <p class="text-sm text-gray-500 mt-1"><%= group.description %></p>
                 <% end %>
               </div>
               <div class="flex space-x-2 text-sm">
-                <%= link_to "View", asset_group_path(group), class: "text-blue-600 hover:underline" %>
+                <%= link_to "View", group, class: "text-blue-600 hover:underline" %>
                 <%= link_to "Edit", edit_asset_group_path(group), class: "text-blue-600 hover:underline" %>
+                <%= button_to "Delete", group, method: :delete, class: "text-red-600 hover:underline", data: { turbo_confirm: "Are you sure? Assets in this group will be ungrouped." } %>
               </div>
             </div>
 
@@ -55,7 +51,6 @@
   <% else %>
     <div class="bg-white rounded-lg shadow p-6 text-center">
       <p class="text-gray-500 mb-4">No asset groups yet.</p>
-      <p class="text-sm text-gray-400 mb-4">Create a group first, then add assets to it.</p>
       <%= link_to "Create your first group", new_asset_group_path, class: "text-blue-600 hover:underline" %>
     </div>
   <% end %>

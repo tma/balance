@@ -15,6 +15,7 @@ Rails.application.routes.draw do
   # Main resources
   resources :accounts
   resources :assets, path: "financial-assets"
+  resources :asset_groups, path: "asset-groups"
   resources :transactions
   resources :budgets
 

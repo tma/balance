@@ -2,8 +2,7 @@ class AssetsController < ApplicationController
   before_action :set_asset, only: %i[ show edit update destroy ]
 
   def index
-    @assets = Asset.includes(:asset_type).assets_only.order(:name)
-    @liabilities = Asset.includes(:asset_type).liabilities_only.order(:name)
+    @asset_groups = AssetGroup.includes(assets: :asset_type).order(:name)
   end
 
   def show
@@ -47,6 +46,6 @@ class AssetsController < ApplicationController
   end
 
   def asset_params
-    params.expect(asset: [ :name, :asset_type_id, :value, :currency, :notes ])
+    params.expect(asset: [ :name, :asset_type_id, :asset_group_id, :value, :currency, :notes ])
   end
 end
