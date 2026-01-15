@@ -11,6 +11,7 @@ class Transaction < ApplicationRecord
   scope :in_month, ->(year, month) { where("strftime('%Y', date) = ? AND strftime('%m', date) = ?", year.to_s, month.to_s.rjust(2, "0")) }
   scope :in_year, ->(year) { where("strftime('%Y', date) = ?", year.to_s) }
   scope :recent, ->(limit = 10) { order(date: :desc, created_at: :desc).limit(limit) }
+  scope :search, ->(query) { where("description LIKE ?", "%#{query}%") }
 
   before_save :calculate_default_currency_amount
   after_create :update_account_balance_on_create

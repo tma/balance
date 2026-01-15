@@ -6,111 +6,153 @@
     <%= link_to "New Transaction", new_transaction_path, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
   </div>
 
-  <!-- Month Navigation & Date Filter -->
-  <div class="bg-white rounded-xl border border-slate-200 mb-4 px-4 py-2">
-    <div class="flex items-center justify-between">
-      <% if @filter_mode == :month %>
-        <% prev_month = @current_month - 1.month %>
-        <%
-          prev_params = { month: prev_month.strftime("%Y-%m") }
-          prev_params[:account_id] = params[:account_id] if params[:account_id].present?
-          prev_params[:category_id] = params[:category_id] if params[:category_id].present?
-        %>
-        <%= link_to transactions_path(prev_params), class: "p-1 hover:bg-slate-50 rounded-lg transition text-slate-500 text-sm" do %>
-          &larr; <%= prev_month.strftime("%b") %>
-        <% end %>
-      <% else %>
-        <span></span>
-      <% end %>
-
-      <div class="flex items-center gap-4">
-        <% if @filter_mode == :month %>
-          <span class="font-semibold text-slate-700"><%= @current_month.strftime("%B %Y") %></span>
-        <% elsif @filter_mode == :range %>
-          <span class="text-sm text-slate-600"><%= @start_date.strftime("%b %d") %> - <%= @end_date.strftime("%b %d, %Y") %></span>
-          <%= link_to "Clear", transactions_path, class: "text-sm text-cyan-600 hover:text-cyan-700" %>
-        <% end %>
-
-        <details class="group relative">
-          <summary class="cursor-pointer text-sm text-slate-400 hover:text-slate-600 list-none flex items-center gap-1">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  <% if @filter_mode == :search %>
+    <!-- Search Mode: Full-width search with results -->
+    <div class="mb-4">
+      <%= form_with url: transactions_path, method: :get, class: "w-full" do |f| %>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <span class="group-open:rotate-180 transition-transform text-xs">&#9660;</span>
-          </summary>
-          <div class="absolute right-0 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-3 z-10">
-            <%= form_with url: transactions_path, method: :get, class: "flex items-center gap-2" do |f| %>
-              <%= f.hidden_field :account_id, value: params[:account_id] if params[:account_id].present? %>
-              <%= f.hidden_field :category_id, value: params[:category_id] if params[:category_id].present? %>
-              <%= f.date_field :start_date, value: @start_date || @current_month, class: "rounded border-slate-300 text-sm px-2 py-1 border w-32" %>
-              <span class="text-slate-400">-</span>
-              <%= f.date_field :end_date, value: @end_date || (@current_month&.end_of_month || Date.current), class: "rounded border-slate-300 text-sm px-2 py-1 border w-32" %>
-              <%= f.submit "Go", class: "rounded px-2 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-sm cursor-pointer" %>
-            <% end %>
           </div>
-        </details>
-      </div>
-
-      <% if @filter_mode == :month %>
-        <% next_month = @current_month + 1.month %>
-        <% if next_month <= Date.current.end_of_month %>
-          <%
-            next_params = { month: next_month.strftime("%Y-%m") }
-            next_params[:account_id] = params[:account_id] if params[:account_id].present?
-            next_params[:category_id] = params[:category_id] if params[:category_id].present?
-          %>
-          <%= link_to transactions_path(next_params), class: "p-1 hover:bg-slate-50 rounded-lg transition text-slate-500 text-sm" do %>
-            <%= next_month.strftime("%b") %> &rarr;
+          <%= f.text_field :search,
+                value: @search_query,
+                placeholder: "Search transactions by description...",
+                class: "w-full pl-10 pr-10 py-2 rounded-xl border border-slate-200 bg-white text-sm focus:border-cyan-500 focus:ring-cyan-500 focus:outline-none",
+                autofocus: true %>
+          <%= link_to transactions_path, class: "absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600" do %>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           <% end %>
-        <% else %>
-          <span class="p-1 text-transparent text-sm">Dec &rarr;</span>
-        <% end %>
-      <% else %>
-        <span></span>
+        </div>
       <% end %>
     </div>
-  </div>
+    <div class="mb-4">
+      <p class="text-sm text-slate-600">
+        Found <span class="font-medium"><%= @transactions.size %></span> transaction<%= @transactions.size == 1 ? '' : 's' %> matching "<span class="font-medium"><%= @search_query %></span>"
+      </p>
+    </div>
+  <% else %>
+    <!-- Month Navigation & Date Filter -->
+    <div class="bg-white rounded-xl border border-slate-200 mb-4 px-4 py-2">
+      <div class="flex items-center justify-between">
+        <% if @filter_mode == :month %>
+          <% prev_month = @current_month - 1.month %>
+          <%
+            prev_params = { month: prev_month.strftime("%Y-%m") }
+            prev_params[:account_id] = params[:account_id] if params[:account_id].present?
+            prev_params[:category_id] = params[:category_id] if params[:category_id].present?
+          %>
+          <%= link_to transactions_path(prev_params), class: "p-1 hover:bg-slate-50 rounded-lg transition text-slate-500 text-sm" do %>
+            &larr; <%= prev_month.strftime("%b") %>
+          <% end %>
+        <% else %>
+          <span></span>
+        <% end %>
 
-  <!-- Filters -->
-  <div class="flex items-center gap-3 mb-4">
-    <span class="text-sm text-slate-500">Filter:</span>
-    <%= form_with url: transactions_path, method: :get, class: "flex items-center gap-2", data: { controller: "auto-submit" } do |f| %>
-      <% if @filter_mode == :month %>
-        <%= f.hidden_field :month, value: @current_month.strftime("%Y-%m") %>
-      <% else %>
-        <%= f.hidden_field :start_date, value: @start_date %>
-        <%= f.hidden_field :end_date, value: @end_date %>
+        <div class="flex items-center gap-4">
+          <% if @filter_mode == :month %>
+            <span class="font-semibold text-slate-700"><%= @current_month.strftime("%B %Y") %></span>
+          <% elsif @filter_mode == :range %>
+            <span class="text-sm text-slate-600"><%= @start_date.strftime("%b %d") %> - <%= @end_date.strftime("%b %d, %Y") %></span>
+            <%= link_to "Clear", transactions_path, class: "text-sm text-cyan-600 hover:text-cyan-700" %>
+          <% end %>
+
+          <details class="group relative">
+            <summary class="cursor-pointer text-sm text-slate-400 hover:text-slate-600 list-none flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span class="group-open:rotate-180 transition-transform text-xs">&#9660;</span>
+            </summary>
+            <div class="absolute right-0 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-3 z-10">
+              <%= form_with url: transactions_path, method: :get, class: "flex items-center gap-2" do |f| %>
+                <%= f.hidden_field :account_id, value: params[:account_id] if params[:account_id].present? %>
+                <%= f.hidden_field :category_id, value: params[:category_id] if params[:category_id].present? %>
+                <%= f.date_field :start_date, value: @start_date || @current_month, class: "rounded border-slate-300 text-sm px-2 py-1 border w-32" %>
+                <span class="text-slate-400">-</span>
+                <%= f.date_field :end_date, value: @end_date || (@current_month&.end_of_month || Date.current), class: "rounded border-slate-300 text-sm px-2 py-1 border w-32" %>
+                <%= f.submit "Go", class: "rounded px-2 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-sm cursor-pointer" %>
+              <% end %>
+            </div>
+          </details>
+        </div>
+
+        <% if @filter_mode == :month %>
+          <% next_month = @current_month + 1.month %>
+          <% if next_month <= Date.current.end_of_month %>
+            <%
+              next_params = { month: next_month.strftime("%Y-%m") }
+              next_params[:account_id] = params[:account_id] if params[:account_id].present?
+              next_params[:category_id] = params[:category_id] if params[:category_id].present?
+            %>
+            <%= link_to transactions_path(next_params), class: "p-1 hover:bg-slate-50 rounded-lg transition text-slate-500 text-sm" do %>
+              <%= next_month.strftime("%b") %> &rarr;
+            <% end %>
+          <% else %>
+            <span class="p-1 text-transparent text-sm">Dec &rarr;</span>
+          <% end %>
+        <% else %>
+          <span></span>
+        <% end %>
+      </div>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="flex flex-col md:flex-row md:items-center gap-3 mb-4">
+      <%= form_with url: transactions_path, method: :get, class: "flex flex-wrap items-center gap-2 flex-1", data: { controller: "auto-submit" } do |f| %>
+        <% if @filter_mode == :month %>
+          <%= f.hidden_field :month, value: @current_month.strftime("%Y-%m") %>
+        <% else %>
+          <%= f.hidden_field :start_date, value: @start_date %>
+          <%= f.hidden_field :end_date, value: @end_date %>
+        <% end %>
+
+        <%= f.select :account_id,
+              options_from_collection_for_select(@accounts, :id, :name, params[:account_id]),
+              { include_blank: "All Accounts" },
+              class: "rounded-lg border-slate-300 text-sm px-2 py-1.5 border bg-white",
+              onchange: "this.form.requestSubmit()" %>
+
+        <%= f.select :category_id,
+              grouped_options_for_select(
+                [
+                  ["Income", @categories.select { |c| c.category_type == "income" }.map { |c| [c.name.titleize, c.id] }],
+                  ["Expense", @categories.select { |c| c.category_type == "expense" }.map { |c| [c.name.titleize, c.id] }]
+                ],
+                params[:category_id]
+              ),
+              { include_blank: "All Categories" },
+              class: "rounded-lg border-slate-300 text-sm px-2 py-1.5 border bg-white",
+              onchange: "this.form.requestSubmit()" %>
+
+        <% if @selected_account || @selected_category %>
+          <%
+            clear_params = {}
+            clear_params[:month] = @current_month.strftime("%Y-%m") if @filter_mode == :month
+            clear_params[:start_date] = @start_date if @filter_mode == :range
+            clear_params[:end_date] = @end_date if @filter_mode == :range
+          %>
+          <%= link_to "Clear", transactions_path(clear_params), class: "text-sm text-cyan-600 hover:text-cyan-700" %>
+        <% end %>
       <% end %>
 
-      <%= f.select :account_id,
-            options_from_collection_for_select(@accounts, :id, :name, params[:account_id]),
-            { include_blank: "All Accounts" },
-            class: "rounded-lg border-slate-300 text-sm px-2 py-1 border bg-white",
-            onchange: "this.form.requestSubmit()" %>
-
-      <%= f.select :category_id,
-            grouped_options_for_select(
-              [
-                ["Income", @categories.select { |c| c.category_type == "income" }.map { |c| [c.name.titleize, c.id] }],
-                ["Expense", @categories.select { |c| c.category_type == "expense" }.map { |c| [c.name.titleize, c.id] }]
-              ],
-              params[:category_id]
-            ),
-            { include_blank: "All Categories" },
-            class: "rounded-lg border-slate-300 text-sm px-2 py-1 border bg-white",
-            onchange: "this.form.requestSubmit()" %>
-    <% end %>
-
-    <% if @selected_account || @selected_category %>
-      <%
-        clear_params = {}
-        clear_params[:month] = @current_month.strftime("%Y-%m") if @filter_mode == :month
-        clear_params[:start_date] = @start_date if @filter_mode == :range
-        clear_params[:end_date] = @end_date if @filter_mode == :range
-      %>
-      <%= link_to "Clear filters", transactions_path(clear_params), class: "text-sm text-cyan-600 hover:text-cyan-700" %>
-    <% end %>
-  </div>
+      <%= form_with url: transactions_path, method: :get, class: "flex-1 md:max-w-xs" do |f| %>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <%= f.text_field :search,
+                placeholder: "Search descriptions...",
+                class: "w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-white text-sm focus:border-cyan-500 focus:ring-cyan-500 focus:outline-none" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
 
   <!-- Summary -->
   <% if @transactions.any? %>

@@ -4,8 +4,13 @@ class TransactionsController < ApplicationController
   def index
     @transactions = Transaction.includes(:account, :category).order(date: :desc, created_at: :desc)
 
-    # Date range filtering
-    if params[:start_date].present? && params[:end_date].present?
+    # Search - when searching, ignore date filters and search across all transactions
+    if params[:search].present?
+      @search_query = params[:search]
+      @transactions = @transactions.search(@search_query)
+      @filter_mode = :search
+    elsif params[:start_date].present? && params[:end_date].present?
+      # Date range filtering
       @start_date = Date.parse(params[:start_date])
       @end_date = Date.parse(params[:end_date])
       @transactions = @transactions.where(date: @start_date..@end_date)
