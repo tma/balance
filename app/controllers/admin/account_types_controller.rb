@@ -1,5 +1,5 @@
 class Admin::AccountTypesController < ApplicationController
-  before_action :set_account_type, only: %i[show edit update destroy]
+  before_action :set_account_type, only: %i[ show edit update destroy ]
 
   def index
     @account_types = AccountType.all.order(:name)
@@ -45,6 +45,6 @@ class Admin::AccountTypesController < ApplicationController
   end
 
   def account_type_params
-    params.expect(account_type: [:name])
+    params.expect(account_type: [ :name ])
   end
 end

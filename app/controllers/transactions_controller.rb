@@ -1,5 +1,5 @@
 class TransactionsController < ApplicationController
-  before_action :set_transaction, only: %i[show edit update destroy]
+  before_action :set_transaction, only: %i[ show edit update destroy ]
 
   def index
     @transactions = Transaction.includes(:account, :category).order(date: :desc, created_at: :desc)
@@ -45,6 +45,6 @@ class TransactionsController < ApplicationController
   end
 
   def transaction_params
-    params.expect(transaction: [:account_id, :category_id, :amount, :transaction_type, :date, :description])
+    params.expect(transaction: [ :account_id, :category_id, :amount, :transaction_type, :date, :description ])
   end
 end

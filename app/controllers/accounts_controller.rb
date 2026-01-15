@@ -1,5 +1,5 @@
 class AccountsController < ApplicationController
-  before_action :set_account, only: %i[show edit update destroy]
+  before_action :set_account, only: %i[ show edit update destroy ]
 
   def index
     @accounts = Account.includes(:account_type).order(:name)
@@ -46,6 +46,6 @@ class AccountsController < ApplicationController
   end
 
   def account_params
-    params.expect(account: [:name, :account_type_id, :balance, :currency])
+    params.expect(account: [ :name, :account_type_id, :balance, :currency ])
   end
 end

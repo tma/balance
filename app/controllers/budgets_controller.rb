@@ -1,5 +1,5 @@
 class BudgetsController < ApplicationController
-  before_action :set_budget, only: %i[show edit update destroy]
+  before_action :set_budget, only: %i[ show edit update destroy ]
 
   def index
     @year = params[:year]&.to_i || Date.current.year
@@ -47,6 +47,6 @@ class BudgetsController < ApplicationController
   end
 
   def budget_params
-    params.expect(budget: [:category_id, :amount, :month, :year])
+    params.expect(budget: [ :category_id, :amount, :month, :year ])
   end
 end

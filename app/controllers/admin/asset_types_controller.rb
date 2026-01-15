@@ -1,5 +1,5 @@
 class Admin::AssetTypesController < ApplicationController
-  before_action :set_asset_type, only: %i[show edit update destroy]
+  before_action :set_asset_type, only: %i[ show edit update destroy ]
 
   def index
     @asset_types = AssetType.all.order(:is_liability, :name)
@@ -45,6 +45,6 @@ class Admin::AssetTypesController < ApplicationController
   end
 
   def asset_type_params
-    params.expect(asset_type: [:name, :is_liability])
+    params.expect(asset_type: [ :name, :is_liability ])
   end
 end

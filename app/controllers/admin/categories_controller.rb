@@ -1,5 +1,5 @@
 class Admin::CategoriesController < ApplicationController
-  before_action :set_category, only: %i[show edit update destroy]
+  before_action :set_category, only: %i[ show edit update destroy ]
 
   def index
     @categories = Category.all.order(:category_type, :name)
@@ -45,6 +45,6 @@ class Admin::CategoriesController < ApplicationController
   end
 
   def category_params
-    params.expect(category: [:name, :category_type])
+    params.expect(category: [ :name, :category_type ])
   end
 end

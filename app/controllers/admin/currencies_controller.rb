@@ -1,5 +1,5 @@
 class Admin::CurrenciesController < ApplicationController
-  before_action :set_currency, only: %i[show edit update destroy]
+  before_action :set_currency, only: %i[ show edit update destroy ]
 
   def index
     @currencies = Currency.all.order(:code)
@@ -45,6 +45,6 @@ class Admin::CurrenciesController < ApplicationController
   end
 
   def currency_params
-    params.expect(currency: [:code])
+    params.expect(currency: [ :code ])
   end
 end
