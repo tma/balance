@@ -10,6 +10,16 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "should get index with month filter" do
+    get transactions_url(month: Date.current.strftime("%Y-%m"))
+    assert_response :success
+  end
+
+  test "should get index with date range" do
+    get transactions_url(start_date: 1.month.ago.to_date, end_date: Date.current)
+    assert_response :success
+  end
+
   test "should get new" do
     get new_transaction_url
     assert_response :success

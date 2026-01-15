@@ -3,6 +3,32 @@ class TransactionsController < ApplicationController
 
   def index
     @transactions = Transaction.includes(:account, :category).order(date: :desc, created_at: :desc)
+
+    # Date range filtering
+    if params[:start_date].present? && params[:end_date].present?
+      @start_date = Date.parse(params[:start_date])
+      @end_date = Date.parse(params[:end_date])
+      @transactions = @transactions.where(date: @start_date..@end_date)
+      @filter_mode = :range
+    elsif params[:month].present?
+      # Month format: "2026-01"
+      date = Date.parse("#{params[:month]}-01")
+      @current_month = date
+      @transactions = @transactions.where(date: date.beginning_of_month..date.end_of_month)
+      @filter_mode = :month
+    else
+      # Default to current month
+      @current_month = Date.current.beginning_of_month
+      @transactions = @transactions.where(date: @current_month..@current_month.end_of_month)
+      @filter_mode = :month
+    end
+
+    # Group transactions by date for display
+    @transactions_by_date = @transactions.group_by(&:date)
+
+    # Calculate totals
+    @total_income = @transactions.income.sum(:amount)
+    @total_expenses = @transactions.expense.sum(:amount)
   end
 
   def show
@@ -35,7 +61,7 @@ class TransactionsController < ApplicationController
 
   def destroy
     @transaction.destroy!
-    redirect_to transactions_path, notice: "Transaction was successfully destroyed.", status: :see_other
+    redirect_to transactions_path(month: params[:month]), notice: "Transaction was successfully destroyed.", status: :see_other
   end
 
   private
