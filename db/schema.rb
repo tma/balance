@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_15_221022) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_15_233407) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -102,11 +102,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_221022) do
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
+    t.string "duplicate_hash"
     t.decimal "exchange_rate"
     t.string "transaction_type"
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
+    t.index ["duplicate_hash"], name: "index_transactions_on_duplicate_hash"
   end
 
   add_foreign_key "accounts", "account_types"

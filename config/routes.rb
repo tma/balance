@@ -23,6 +23,13 @@ Rails.application.routes.draw do
   resources :transactions
   resources :budgets
 
+  # Transaction import
+  resources :imports, only: [ :new, :create ] do
+    collection do
+      post :preview
+    end
+  end
+
   # Bulk update valuations for all assets
   get "valuations", to: "asset_valuations#edit", as: :update_valuations
   patch "valuations", to: "asset_valuations#update"

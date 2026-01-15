@@ -1,18 +1,11 @@
 {
   "name": "Balance Rails App",
-  "build": {
-    "context": "..",
-    "dockerfile": "Dockerfile"
-  },
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
   "workspaceFolder": "/workspaces/balance",
-  "forwardPorts": [3000],
+  "forwardPorts": [3000, 11434],
   "postCreateCommand": "bundle config set --local jobs 1 && bundle install && bin/setup",
   "postStartCommand": "git config --global --add safe.directory /workspaces/balance",
-  "containerEnv": {
-    "RAILS_ENV": "development",
-    "RUBY_DEBUG_OPEN": "true",
-    "RUBY_DEBUG_LAZY": "true"
-  },
   "customizations": {
     "vscode": {
       "extensions": [

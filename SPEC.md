@@ -32,8 +32,18 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Add income/expense transactions
 - Fields: amount, date, description, category, account
 - Edit/delete transactions
+- **Import from bank statements:** Upload PDF or CSV files for AI-powered extraction
 
-### 4. Budgets
+### 4. Transaction Import
+- Upload PDF or CSV bank statements
+- AI-powered extraction using Ollama LLM (configurable model)
+- Automatic category matching based on description
+- Duplicate detection via hash of date + amount + description
+- Preview extracted transactions before import
+- Manual fallback when AI extraction fails
+- Max file size: 5MB
+
+### 5. Budgets
 - Set recurring budgets per expense category
 - Two budget periods:
   - **Monthly:** Track spending per calendar month (e.g., $500/month for groceries)
@@ -43,7 +53,7 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Track spending vs budget with visual progress indicators
 - View budget status for any month/year
 
-### 5. Dashboard
+### 6. Dashboard
 Split into two views:
 
 #### Cash Flow View (root path)
@@ -66,7 +76,7 @@ Split into two views:
   - Each asset shows current value and liability badge if applicable
 - **Totals Footer** - Assets - Liabilities = Net
 
-### 6. Admin
+### 7. Admin
 - Manage master data: 
   - **Currencies** - ISO 4217 codes (e.g., USD, EUR, GBP)
   - **Account Types** - name (e.g., checking, savings, credit, cash)
@@ -127,6 +137,7 @@ Transaction
 - description:string
 - exchange_rate:decimal (rate at transaction date)
 - amount_in_default_currency:decimal (for reporting)
+- duplicate_hash:string (SHA256 for import duplicate detection)
 
 Budget
 - category_id:references
@@ -145,10 +156,11 @@ Budget
 1. **Cash Flow** (root path) - 12-month income/expense overview, budget status
 2. **Net Worth** - Assets, liabilities, and net worth summary
 3. **Transactions** - List with filters (account, category, month/date range), add/edit forms
-4. **Accounts** - Account list and management
-5. **Assets** - Asset/liability list with value history, grouped by AssetGroup
-6. **Budgets** - Budget setup and tracking
-7. **Admin** - Master data management
+4. **Import Transactions** - Upload bank statements, preview and import extracted transactions
+5. **Accounts** - Account list and management
+6. **Assets** - Asset/liability list with value history, grouped by AssetGroup
+7. **Budgets** - Budget setup and tracking
+8. **Admin** - Master data management
    - Currencies (with default currency setting)
    - Account Types
    - Asset Types
@@ -172,6 +184,14 @@ Budget
 - Environment variables for Rails configuration
 - Expose port 3000
 
+### Devcontainer
+- Includes Ollama service for AI-powered transaction import
+- Auto-pulls configured model on first start
+- Environment variables:
+  - `OLLAMA_HOST` - Ollama API endpoint (default: http://ollama:11434)
+  - `OLLAMA_MODEL` - LLM model to use (default: mistral)
+  - `OLLAMA_TIMEOUT` - Request timeout in seconds (default: 120)
+
 ## Implementation Notes
 - Use Rails scaffold generators where appropriate
 - Turbo Frames for inline editing
@@ -187,6 +207,8 @@ Budget
 - Asset.value always reflects current value; history in AssetValuation
 - ExchangeRateService fetches rates from Frankfurter API (supports historical dates)
 - Transaction exchange rates captured at transaction date for accurate historical reporting
+- Transaction import uses Ollama LLM for extraction and categorization
+- Import services: OllamaService, PdfParserService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
 
 ## Agent Guidelines
 See `AGENTS.md` for development guidelines, code style, and task checklists for AI agents working on this project.

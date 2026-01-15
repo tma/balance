@@ -14,6 +14,7 @@ class Transaction < ApplicationRecord
   scope :search, ->(query) { where("description LIKE ?", "%#{query}%") }
 
   before_save :calculate_default_currency_amount
+  before_save :calculate_duplicate_hash
   after_create :update_account_balance_on_create
   after_update :update_account_balance_on_update, if: :saved_change_to_amount_or_type?
   after_destroy :update_account_balance_on_destroy
@@ -40,6 +41,10 @@ class Transaction < ApplicationRecord
       self.exchange_rate = ExchangeRateService.rate(account_currency, default_curr, date: date)
       self.amount_in_default_currency = (amount * exchange_rate).round(2)
     end
+  end
+
+  def calculate_duplicate_hash
+    self.duplicate_hash = DuplicateDetectionService.hash_for(date, amount, description)
   end
 
   def saved_change_to_amount_or_type?
