@@ -44,20 +44,27 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - View budget status for any month/year
 
 ### 5. Dashboard
-- **Net Worth Summary:**
-  - Total cash (all accounts)
+Split into two views:
+
+#### Cash Flow View (root path)
+- **12-Month Summary Cards:**
+  - Total income
+  - Total expenses  
+  - Net savings
+  - Saving rate percentage
+- **Monthly Breakdown Table** - Last 12 months with income/expenses/net/saving rate
+- **Budget Status** - Two-column layout for monthly and yearly budgets with progress bars
+  - Budgets link to filtered transaction list for category and time range
+
+#### Net Worth View
+- **Summary Cards:**
+  - Cash (all accounts)
   - Total assets
   - Total liabilities
-  - Net worth (cash + assets - liabilities)
-  - Grouped by currency
-- **Account Summary Cards** - Each account with balance and currency
-- **Asset Summary Cards** - Each asset with current value
-- **Current Month Stats:**
-  - Total income
-  - Total expenses
-  - Net change (income - expenses)
-- **Budget Status** - Progress bars for each budget category
-- **Recent Transactions** - Last 10 transactions
+  - Net worth
+- **Assets by Group** - Expandable sections showing assets grouped by AssetGroup
+  - Each asset shows current value and liability badge if applicable
+- **Totals Footer** - Assets - Liabilities = Net
 
 ### 6. Admin
 - Manage master data: 
@@ -74,6 +81,7 @@ A personal finance budgeting application to track income, expenses, budgets, and
 # Master Data (Admin)
 Currency
 - code:string (ISO 4217, e. g., "USD", unique)
+- default:boolean (one currency marked as default for reporting)
 
 AccountType
 - name: string (e.g., "checking", "savings")
@@ -81,6 +89,10 @@ AccountType
 AssetType
 - name:string (e. g., "property", "investment")
 - is_liability:boolean (default:  false)
+
+AssetGroup
+- name:string (e.g., "Retirement", "Real Estate")
+- description:string (optional)
 
 Category
 - name:string
@@ -96,6 +108,7 @@ Account
 Asset
 - name:string
 - asset_type_id:references
+- asset_group_id:references (optional)
 - value:decimal
 - currency:string (ISO 4217 code, e.g., "USD")
 - notes:text
@@ -112,6 +125,8 @@ Transaction
 - transaction_type:string (income, expense)
 - date:date
 - description:string
+- exchange_rate:decimal (rate at transaction date)
+- amount_in_default_currency:decimal (for reporting)
 
 Budget
 - category_id:references
@@ -127,21 +142,17 @@ Budget
 - Minimal, clean aesthetic
 
 ## Pages
-1. **Dashboard** - Overview with key metrics (root path)
-   - Net worth summary (cash + assets - liabilities)
-   - Account summary cards in a grid
-   - Asset summary cards
-   - Monthly income/expense/net stats
-   - Budget progress section
-   - Recent transactions list
-2. **Transactions** - List with filters, add/edit forms
-3. **Accounts** - Account list and management
-4. **Assets** - Asset/liability list with value history
-5. **Budgets** - Budget setup and tracking
-6. **Admin** - Master data management
-   - Currencies
+1. **Cash Flow** (root path) - 12-month income/expense overview, budget status
+2. **Net Worth** - Assets, liabilities, and net worth summary
+3. **Transactions** - List with filters (account, category, month/date range), add/edit forms
+4. **Accounts** - Account list and management
+5. **Assets** - Asset/liability list with value history, grouped by AssetGroup
+6. **Budgets** - Budget setup and tracking
+7. **Admin** - Master data management
+   - Currencies (with default currency setting)
    - Account Types
    - Asset Types
+   - Asset Groups
    - Categories
 
 ## Deployment
@@ -169,9 +180,13 @@ Budget
 - DB-level balance updates via callbacks or service objects
 - Seed file with default currencies, account types, asset types, and categories
 - Store currency as ISO 4217 code string (validated against Currency)
-- Display totals grouped by currency (no automatic conversion)
+- One currency marked as default for all reporting/dashboard views
+- All dashboard amounts converted to default currency using exchange rates
+- Swiss-style number formatting: apostrophe as thousand separator (e.g., CHF 1'234.56)
 - AssetValuation created automatically when Asset value changes
-- Asset. value always reflects current value; history in AssetValuation
+- Asset.value always reflects current value; history in AssetValuation
+- ExchangeRateService fetches rates from Frankfurter API (supports historical dates)
+- Transaction exchange rates captured at transaction date for accurate historical reporting
 
 ## Agent Guidelines
 See `AGENTS.md` for development guidelines, code style, and task checklists for AI agents working on this project.

@@ -128,26 +128,34 @@ app/
 ├── controllers/
 │   ├── admin/           # Admin namespace for master data
 │   ├── accounts_controller.rb
+│   ├── asset_groups_controller.rb
+│   ├── asset_valuations_controller.rb
 │   ├── assets_controller.rb
 │   ├── budgets_controller.rb
 │   ├── dashboard_controller.rb
 │   └── transactions_controller.rb
+├── helpers/
+│   └── application_helper.rb  # format_currency, format_amount
 ├── models/
 │   ├── account.rb
 │   ├── account_type.rb
 │   ├── asset.rb
+│   ├── asset_group.rb
 │   ├── asset_type.rb
 │   ├── asset_valuation.rb
 │   ├── budget.rb
 │   ├── category.rb
 │   ├── currency.rb
 │   └── transaction.rb
+├── services/
+│   └── exchange_rate_service.rb  # Frankfurter API integration
 └── views/
     ├── admin/
     ├── accounts/
+    ├── asset_groups/
     ├── assets/
     ├── budgets/
-    ├── dashboard/
+    ├── dashboard/       # cash_flow.html.erb, net_worth.html.erb
     └── transactions/
 ```
 
