@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+checking_account:
+  name: My Checking
+  account_type: checking
+  balance: 1000.00
+  currency: USD
+
+savings_account:
+  name: My Savings
+  account_type: savings
+  balance: 5000.00
+  currency: USD

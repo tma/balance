@@ -1,0 +1,15 @@
+<% content_for :title, "Currency - Admin" %>
+
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Currency: <%= @currency.code %></h1>
+
+  <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <p class="text-gray-700"><strong>Code:</strong> <%= @currency.code %></p>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= link_to "Edit", edit_admin_currency_path(@currency), class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
+    <%= link_to "Back", admin_currencies_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+    <%= button_to "Delete", admin_currency_path(@currency), method: :delete, class: "rounded-md px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+  </div>
+</div>

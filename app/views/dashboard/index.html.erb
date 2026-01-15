@@ -1,0 +1,201 @@
+<div class="space-y-6">
+  <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+
+  <!-- Net Worth Summary -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Net Worth Summary</h2>
+    <% if @net_worth_by_currency.empty? %>
+      <p class="text-gray-500">No financial data yet. Add accounts or assets to get started.</p>
+    <% else %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @net_worth_by_currency.each do |currency, data| %>
+          <div class="border rounded-lg p-4">
+            <h3 class="text-sm font-medium text-gray-500 mb-2"><%= currency %></h3>
+            <div class="space-y-1 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Cash:</span>
+                <span class="font-medium"><%= number_to_currency(data[:cash], unit: currency + " ") %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Assets:</span>
+                <span class="font-medium text-green-600">+<%= number_to_currency(data[:assets], unit: currency + " ") %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Liabilities:</span>
+                <span class="font-medium text-red-600">-<%= number_to_currency(data[:liabilities], unit: currency + " ") %></span>
+              </div>
+              <div class="flex justify-between pt-2 border-t mt-2">
+                <span class="font-semibold">Net Worth:</span>
+                <span class="font-bold <%= data[:net_worth] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= number_to_currency(data[:net_worth], unit: currency + " ") %>
+                </span>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Monthly Stats -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+      <%= Date::MONTHNAMES[@current_month] %> <%= @current_year %>
+    </h2>
+    <div class="grid grid-cols-3 gap-4 text-center">
+      <div>
+        <p class="text-2xl font-bold text-green-600"><%= number_to_currency(@monthly_income) %></p>
+        <p class="text-sm text-gray-500">Income</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold text-red-600"><%= number_to_currency(@monthly_expenses) %></p>
+        <p class="text-sm text-gray-500">Expenses</p>
+      </div>
+      <div>
+        <p class="text-2xl font-bold <%= @monthly_net >= 0 ? 'text-green-600' : 'text-red-600' %>">
+          <%= number_to_currency(@monthly_net) %>
+        </p>
+        <p class="text-sm text-gray-500">Net</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Summary Cards -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Accounts</h2>
+      <%= link_to "View all", accounts_path, class: "text-sm text-blue-600 hover:underline" %>
+    </div>
+    <% if @accounts.empty? %>
+      <p class="text-gray-500">No accounts yet. <%= link_to "Add one", new_account_path, class: "text-blue-600 hover:underline" %>.</p>
+    <% else %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @accounts.each do |account| %>
+          <%= link_to account, class: "block border rounded-lg p-4 hover:border-blue-500 hover:shadow-sm transition" do %>
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-medium text-gray-900"><%= account.name %></p>
+                <p class="text-xs text-gray-500"><%= account.account_type.name.capitalize %></p>
+              </div>
+              <p class="font-semibold <%= account.balance >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                <%= number_to_currency(account.balance, unit: account.currency + " ") %>
+              </p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Asset Summary Cards -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Assets & Liabilities</h2>
+      <%= link_to "View all", assets_path, class: "text-sm text-blue-600 hover:underline" %>
+    </div>
+    <% if @assets.empty? && @liabilities.empty? %>
+      <p class="text-gray-500">No assets yet. <%= link_to "Add one", new_asset_path, class: "text-blue-600 hover:underline" %>.</p>
+    <% else %>
+      <div class="space-y-4">
+        <% if @assets.any? %>
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Assets</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <% @assets.each do |asset| %>
+                <%= link_to asset, class: "block border rounded-lg p-3 hover:border-green-500 hover:shadow-sm transition" do %>
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <p class="font-medium text-gray-900"><%= asset.name %></p>
+                      <p class="text-xs text-gray-500"><%= asset.asset_type.name.capitalize %></p>
+                    </div>
+                    <p class="font-semibold text-green-600">
+                      <%= number_to_currency(asset.value, unit: asset.currency + " ") %>
+                    </p>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+        <% if @liabilities.any? %>
+          <div>
+            <h3 class="text-sm font-medium text-gray-500 mb-2">Liabilities</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <% @liabilities.each do |liability| %>
+                <%= link_to liability, class: "block border rounded-lg p-3 hover:border-red-500 hover:shadow-sm transition" do %>
+                  <div class="flex justify-between items-start">
+                    <div>
+                      <p class="font-medium text-gray-900"><%= liability.name %></p>
+                      <p class="text-xs text-gray-500"><%= liability.asset_type.name.capitalize %></p>
+                    </div>
+                    <p class="font-semibold text-red-600">
+                      <%= number_to_currency(liability.value, unit: liability.currency + " ") %>
+                    </p>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Budget Status -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Budget Status</h2>
+      <%= link_to "Manage budgets", budgets_path, class: "text-sm text-blue-600 hover:underline" %>
+    </div>
+    <% if @budgets.empty? %>
+      <p class="text-gray-500">No budgets set for this month. <%= link_to "Create one", new_budget_path, class: "text-blue-600 hover:underline" %>.</p>
+    <% else %>
+      <div class="space-y-4">
+        <% @budgets.each do |budget| %>
+          <div>
+            <div class="flex justify-between text-sm mb-1">
+              <span class="font-medium"><%= budget.category.name.capitalize %></span>
+              <span class="text-gray-500">
+                <%= number_to_currency(budget.spent) %> / <%= number_to_currency(budget.amount) %>
+              </span>
+            </div>
+            <div class="w-full bg-gray-200 rounded-full h-2.5">
+              <% percentage = [budget.percentage_used, 100].min %>
+              <% bar_color = percentage >= 100 ? 'bg-red-600' : percentage >= 80 ? 'bg-yellow-500' : 'bg-green-500' %>
+              <div class="<%= bar_color %> h-2.5 rounded-full" style="width: <%= percentage %>%"></div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Recent Transactions -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <div class="flex justify-between items-center mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+      <%= link_to "View all", transactions_path, class: "text-sm text-blue-600 hover:underline" %>
+    </div>
+    <% if @recent_transactions.empty? %>
+      <p class="text-gray-500">No transactions yet. <%= link_to "Add one", new_transaction_path, class: "text-blue-600 hover:underline" %>.</p>
+    <% else %>
+      <div class="divide-y">
+        <% @recent_transactions.each do |transaction| %>
+          <%= link_to transaction, class: "block py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition" do %>
+            <div class="flex justify-between items-center">
+              <div>
+                <p class="font-medium text-gray-900"><%= transaction.description.presence || transaction.category.name.capitalize %></p>
+                <p class="text-xs text-gray-500">
+                  <%= transaction.account.name %> · <%= transaction.date.strftime("%b %d") %>
+                </p>
+              </div>
+              <p class="font-semibold <%= transaction.transaction_type == 'income' ? 'text-green-600' : 'text-red-600' %>">
+                <%= transaction.transaction_type == 'income' ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
+              </p>
+            </div>
+          <% end %>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+</div>

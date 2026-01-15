@@ -1,0 +1,32 @@
+<% content_for :title, "Transaction" %>
+
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Transaction Details</h1>
+
+  <div class="bg-white rounded-lg shadow p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <span class="text-4xl"><%= @transaction.transaction_type == 'income' ? '💰' : '💸' %></span>
+      <span class="text-3xl font-bold <%= @transaction.transaction_type == 'income' ? 'text-green-600' : 'text-red-600' %>">
+        <%= @transaction.transaction_type == 'income' ? '+' : '-' %><%= number_to_currency(@transaction.amount) %>
+      </span>
+    </div>
+    
+    <div class="space-y-2 text-sm">
+      <p><strong>Description:</strong> <%= @transaction.description.presence || "-" %></p>
+      <p><strong>Category:</strong> <%= @transaction.category.name.capitalize %></p>
+      <p><strong>Account:</strong> <%= @transaction.account.name %></p>
+      <p><strong>Date:</strong> <%= @transaction.date.strftime("%B %d, %Y") %></p>
+      <p><strong>Type:</strong> 
+        <span class="px-2 py-0.5 text-xs rounded-full <%= @transaction.transaction_type == 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+          <%= @transaction.transaction_type.capitalize %>
+        </span>
+      </p>
+    </div>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= link_to "Edit", edit_transaction_path(@transaction), class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
+    <%= link_to "Back", transactions_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+    <%= button_to "Delete", @transaction, method: :delete, class: "rounded-md px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+  </div>
+</div>

@@ -1,0 +1,26 @@
+<div id="<%= dom_id transaction %>" class="w-full sm:w-auto my-5 space-y-5">
+  <div>
+    <strong class="block font-medium mb-1">Account:</strong>
+    <%= transaction.account_id %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Category:</strong>
+    <%= transaction.category_id %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Amount:</strong>
+    <%= transaction.amount %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Transaction type:</strong>
+    <%= transaction.transaction_type %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Date:</strong>
+    <%= transaction.date %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Description:</strong>
+    <%= transaction.description %>
+  </div>
+</div>

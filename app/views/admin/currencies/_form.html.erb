@@ -1,0 +1,23 @@
+<%= form_with(model: [:admin, currency], class: "contents") do |form| %>
+  <% if currency.errors.any? %>
+    <div class="bg-red-50 text-red-500 px-4 py-3 rounded-md mb-4">
+      <h2 class="font-medium"><%= pluralize(currency.errors.count, "error") %> prohibited this currency from being saved:</h2>
+      <ul class="list-disc ml-6 mt-2">
+        <% currency.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :code, class: "block text-sm font-medium text-gray-700" %>
+    <%= form.text_field :code, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2", placeholder: "USD", maxlength: 3 %>
+    <p class="mt-1 text-sm text-gray-500">3-letter ISO 4217 code (e.g., USD, EUR, GBP)</p>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= form.submit class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium cursor-pointer" %>
+    <%= link_to "Cancel", admin_currencies_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+  </div>
+<% end %>

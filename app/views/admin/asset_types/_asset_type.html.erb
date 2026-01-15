@@ -1,0 +1,10 @@
+<div id="<%= dom_id asset_type %>" class="w-full sm:w-auto my-5 space-y-5">
+  <div>
+    <strong class="block font-medium mb-1">Name:</strong>
+    <%= asset_type.name %>
+  </div>
+  <div>
+    <strong class="block font-medium mb-1">Is liability:</strong>
+    <%= asset_type.is_liability? ? "Yes" : "No" %>
+  </div>
+</div>

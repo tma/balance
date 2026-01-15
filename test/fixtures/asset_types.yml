@@ -1,0 +1,9 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+property:
+  name: property
+  is_liability: false
+
+mortgage:
+  name: mortgage
+  is_liability: true
