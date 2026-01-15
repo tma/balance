@@ -1,106 +1,106 @@
 <div class="space-y-6">
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">Cash Flow</h1>
-      <p class="text-sm text-gray-500">All values in <%= @default_currency %></p>
+      <h1 class="text-2xl font-bold text-slate-800">Cash Flow</h1>
+      <p class="text-sm text-slate-500">All values in <%= @default_currency %></p>
     </div>
-    <%= link_to "Net Worth", net_worth_path, class: "text-blue-600 hover:underline" %>
+    <%= link_to "Net Worth", net_worth_path, class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
   </div>
 
   <!-- 12-Month Summary -->
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Last 12 Months</h2>
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Last 12 Months</h2>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
       <div>
-        <p class="text-2xl font-bold text-green-600"><%= number_to_currency(@twelve_month_totals[:income]) %></p>
-        <p class="text-sm text-gray-500">Total Income</p>
+        <p class="text-2xl font-bold text-emerald-500"><%= number_to_currency(@twelve_month_totals[:income]) %></p>
+        <p class="text-sm text-slate-500">Total Income</p>
       </div>
       <div>
-        <p class="text-2xl font-bold text-red-600"><%= number_to_currency(@twelve_month_totals[:expenses]) %></p>
-        <p class="text-sm text-gray-500">Total Expenses</p>
+        <p class="text-2xl font-bold text-rose-400"><%= number_to_currency(@twelve_month_totals[:expenses]) %></p>
+        <p class="text-sm text-slate-500">Total Expenses</p>
       </div>
       <div>
-        <p class="text-2xl font-bold <%= @twelve_month_totals[:net] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+        <p class="text-2xl font-bold <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
           <%= number_to_currency(@twelve_month_totals[:net]) %>
         </p>
-        <p class="text-sm text-gray-500">Net Savings</p>
+        <p class="text-sm text-slate-500">Net Savings</p>
       </div>
       <div>
-        <p class="text-2xl font-bold <%= @twelve_month_totals[:saving_rate] >= 0 ? 'text-blue-600' : 'text-red-600' %>">
+        <p class="text-2xl font-bold <%= @twelve_month_totals[:saving_rate] >= 0 ? 'text-cyan-500' : 'text-rose-400' %>">
           <%= @twelve_month_totals[:saving_rate] %>%
         </p>
-        <p class="text-sm text-gray-500">Saving Rate</p>
+        <p class="text-sm text-slate-500">Saving Rate</p>
       </div>
     </div>
   </div>
 
   <!-- Monthly Breakdown Table -->
-  <div class="bg-white rounded-lg shadow overflow-hidden">
-    <div class="p-4 border-b">
-      <h2 class="text-lg font-semibold text-gray-900">Monthly Breakdown</h2>
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="p-4 border-b border-slate-200">
+      <h2 class="text-lg font-semibold text-slate-800">Monthly Breakdown</h2>
     </div>
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-gray-50">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Month</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Income</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Expenses</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Net</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Saving Rate</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Month</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Income</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Expenses</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Net</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Saving Rate</th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white divide-y divide-slate-100">
           <% @monthly_data.each_with_index do |month, index| %>
-            <tr class="<%= index == 0 ? 'bg-blue-50' : 'hover:bg-gray-50' %>">
+            <tr class="<%= index == 0 ? 'bg-cyan-50/50' : 'hover:bg-slate-50' %>">
               <td class="px-4 py-3 whitespace-nowrap">
-                <%= link_to month[:month_name], transactions_path(month: month[:date].strftime("%Y-%m")), class: "font-medium text-gray-900 hover:text-blue-600" %>
+                <%= link_to month[:month_name], transactions_path(month: month[:date].strftime("%Y-%m")), class: "font-medium text-slate-700 hover:text-cyan-600" %>
                 <% if index == 0 %>
-                  <span class="ml-2 text-xs text-blue-600">(current)</span>
+                  <span class="ml-2 text-xs text-cyan-600">(current)</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right text-green-600">
+              <td class="px-4 py-3 whitespace-nowrap text-right text-emerald-500">
                 <% if month[:income] > 0 %>
                   +<%= number_to_currency(month[:income]) %>
                 <% else %>
-                  <span class="text-gray-400">-</span>
+                  <span class="text-slate-300">-</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right text-red-600">
+              <td class="px-4 py-3 whitespace-nowrap text-right text-rose-400">
                 <% if month[:expenses] > 0 %>
                   -<%= number_to_currency(month[:expenses]) %>
                 <% else %>
-                  <span class="text-gray-400">-</span>
+                  <span class="text-slate-300">-</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+              <td class="px-4 py-3 whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
                 <% if month[:income] > 0 || month[:expenses] > 0 %>
                   <%= month[:net] >= 0 ? '+' : '' %><%= number_to_currency(month[:net]) %>
                 <% else %>
-                  <span class="text-gray-400">-</span>
+                  <span class="text-slate-300">-</span>
                 <% end %>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right">
                 <% if month[:income] > 0 %>
-                  <span class="<%= month[:saving_rate] >= 20 ? 'text-green-600' : month[:saving_rate] >= 0 ? 'text-yellow-600' : 'text-red-600' %>">
+                  <span class="<%= month[:saving_rate] >= 20 ? 'text-emerald-500' : month[:saving_rate] >= 0 ? 'text-amber-400' : 'text-rose-400' %>">
                     <%= month[:saving_rate] %>%
                   </span>
                 <% else %>
-                  <span class="text-gray-400">-</span>
+                  <span class="text-slate-300">-</span>
                 <% end %>
               </td>
             </tr>
           <% end %>
         </tbody>
-        <tfoot class="bg-gray-100 font-semibold">
+        <tfoot class="bg-slate-50 font-semibold">
           <tr>
-            <td class="px-4 py-3 text-gray-900">12-Month Total</td>
-            <td class="px-4 py-3 text-right text-green-600">+<%= number_to_currency(@twelve_month_totals[:income]) %></td>
-            <td class="px-4 py-3 text-right text-red-600">-<%= number_to_currency(@twelve_month_totals[:expenses]) %></td>
-            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:net] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+            <td class="px-4 py-3 text-slate-700">12-Month Total</td>
+            <td class="px-4 py-3 text-right text-emerald-500">+<%= number_to_currency(@twelve_month_totals[:income]) %></td>
+            <td class="px-4 py-3 text-right text-rose-400">-<%= number_to_currency(@twelve_month_totals[:expenses]) %></td>
+            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
               <%= @twelve_month_totals[:net] >= 0 ? '+' : '' %><%= number_to_currency(@twelve_month_totals[:net]) %>
             </td>
-            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:saving_rate] >= 20 ? 'text-green-600' : @twelve_month_totals[:saving_rate] >= 0 ? 'text-yellow-600' : 'text-red-600' %>">
+            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:saving_rate] >= 20 ? 'text-emerald-500' : @twelve_month_totals[:saving_rate] >= 0 ? 'text-amber-400' : 'text-rose-400' %>">
               <%= @twelve_month_totals[:saving_rate] %>%
             </td>
           </tr>
@@ -110,26 +110,26 @@
   </div>
 
   <!-- Budget Status -->
-  <div class="bg-white rounded-lg shadow p-6">
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-gray-900">Budget Status</h2>
-      <%= link_to "Manage", budgets_path, class: "text-sm text-blue-600 hover:underline" %>
+      <h2 class="text-lg font-semibold text-slate-800">Budget Status</h2>
+      <%= link_to "Manage", budgets_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
     </div>
     <% if @budgets.empty? %>
-      <p class="text-gray-500">No budgets set for this month. <%= link_to "Create one", new_budget_path, class: "text-blue-600 hover:underline" %>.</p>
+      <p class="text-slate-500">No budgets set for this month. <%= link_to "Create one", new_budget_path, class: "text-cyan-600 hover:underline" %>.</p>
     <% else %>
       <div class="space-y-4">
         <% @budgets.each do |budget| %>
           <div>
             <div class="flex justify-between text-sm mb-1">
-              <span class="font-medium"><%= budget.category.name.titleize %></span>
-              <span class="text-gray-500">
+              <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+              <span class="text-slate-500">
                 <%= number_to_currency(budget.spent) %> / <%= number_to_currency(budget.amount) %>
               </span>
             </div>
-            <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="w-full bg-slate-100 rounded-full h-2">
               <% percentage = [budget.percentage_used, 100].min %>
-              <% bar_color = percentage >= 100 ? 'bg-red-500' : percentage >= 80 ? 'bg-yellow-500' : 'bg-green-500' %>
+              <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
               <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
             </div>
           </div>
@@ -139,25 +139,25 @@
   </div>
 
   <!-- Recent Transactions -->
-  <div class="bg-white rounded-lg shadow p-6">
+  <div class="bg-white rounded-xl border border-slate-200 p-6">
     <div class="flex justify-between items-center mb-4">
-      <h2 class="text-lg font-semibold text-gray-900">Recent Transactions</h2>
-      <%= link_to "View all", transactions_path, class: "text-sm text-blue-600 hover:underline" %>
+      <h2 class="text-lg font-semibold text-slate-800">Recent Transactions</h2>
+      <%= link_to "View all", transactions_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
     </div>
     <% if @recent_transactions.empty? %>
-      <p class="text-gray-500">No transactions yet. <%= link_to "Add one", new_transaction_path, class: "text-blue-600 hover:underline" %>.</p>
+      <p class="text-slate-500">No transactions yet. <%= link_to "Add one", new_transaction_path, class: "text-cyan-600 hover:underline" %>.</p>
     <% else %>
-      <div class="divide-y">
+      <div class="divide-y divide-slate-100">
         <% @recent_transactions.each do |transaction| %>
-          <%= link_to transaction, class: "block py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition" do %>
+          <%= link_to transaction, class: "block py-3 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition" do %>
             <div class="flex justify-between items-center">
               <div>
-                <p class="font-medium text-gray-900"><%= transaction.description.presence || transaction.category.name.titleize %></p>
-                <p class="text-xs text-gray-500">
+                <p class="font-medium text-slate-700"><%= transaction.description.presence || transaction.category.name.titleize %></p>
+                <p class="text-xs text-slate-400">
                   <%= transaction.account.name %> &middot; <%= transaction.date.strftime("%b %d") %>
                 </p>
               </div>
-              <p class="font-semibold <%= transaction.income? ? 'text-green-600' : 'text-red-600' %>">
+              <p class="font-semibold <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
                 <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
               </p>
             </div>

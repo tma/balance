@@ -3,18 +3,18 @@
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900"><%= @account.name %></h1>
-      <p class="text-gray-500"><%= @account.account_type.name.capitalize %> · <%= @account.currency %></p>
+      <h1 class="text-2xl font-bold text-slate-800"><%= @account.name %></h1>
+      <p class="text-slate-500"><%= @account.account_type.name.capitalize %> · <%= @account.currency %></p>
     </div>
     <div class="flex space-x-2">
-      <%= link_to "Edit", edit_account_path(@account), class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
-      <%= link_to "Back", accounts_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+      <%= link_to "Edit", edit_account_path(@account), class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
+      <%= link_to "Back", accounts_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
     </div>
   </div>
 
   <div class="bg-white rounded-lg shadow p-6 mb-6">
-    <p class="text-sm text-gray-500">Current Balance</p>
-    <p class="text-4xl font-bold <%= @account.balance >= 0 ? 'text-green-600' : 'text-red-600' %>">
+    <p class="text-sm text-slate-500">Current Balance</p>
+    <p class="text-4xl font-bold <%= @account.balance >= 0 ? 'text-emerald-500' : 'text-rose-500' %>">
       <%= number_to_currency(@account.balance, unit: @account.currency + " ") %>
     </p>
   </div>
@@ -26,13 +26,13 @@
     <% if @transactions.any? %>
       <div class="divide-y">
         <% @transactions.each do |transaction| %>
-          <%= link_to transaction, class: "block px-6 py-4 hover:bg-gray-50" do %>
+          <%= link_to transaction, class: "block px-6 py-4 hover:bg-slate-50" do %>
             <div class="flex justify-between items-center">
               <div>
                 <p class="font-medium"><%= transaction.description.presence || transaction.category.name.capitalize %></p>
-                <p class="text-sm text-gray-500"><%= transaction.category.name.capitalize %> · <%= transaction.date.strftime("%b %d, %Y") %></p>
+                <p class="text-sm text-slate-500"><%= transaction.category.name.capitalize %> · <%= transaction.date.strftime("%b %d, %Y") %></p>
               </div>
-              <p class="font-semibold <%= transaction.transaction_type == 'income' ? 'text-green-600' : 'text-red-600' %>">
+              <p class="font-semibold <%= transaction.transaction_type == 'income' ? 'text-emerald-500' : 'text-rose-500' %>">
                 <%= transaction.transaction_type == 'income' ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
               </p>
             </div>
@@ -40,7 +40,7 @@
         <% end %>
       </div>
     <% else %>
-      <p class="px-6 py-8 text-center text-gray-500">No transactions yet.</p>
+      <p class="px-6 py-8 text-center text-slate-500">No transactions yet.</p>
     <% end %>
   </div>
 </div>

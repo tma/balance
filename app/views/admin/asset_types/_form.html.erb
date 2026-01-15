@@ -1,6 +1,6 @@
 <%= form_with(model: [:admin, asset_type], class: "contents") do |form| %>
   <% if asset_type.errors.any? %>
-    <div class="bg-red-50 text-red-500 px-4 py-3 rounded-md mb-4">
+    <div class="bg-rose-50 text-rose-500 px-4 py-3 rounded-lg mb-4">
       <h2 class="font-medium"><%= pluralize(asset_type.errors.count, "error") %> prohibited this asset type from being saved:</h2>
       <ul class="list-disc ml-6 mt-2">
         <% asset_type.errors.each do |error| %>
@@ -11,17 +11,17 @@
   <% end %>
 
   <div class="mb-4">
-    <%= form.label :name, class: "block text-sm font-medium text-gray-700" %>
-    <%= form.text_field :name, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2", placeholder: "property" %>
+    <%= form.label :name, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "property" %>
   </div>
 
   <div class="mb-4 flex items-center gap-2">
-    <%= form.check_box :is_liability, class: "rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500" %>
-    <%= form.label :is_liability, "Is this a liability?", class: "text-sm font-medium text-gray-700" %>
+    <%= form.check_box :is_liability, class: "rounded border-slate-300 text-cyan-600 shadow-sm focus:border-cyan-500 focus:ring-cyan-500" %>
+    <%= form.label :is_liability, "Is this a liability?", class: "text-sm font-medium text-slate-700" %>
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium cursor-pointer" %>
-    <%= link_to "Cancel", admin_asset_types_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
+    <%= link_to "Cancel", admin_asset_types_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
   </div>
 <% end %>

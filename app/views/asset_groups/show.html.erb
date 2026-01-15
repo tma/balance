@@ -3,27 +3,27 @@
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900"><%= @asset_group.name %></h1>
+      <h1 class="text-2xl font-bold text-slate-800"><%= @asset_group.name %></h1>
       <% if @asset_group.description.present? %>
-        <p class="text-gray-500 mt-1"><%= @asset_group.description %></p>
+        <p class="text-slate-500 mt-1"><%= @asset_group.description %></p>
       <% end %>
     </div>
     <div class="flex space-x-2">
-      <%= link_to "Edit", edit_asset_group_path(@asset_group), class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
-      <%= link_to "Back", asset_groups_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+      <%= link_to "Edit", edit_asset_group_path(@asset_group), class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+      <%= link_to "Back", asset_groups_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
     </div>
   </div>
 
   <%# Summary %>
   <div class="bg-white rounded-lg shadow p-6 mb-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Summary</h2>
+    <h2 class="text-lg font-semibold text-slate-800 mb-4">Summary</h2>
     <% net_values = @asset_group.net_value_by_currency %>
     <% if net_values.any? %>
       <div class="flex flex-wrap gap-6">
         <% net_values.each do |currency, value| %>
           <div>
-            <p class="text-sm text-gray-500">Net Value (<%= currency %>)</p>
-            <p class="text-2xl font-bold <%= value >= 0 ? 'text-green-600' : 'text-red-600' %>">
+            <p class="text-sm text-slate-500">Net Value (<%= currency %>)</p>
+            <p class="text-2xl font-bold <%= value >= 0 ? 'text-emerald-500' : 'text-rose-500' %>">
               <%= number_to_currency(value.abs, unit: "") %>
               <span class="text-sm font-normal"><%= value < 0 ? '(liability)' : '' %></span>
             </p>
@@ -31,30 +31,30 @@
         <% end %>
       </div>
     <% else %>
-      <p class="text-gray-500">No assets in this group yet.</p>
+      <p class="text-slate-500">No assets in this group yet.</p>
     <% end %>
   </div>
 
   <%# Assets %>
   <% if @assets.any? %>
     <div class="mb-8">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Assets</h2>
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Assets</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <% @assets.each do |asset| %>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h3 class="text-lg font-semibold text-gray-900"><%= asset.name %></h3>
-                <p class="text-sm text-gray-500"><%= asset.asset_type.name.capitalize %></p>
+                <h3 class="text-lg font-semibold text-slate-800"><%= asset.name %></h3>
+                <p class="text-sm text-slate-500"><%= asset.asset_type.name.capitalize %></p>
               </div>
               <span class="text-xs font-medium px-2 py-1 bg-green-100 text-green-800 rounded"><%= asset.currency %></span>
             </div>
-            <p class="text-2xl font-bold text-green-600 mb-4">
+            <p class="text-2xl font-bold text-emerald-500 mb-4">
               <%= number_to_currency(asset.value, unit: "") %>
             </p>
             <div class="flex space-x-2 text-sm">
-              <%= link_to "View", asset, class: "text-blue-600 hover:underline" %>
-              <%= link_to "Edit", edit_asset_path(asset), class: "text-blue-600 hover:underline" %>
+              <%= link_to "View", asset, class: "text-cyan-600 hover:underline" %>
+              <%= link_to "Edit", edit_asset_path(asset), class: "text-cyan-600 hover:underline" %>
             </div>
           </div>
         <% end %>
@@ -65,23 +65,23 @@
   <%# Liabilities %>
   <% if @liabilities.any? %>
     <div>
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Liabilities</h2>
+      <h2 class="text-lg font-semibold text-slate-800 mb-4">Liabilities</h2>
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <% @liabilities.each do |liability| %>
           <div class="bg-white rounded-lg shadow p-6">
             <div class="flex justify-between items-start mb-4">
               <div>
-                <h3 class="text-lg font-semibold text-gray-900"><%= liability.name %></h3>
-                <p class="text-sm text-gray-500"><%= liability.asset_type.name.capitalize %></p>
+                <h3 class="text-lg font-semibold text-slate-800"><%= liability.name %></h3>
+                <p class="text-sm text-slate-500"><%= liability.asset_type.name.capitalize %></p>
               </div>
               <span class="text-xs font-medium px-2 py-1 bg-red-100 text-red-800 rounded"><%= liability.currency %></span>
             </div>
-            <p class="text-2xl font-bold text-red-600 mb-4">
+            <p class="text-2xl font-bold text-rose-500 mb-4">
               <%= number_to_currency(liability.value, unit: "") %>
             </p>
             <div class="flex space-x-2 text-sm">
-              <%= link_to "View", liability, class: "text-blue-600 hover:underline" %>
-              <%= link_to "Edit", edit_asset_path(liability), class: "text-blue-600 hover:underline" %>
+              <%= link_to "View", liability, class: "text-cyan-600 hover:underline" %>
+              <%= link_to "Edit", edit_asset_path(liability), class: "text-cyan-600 hover:underline" %>
             </div>
           </div>
         <% end %>
@@ -91,8 +91,8 @@
 
   <% if @assets.empty? && @liabilities.empty? %>
     <div class="bg-white rounded-lg shadow p-6 text-center">
-      <p class="text-gray-500 mb-4">No assets or liabilities in this group yet.</p>
-      <%= link_to "Add an asset", new_asset_path, class: "text-blue-600 hover:underline" %>
+      <p class="text-slate-500 mb-4">No assets or liabilities in this group yet.</p>
+      <%= link_to "Add an asset", new_asset_path, class: "text-cyan-600 hover:underline" %>
     </div>
   <% end %>
 </div>

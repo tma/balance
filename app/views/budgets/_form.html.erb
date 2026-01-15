@@ -1,6 +1,6 @@
 <%= form_with(model: budget, class: "contents") do |form| %>
   <% if budget.errors.any? %>
-    <div class="bg-red-50 text-red-500 px-4 py-3 rounded-md mb-4">
+    <div class="bg-rose-50 text-rose-600 px-4 py-3 rounded-lg border border-rose-200 mb-4">
       <h2 class="font-medium"><%= pluralize(budget.errors.count, "error") %> prohibited this budget from being saved:</h2>
       <ul class="list-disc ml-6 mt-2">
         <% budget.errors.each do |error| %>
@@ -11,28 +11,28 @@
   <% end %>
 
   <div class="mb-4">
-    <%= form.label :category_id, "Category", class: "block text-sm font-medium text-gray-700" %>
-    <%= form.collection_select :category_id, Category.expense.order(:name), :id, :name, { prompt: "Select expense category" }, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2" %>
+    <%= form.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.collection_select :category_id, Category.expense.order(:name), :id, :name, { prompt: "Select expense category" }, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
   </div>
 
   <div class="mb-4">
-    <%= form.label :amount, "Budget Amount", class: "block text-sm font-medium text-gray-700" %>
-    <%= form.number_field :amount, step: 0.01, min: 0.01, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2", placeholder: "0.00" %>
+    <%= form.label :amount, "Budget Amount", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.number_field :amount, step: 0.01, min: 0.01, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "0.00" %>
   </div>
 
   <div class="grid grid-cols-2 gap-4 mb-4">
     <div>
-      <%= form.label :month, class: "block text-sm font-medium text-gray-700" %>
-      <%= form.select :month, (1..12).map { |m| [Date::MONTHNAMES[m], m] }, {}, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2" %>
+      <%= form.label :month, class: "block text-sm font-medium text-slate-700" %>
+      <%= form.select :month, (1..12).map { |m| [Date::MONTHNAMES[m], m] }, {}, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
     </div>
     <div>
-      <%= form.label :year, class: "block text-sm font-medium text-gray-700" %>
-      <%= form.select :year, ((Date.current.year - 1)..(Date.current.year + 2)).to_a, {}, class: "mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border px-3 py-2" %>
+      <%= form.label :year, class: "block text-sm font-medium text-slate-700" %>
+      <%= form.select :year, ((Date.current.year - 1)..(Date.current.year + 2)).to_a, {}, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
     </div>
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium cursor-pointer" %>
-    <%= link_to "Cancel", budgets_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+    <%= link_to "Cancel", budgets_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
   </div>
 <% end %>

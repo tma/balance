@@ -3,9 +3,9 @@
 <div class="w-full max-w-2xl">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900"><%= @asset.name %></h1>
-      <p class="text-gray-500">
-        <%= link_to @asset.asset_group.name, asset_group_path(@asset.asset_group), class: "hover:text-blue-600" %> ·
+      <h1 class="text-2xl font-bold text-slate-800"><%= @asset.name %></h1>
+      <p class="text-slate-500">
+        <%= link_to @asset.asset_group.name, asset_group_path(@asset.asset_group), class: "hover:text-cyan-600" %> ·
         <%= @asset.asset_type.name.capitalize %> · <%= @asset.currency %>
         <% if @asset.asset_type.is_liability? %>
           <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Liability</span>
@@ -15,18 +15,18 @@
       </p>
     </div>
     <div class="flex space-x-2">
-      <%= link_to "Edit", edit_asset_path(@asset), class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
-      <%= link_to "Back", asset_group_path(@asset.asset_group), class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
+      <%= link_to "Edit", edit_asset_path(@asset), class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
+      <%= link_to "Back", asset_group_path(@asset.asset_group), class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
     </div>
   </div>
 
   <div class="bg-white rounded-lg shadow p-6 mb-6">
-    <p class="text-sm text-gray-500">Current Value</p>
-    <p class="text-4xl font-bold <%= @asset.asset_type.is_liability? ? 'text-red-600' : 'text-green-600' %>">
+    <p class="text-sm text-slate-500">Current Value</p>
+    <p class="text-4xl font-bold <%= @asset.asset_type.is_liability? ? 'text-rose-500' : 'text-emerald-500' %>">
       <%= number_to_currency(@asset.value, unit: @asset.currency + " ") %>
     </p>
     <% if @asset.notes.present? %>
-      <p class="mt-4 text-sm text-gray-600"><%= @asset.notes %></p>
+      <p class="mt-4 text-sm text-slate-600"><%= @asset.notes %></p>
     <% end %>
   </div>
 
@@ -38,13 +38,13 @@
       <div class="divide-y">
         <% @valuations.each do |valuation| %>
           <div class="px-6 py-4 flex justify-between">
-            <span class="text-gray-500"><%= valuation.date.strftime("%b %d, %Y") %></span>
+            <span class="text-slate-500"><%= valuation.date.strftime("%b %d, %Y") %></span>
             <span class="font-medium"><%= number_to_currency(valuation.value, unit: @asset.currency + " ") %></span>
           </div>
         <% end %>
       </div>
     <% else %>
-      <p class="px-6 py-8 text-center text-gray-500">No valuation history yet.</p>
+      <p class="px-6 py-8 text-center text-slate-500">No valuation history yet.</p>
     <% end %>
   </div>
 </div>

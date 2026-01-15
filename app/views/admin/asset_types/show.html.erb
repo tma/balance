@@ -1,23 +1,23 @@
 <% content_for :title, "Asset Type - Admin" %>
 
 <div class="max-w-md">
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">Asset Type: <%= @asset_type.name.capitalize %></h1>
+  <h1 class="text-2xl font-bold text-slate-800 mb-6">Asset Type: <%= @asset_type.name.capitalize %></h1>
 
-  <div class="bg-white rounded-lg shadow p-6 mb-6">
-    <p class="text-gray-700 mb-2"><strong>Name:</strong> <%= @asset_type.name.capitalize %></p>
-    <p class="text-gray-700">
+  <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+    <p class="text-slate-700 mb-2"><strong>Name:</strong> <%= @asset_type.name.capitalize %></p>
+    <p class="text-slate-700">
       <strong>Type:</strong>
       <% if @asset_type.is_liability? %>
         <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Liability</span>
       <% else %>
-        <span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Asset</span>
+        <span class="px-2 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-600">Asset</span>
       <% end %>
     </p>
   </div>
 
   <div class="flex space-x-4">
-    <%= link_to "Edit", edit_admin_asset_type_path(@asset_type), class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
-    <%= link_to "Back", admin_asset_types_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>
-    <%= button_to "Delete", admin_asset_type_path(@asset_type), method: :delete, class: "rounded-md px-4 py-2 bg-red-600 hover:bg-red-500 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+    <%= link_to "Edit", edit_admin_asset_type_path(@asset_type), class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
+    <%= link_to "Back", admin_asset_types_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+    <%= button_to "Delete", admin_asset_type_path(@asset_type), method: :delete, class: "rounded-lg px-4 py-2 bg-red-600 hover:bg-rose-500 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

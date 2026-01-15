@@ -23,48 +23,48 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-gray-50 min-h-screen">
+  <body class="bg-slate-50 min-h-screen">
     <!-- Desktop sidebar -->
-    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-slate-800 text-white">
-      <div class="flex items-center h-16 px-4 border-b border-slate-700">
-        <h1 class="text-xl font-bold">Balance</h1>
+    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200">
+      <div class="flex items-center h-16 px-4 border-b border-slate-200">
+        <h1 class="text-xl font-bold text-slate-700">Balance</h1>
       </div>
       <nav class="flex-1 px-2 py-4 space-y-1">
         <!-- Analysis -->
-        <%= link_to "Cash Flow", cash_flow_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path == '/' || request.path == '/cash-flow' ? 'bg-slate-700' : ''}" %>
-        <%= link_to "Net Worth", net_worth_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path == '/net-worth' ? 'bg-slate-700' : ''}" %>
+        <%= link_to "Cash Flow", cash_flow_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == '/' || request.path == '/cash-flow' ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+        <%= link_to "Net Worth", net_worth_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == '/net-worth' ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
         
         <!-- Frequently used -->
-        <div class="pt-4 mt-4 border-t border-slate-700">
-          <span class="px-4 text-xs font-semibold text-slate-400 uppercase">Frequent</span>
-          <%= link_to "New Transaction", new_transaction_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path == new_transaction_path ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Update Valuations", update_valuations_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path == update_valuations_path ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Transactions", transactions_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path == transactions_path ? 'bg-slate-700' : ''}" %>
+        <div class="pt-4 mt-4 border-t border-slate-200">
+          <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Frequent</span>
+          <%= link_to "New Transaction", new_transaction_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == new_transaction_path ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Update Valuations", update_valuations_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == update_valuations_path ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Transactions", transactions_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == transactions_path ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
         </div>
 
         <!-- Data views -->
-        <div class="pt-4 mt-4 border-t border-slate-700">
-          <span class="px-4 text-xs font-semibold text-slate-400 uppercase">Data</span>
-          <%= link_to "Accounts", accounts_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/accounts') ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Budgets", budgets_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/budgets') ? 'bg-slate-700' : ''}" %>
+        <div class="pt-4 mt-4 border-t border-slate-200">
+          <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Data</span>
+          <%= link_to "Accounts", accounts_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/accounts') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Budgets", budgets_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/budgets') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
         </div>
 
         <!-- Admin section -->
-        <div class="pt-4 mt-4 border-t border-slate-700">
-          <span class="px-4 text-xs font-semibold text-slate-400 uppercase">Settings</span>
-          <%= link_to "Currencies", admin_currencies_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/admin/currencies') ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Account Types", admin_account_types_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/admin/account_types') ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Asset Types", admin_asset_types_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/admin/asset_types') ? 'bg-slate-700' : ''}" %>
-          <%= link_to "Categories", admin_categories_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 text-sm #{request.path.start_with?('/admin/categories') ? 'bg-slate-700' : ''}" %>
+        <div class="pt-4 mt-4 border-t border-slate-200">
+          <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Settings</span>
+          <%= link_to "Currencies", admin_currencies_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/currencies') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Account Types", admin_account_types_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/account_types') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Asset Types", admin_asset_types_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/asset_types') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Categories", admin_categories_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/categories') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
         </div>
       </nav>
     </aside>
 
     <!-- Mobile header -->
-    <header class="md:hidden fixed top-0 left-0 right-0 bg-slate-800 text-white z-50">
+    <header class="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50">
       <div class="flex items-center justify-between h-14 px-4">
-        <h1 class="text-lg font-bold">Balance</h1>
+        <h1 class="text-lg font-bold text-slate-700">Balance</h1>
       </div>
     </header>
 
@@ -72,12 +72,12 @@
     <main class="md:ml-64 pt-14 md:pt-0 pb-20 md:pb-4">
       <div class="p-4 md:p-6">
         <% if notice.present? %>
-          <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+          <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg">
             <%= notice %>
           </div>
         <% end %>
         <% if alert.present? %>
-          <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+          <div class="mb-4 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg">
             <%= alert %>
           </div>
         <% end %>
@@ -86,25 +86,25 @@
     </main>
 
     <!-- Mobile bottom navigation -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
       <div class="flex justify-around py-2">
-        <%= link_to cash_flow_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/' || request.path == '/cash-flow' ? 'text-blue-600' : 'text-gray-500'}" do %>
+        <%= link_to cash_flow_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/' || request.path == '/cash-flow' ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">$</span>
           <span class="text-xs">Cash Flow</span>
         <% end %>
-        <%= link_to net_worth_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/net-worth' ? 'text-blue-600' : 'text-gray-500'}" do %>
+        <%= link_to net_worth_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/net-worth' ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">#</span>
           <span class="text-xs">Net Worth</span>
         <% end %>
-        <%= link_to new_transaction_path, class: "flex flex-col items-center px-3 py-1 #{request.path == new_transaction_path ? 'text-blue-600' : 'text-gray-500'}" do %>
+        <%= link_to new_transaction_path, class: "flex flex-col items-center px-3 py-1 #{request.path == new_transaction_path ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">+</span>
           <span class="text-xs">Add</span>
         <% end %>
-        <%= link_to transactions_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/transactions') && request.path != new_transaction_path ? 'text-blue-600' : 'text-gray-500'}" do %>
+        <%= link_to transactions_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/transactions') && request.path != new_transaction_path ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">=</span>
           <span class="text-xs">History</span>
         <% end %>
-        <%= link_to accounts_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/accounts', '/financial-assets', '/budgets', '/admin', '/valuations') ? 'text-blue-600' : 'text-gray-500'}" do %>
+        <%= link_to accounts_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/accounts', '/financial-assets', '/budgets', '/admin', '/valuations') ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">*</span>
           <span class="text-xs">More</span>
         <% end %>
