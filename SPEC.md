@@ -167,3 +167,6 @@ Budget
 - Display totals grouped by currency (no automatic conversion)
 - AssetValuation created automatically when Asset value changes
 - Asset. value always reflects current value; history in AssetValuation
+
+## Agent Guidelines
+See `AGENTS.md` for development guidelines, code style, and task checklists for AI agents working on this project.
