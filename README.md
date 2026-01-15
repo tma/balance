@@ -1,24 +1,77 @@
-# README
+# Balance
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+A personal finance budgeting application for tracking income, expenses, budgets, and assets with a clean, mobile-friendly web interface.
 
-Things you may want to cover:
+## Features
 
-* Ruby version
+- **Cash Flow Dashboard** - 12-month income/expense overview with saving rate tracking
+- **Net Worth Tracking** - Monitor cash accounts, assets, and liabilities
+- **Transactions** - Record and categorize income and expenses across multiple accounts
+- **Budget Management** - Set monthly and yearly budgets with visual progress indicators
+- **Multi-Currency Support** - Track accounts and assets in different currencies (USD, EUR, GBP, CHF, etc.)
+- **Asset Tracking** - Monitor investments, property, and liabilities with value history
+- **Mobile-First Design** - Responsive interface optimized for mobile and desktop
 
-* System dependencies
+## Running with Docker Compose
 
-* Configuration
+### Prerequisites
 
-* Database creation
+- Docker and Docker Compose installed
 
-* Database initialization
+### Quick Start
 
-* How to run the test suite
+1. Create a `docker-compose.yml` file:
+   ```yaml
+   services:
+     web:
+       image: ghcr.io/tma/balance:main
+       ports:
+         - "3000:80"
+       environment:
+         - RAILS_ENV=production
+         - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+         - RAILS_LOG_TO_STDOUT=1
+       volumes:
+         - balance_storage:/rails/storage
+       restart: unless-stopped
+   
+   volumes:
+     balance_storage:
+   ```
 
-* Services (job queues, cache servers, search engines, etc.)
+2. Set your Rails master key as an environment variable:
+   ```bash
+   export RAILS_MASTER_KEY=your_master_key_here
+   ```
+   
+   > **Note:** The Rails master key is required to decrypt encrypted credentials. If deploying your own instance, you'll need to generate your own credentials by cloning the repository and running `EDITOR=nano rails credentials:edit`, which creates a `config/master.key` file.
 
-* Deployment instructions
+3. Start the application:
+   ```bash
+   docker compose up -d
+   ```
 
-* ...
+4. The application will be available at **http://localhost:3000**
+
+5. On first run, the database will be seeded with default currencies, categories, and account types.
+
+### Stopping the Application
+
+```bash
+docker compose down
+```
+
+### Persistent Data
+
+All data (transactions, accounts, assets) is stored in the `balance_storage` Docker volume and persists between restarts.
+
+## Tech Stack
+
+- Ruby on Rails 8.x
+- SQLite database
+- Tailwind CSS
+- Hotwire (Turbo + Stimulus)
+
+## License
+
+See [LICENSE](LICENSE) file for details.
