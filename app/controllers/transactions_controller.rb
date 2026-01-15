@@ -23,6 +23,22 @@ class TransactionsController < ApplicationController
       @filter_mode = :month
     end
 
+    # Account filter
+    if params[:account_id].present?
+      @transactions = @transactions.where(account_id: params[:account_id])
+      @selected_account = Account.find_by(id: params[:account_id])
+    end
+
+    # Category filter
+    if params[:category_id].present?
+      @transactions = @transactions.where(category_id: params[:category_id])
+      @selected_category = Category.find_by(id: params[:category_id])
+    end
+
+    # For filter dropdowns
+    @accounts = Account.order(:name)
+    @categories = Category.order(:category_type, :name)
+
     # Group transactions by date for display
     @transactions_by_date = @transactions.group_by(&:date)
 

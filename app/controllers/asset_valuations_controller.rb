@@ -32,4 +32,11 @@ class AssetValuationsController < ApplicationController
   rescue ActiveRecord::RecordInvalid => e
     redirect_to update_valuations_path, alert: "Update failed: #{e.message}"
   end
+
+  def destroy
+    @asset = Asset.find(params[:asset_id])
+    @valuation = @asset.asset_valuations.find(params[:id])
+    @valuation.destroy!
+    redirect_to @asset, notice: "Valuation deleted.", status: :see_other
+  end
 end

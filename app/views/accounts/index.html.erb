@@ -7,26 +7,44 @@
   </div>
 
   <% if @accounts.any? %>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      <% @accounts.each do |account| %>
-        <div class="bg-white rounded-xl border border-slate-200 p-6">
-          <div class="flex justify-between items-start mb-4">
-            <div>
-              <h3 class="text-lg font-semibold text-slate-800"><%= account.name %></h3>
-              <p class="text-sm text-slate-500"><%= account.account_type.name.capitalize %></p>
-            </div>
-            <span class="text-xs font-medium px-2 py-1 bg-slate-100 text-slate-600 rounded-lg"><%= account.currency %></span>
-          </div>
-          <p class="text-2xl font-bold <%= account.balance >= 0 ? 'text-emerald-500' : 'text-rose-400' %> mb-4">
-            <%= number_to_currency(account.balance, unit: "") %>
-          </p>
-          <div class="flex space-x-3 text-sm">
-            <%= link_to "View", account, class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
-            <%= link_to "Edit", edit_account_path(account), class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
-            <%= button_to "Delete", account, method: :delete, class: "text-rose-500 hover:text-rose-600 hover:underline", data: { turbo_confirm: "Are you sure? This will delete all associated transactions." } %>
-          </div>
-        </div>
-      <% end %>
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      <table class="min-w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Account</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Currency</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Balance</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+          <% @accounts.includes(:account_type).order("account_types.name", :name).group_by(&:account_type).each do |account_type, type_accounts| %>
+            <tr class="bg-slate-50 border-t border-b border-slate-200">
+              <td colspan="4" class="px-4 py-1.5 text-xs font-medium text-slate-500">
+                <%= account_type.name.capitalize %>
+                <span class="text-slate-400 ml-2"><%= type_accounts.size %> account<%= type_accounts.size == 1 ? '' : 's' %></span>
+              </td>
+            </tr>
+            <% type_accounts.each do |account| %>
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+                <td class="px-4 py-2 text-sm text-slate-700 font-medium">
+                  <%= link_to account.name, transactions_path(account_id: account.id), class: "hover:text-cyan-600" %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
+                  <%= account.currency %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-right font-medium <%= account.balance >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
+                  <%= number_to_currency(account.balance, unit: "") %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
+                  <%= link_to "Edit", edit_account_path(account), class: "text-cyan-600 hover:text-cyan-700" %>
+                  <%= button_to "Delete", account, method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure? This will delete all associated transactions." }, class: "inline" } %>
+                </td>
+              </tr>
+            <% end %>
+          <% end %>
+        </tbody>
+      </table>
     </div>
   <% else %>
     <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">

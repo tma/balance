@@ -1,12 +1,8 @@
 class AccountsController < ApplicationController
-  before_action :set_account, only: %i[ show edit update destroy ]
+  before_action :set_account, only: %i[ edit update destroy ]
 
   def index
     @accounts = Account.includes(:account_type).order(:name)
-  end
-
-  def show
-    @transactions = @account.transactions.includes(:category).order(date: :desc, created_at: :desc).limit(20)
   end
 
   def new
@@ -20,7 +16,7 @@ class AccountsController < ApplicationController
     @account = Account.new(account_params)
 
     if @account.save
-      redirect_to @account, notice: "Account was successfully created."
+      redirect_to accounts_path, notice: "Account was successfully created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -28,7 +24,7 @@ class AccountsController < ApplicationController
 
   def update
     if @account.update(account_params)
-      redirect_to @account, notice: "Account was successfully updated.", status: :see_other
+      redirect_to accounts_path, notice: "Account was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end

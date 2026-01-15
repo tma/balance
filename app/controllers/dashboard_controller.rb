@@ -6,8 +6,9 @@ class DashboardController < ApplicationController
     @monthly_data = calculate_monthly_data(12)
     @twelve_month_totals = calculate_twelve_month_totals
 
-    # All budgets (both monthly and yearly)
-    @budgets = Budget.includes(:category).order("categories.name")
+    # Budgets separated by period
+    @monthly_budgets = Budget.monthly.includes(:category).order("categories.name")
+    @yearly_budgets = Budget.yearly.includes(:category).order("categories.name")
 
     # Recent transactions
     @recent_transactions = Transaction.includes(:account, :category).recent(5)

@@ -6,64 +6,110 @@
     <%= link_to "New Transaction", new_transaction_path, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
   </div>
 
-  <!-- Month Navigation -->
-  <% if @filter_mode == :month %>
-    <div class="bg-white rounded-xl border border-slate-200 mb-4">
-      <div class="flex items-center justify-between p-4">
+  <!-- Month Navigation & Date Filter -->
+  <div class="bg-white rounded-xl border border-slate-200 mb-4 px-4 py-2">
+    <div class="flex items-center justify-between">
+      <% if @filter_mode == :month %>
         <% prev_month = @current_month - 1.month %>
-        <% next_month = @current_month + 1.month %>
-        
-        <%= link_to transactions_path(month: prev_month.strftime("%Y-%m")), class: "p-2 hover:bg-slate-50 rounded-lg transition" do %>
-          <span class="text-slate-500">&larr; <%= prev_month.strftime("%b %Y") %></span>
+        <%
+          prev_params = { month: prev_month.strftime("%Y-%m") }
+          prev_params[:account_id] = params[:account_id] if params[:account_id].present?
+          prev_params[:category_id] = params[:category_id] if params[:category_id].present?
+        %>
+        <%= link_to transactions_path(prev_params), class: "p-1 hover:bg-slate-50 rounded-lg transition text-slate-500 text-sm" do %>
+          &larr; <%= prev_month.strftime("%b") %>
         <% end %>
-        
-        <div class="text-center">
-          <h2 class="text-lg font-semibold text-slate-700"><%= @current_month.strftime("%B %Y") %></h2>
-        </div>
-        
-        <% if next_month <= Date.current.end_of_month %>
-          <%= link_to transactions_path(month: next_month.strftime("%Y-%m")), class: "p-2 hover:bg-slate-50 rounded-lg transition" do %>
-            <span class="text-slate-500"><%= next_month.strftime("%b %Y") %> &rarr;</span>
-          <% end %>
-        <% else %>
-          <span class="p-2 text-slate-200">&nbsp;</span>
-        <% end %>
-      </div>
-    </div>
-  <% end %>
+      <% else %>
+        <span></span>
+      <% end %>
 
-  <!-- Date Range Filter -->
-  <div class="bg-white rounded-xl border border-slate-200 mb-4">
-    <details class="group">
-      <summary class="p-4 cursor-pointer flex items-center justify-between hover:bg-slate-50 rounded-xl transition">
-        <span class="font-medium text-slate-600">
-          <% if @filter_mode == :range %>
-            Custom Range: <%= @start_date.strftime("%b %d, %Y") %> - <%= @end_date.strftime("%b %d, %Y") %>
-          <% else %>
-            Filter by Date Range
-          <% end %>
-        </span>
-        <span class="text-slate-400 group-open:rotate-180 transition-transform">&#9660;</span>
-      </summary>
-      <div class="p-4 border-t border-slate-200">
-        <%= form_with url: transactions_path, method: :get, class: "flex flex-wrap gap-4 items-end" do |f| %>
-          <div>
-            <%= f.label :start_date, "Start Date", class: "block text-sm font-medium text-slate-700" %>
-            <%= f.date_field :start_date, value: @start_date || @current_month, class: "mt-1 rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
-          </div>
-          <div>
-            <%= f.label :end_date, "End Date", class: "block text-sm font-medium text-slate-700" %>
-            <%= f.date_field :end_date, value: @end_date || (@current_month&.end_of_month || Date.current), class: "mt-1 rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
-          </div>
-          <div class="flex gap-2">
-            <%= f.submit "Apply", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
-            <% if @filter_mode == :range %>
-              <%= link_to "Clear", transactions_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+      <div class="flex items-center gap-4">
+        <% if @filter_mode == :month %>
+          <span class="font-semibold text-slate-700"><%= @current_month.strftime("%B %Y") %></span>
+        <% elsif @filter_mode == :range %>
+          <span class="text-sm text-slate-600"><%= @start_date.strftime("%b %d") %> - <%= @end_date.strftime("%b %d, %Y") %></span>
+          <%= link_to "Clear", transactions_path, class: "text-sm text-cyan-600 hover:text-cyan-700" %>
+        <% end %>
+
+        <details class="group relative">
+          <summary class="cursor-pointer text-sm text-slate-400 hover:text-slate-600 list-none flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <span class="group-open:rotate-180 transition-transform text-xs">&#9660;</span>
+          </summary>
+          <div class="absolute right-0 top-full mt-2 bg-white border border-slate-200 rounded-lg shadow-lg p-3 z-10">
+            <%= form_with url: transactions_path, method: :get, class: "flex items-center gap-2" do |f| %>
+              <%= f.hidden_field :account_id, value: params[:account_id] if params[:account_id].present? %>
+              <%= f.hidden_field :category_id, value: params[:category_id] if params[:category_id].present? %>
+              <%= f.date_field :start_date, value: @start_date || @current_month, class: "rounded border-slate-300 text-sm px-2 py-1 border w-32" %>
+              <span class="text-slate-400">-</span>
+              <%= f.date_field :end_date, value: @end_date || (@current_month&.end_of_month || Date.current), class: "rounded border-slate-300 text-sm px-2 py-1 border w-32" %>
+              <%= f.submit "Go", class: "rounded px-2 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-sm cursor-pointer" %>
             <% end %>
           </div>
-        <% end %>
+        </details>
       </div>
-    </details>
+
+      <% if @filter_mode == :month %>
+        <% next_month = @current_month + 1.month %>
+        <% if next_month <= Date.current.end_of_month %>
+          <%
+            next_params = { month: next_month.strftime("%Y-%m") }
+            next_params[:account_id] = params[:account_id] if params[:account_id].present?
+            next_params[:category_id] = params[:category_id] if params[:category_id].present?
+          %>
+          <%= link_to transactions_path(next_params), class: "p-1 hover:bg-slate-50 rounded-lg transition text-slate-500 text-sm" do %>
+            <%= next_month.strftime("%b") %> &rarr;
+          <% end %>
+        <% else %>
+          <span class="p-1 text-transparent text-sm">Dec &rarr;</span>
+        <% end %>
+      <% else %>
+        <span></span>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex items-center gap-3 mb-4">
+    <span class="text-sm text-slate-500">Filter:</span>
+    <%= form_with url: transactions_path, method: :get, class: "flex items-center gap-2", data: { controller: "auto-submit" } do |f| %>
+      <% if @filter_mode == :month %>
+        <%= f.hidden_field :month, value: @current_month.strftime("%Y-%m") %>
+      <% else %>
+        <%= f.hidden_field :start_date, value: @start_date %>
+        <%= f.hidden_field :end_date, value: @end_date %>
+      <% end %>
+
+      <%= f.select :account_id,
+            options_from_collection_for_select(@accounts, :id, :name, params[:account_id]),
+            { include_blank: "All Accounts" },
+            class: "rounded-lg border-slate-300 text-sm px-2 py-1 border bg-white",
+            onchange: "this.form.requestSubmit()" %>
+
+      <%= f.select :category_id,
+            grouped_options_for_select(
+              [
+                ["Income", @categories.select { |c| c.category_type == "income" }.map { |c| [c.name.titleize, c.id] }],
+                ["Expense", @categories.select { |c| c.category_type == "expense" }.map { |c| [c.name.titleize, c.id] }]
+              ],
+              params[:category_id]
+            ),
+            { include_blank: "All Categories" },
+            class: "rounded-lg border-slate-300 text-sm px-2 py-1 border bg-white",
+            onchange: "this.form.requestSubmit()" %>
+    <% end %>
+
+    <% if @selected_account || @selected_category %>
+      <%
+        clear_params = {}
+        clear_params[:month] = @current_month.strftime("%Y-%m") if @filter_mode == :month
+        clear_params[:start_date] = @start_date if @filter_mode == :range
+        clear_params[:end_date] = @end_date if @filter_mode == :range
+      %>
+      <%= link_to "Clear filters", transactions_path(clear_params), class: "text-sm text-cyan-600 hover:text-cyan-700" %>
+    <% end %>
   </div>
 
   <!-- Summary -->
@@ -97,8 +143,8 @@
   <!-- Transactions Table -->
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <% if @transactions.any? %>
-      <table class="min-w-full divide-y divide-slate-200">
-        <thead class="bg-slate-50">
+      <table class="min-w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
@@ -108,29 +154,37 @@
             <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-slate-100">
-          <% @transactions.order(date: :desc, created_at: :desc).each do |transaction| %>
-            <tr class="hover:bg-slate-50 transition">
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
-                <%= transaction.date.strftime("%b %d") %>
-              </td>
-              <td class="px-4 py-2 text-sm text-slate-700">
-                <%= transaction.description.presence || "-" %>
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
-                <%= transaction.category.name.titleize %>
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
-                <%= transaction.account.name %>
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm text-right font-medium <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
-                <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
-              </td>
-              <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
-                <%= link_to "Edit", edit_transaction_path(transaction), class: "text-cyan-600 hover:text-cyan-700" %>
-                <%= button_to "Delete", transaction, method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>
+        <tbody class="bg-white">
+          <% @transactions.order(date: :desc, created_at: :desc).group_by(&:date).each do |date, day_transactions| %>
+            <tr class="bg-slate-50 border-t border-b border-slate-200">
+              <td colspan="6" class="px-4 py-1.5 text-xs font-medium text-slate-500">
+                <%= date.strftime("%A, %B %d") %>
+                <span class="text-slate-400 ml-2"><%= day_transactions.size %> transaction<%= day_transactions.size == 1 ? '' : 's' %></span>
               </td>
             </tr>
+            <% day_transactions.each do |transaction| %>
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-400">
+                  <%= transaction.date.strftime("%b %d") %>
+                </td>
+                <td class="px-4 py-2 text-sm text-slate-700">
+                  <%= transaction.description.presence || "-" %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
+                  <%= transaction.category.name.titleize %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
+                  <%= transaction.account.name %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-right font-medium <%= transaction.income? ? 'text-emerald-500' : 'text-rose-400' %>">
+                  <%= transaction.income? ? '+' : '-' %><%= number_to_currency(transaction.amount) %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
+                  <%= link_to "Edit", edit_transaction_path(transaction), class: "text-cyan-600 hover:text-cyan-700" %>
+                  <%= button_to "Delete", transaction, method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>
+                </td>
+              </tr>
+            <% end %>
           <% end %>
         </tbody>
       </table>

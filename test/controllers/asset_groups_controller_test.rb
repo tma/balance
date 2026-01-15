@@ -5,11 +5,6 @@ class AssetGroupsControllerTest < ActionDispatch::IntegrationTest
     @asset_group = asset_groups(:real_estate)
   end
 
-  test "should get index" do
-    get asset_groups_url
-    assert_response :success
-  end
-
   test "should get new" do
     get new_asset_group_url
     assert_response :success
@@ -20,12 +15,7 @@ class AssetGroupsControllerTest < ActionDispatch::IntegrationTest
       post asset_groups_url, params: { asset_group: { name: "New Group", description: "Test" } }
     end
 
-    assert_redirected_to asset_group_url(AssetGroup.last)
-  end
-
-  test "should show asset_group" do
-    get asset_group_url(@asset_group)
-    assert_response :success
+    assert_redirected_to assets_url
   end
 
   test "should get edit" do
@@ -35,7 +25,7 @@ class AssetGroupsControllerTest < ActionDispatch::IntegrationTest
 
   test "should update asset_group" do
     patch asset_group_url(@asset_group), params: { asset_group: { name: "Updated Name" } }
-    assert_redirected_to asset_group_url(@asset_group)
+    assert_redirected_to assets_url
   end
 
   test "should destroy asset_group without assets" do
@@ -44,6 +34,6 @@ class AssetGroupsControllerTest < ActionDispatch::IntegrationTest
       delete asset_group_url(empty_group)
     end
 
-    assert_redirected_to asset_groups_url
+    assert_redirected_to assets_url
   end
 end

@@ -15,9 +15,11 @@ Rails.application.routes.draw do
   get "net-worth", to: "dashboard#net_worth", as: :net_worth
 
   # Main resources
-  resources :accounts
-  resources :assets, path: "financial-assets"
-  resources :asset_groups, path: "asset-groups"
+  resources :accounts, except: :show
+  resources :assets, path: "financial-assets" do
+    resources :valuations, only: :destroy, controller: "asset_valuations"
+  end
+  resources :asset_groups, path: "asset-groups", except: [ :index, :show ]
   resources :transactions
   resources :budgets
 

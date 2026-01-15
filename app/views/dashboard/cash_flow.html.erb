@@ -112,35 +112,63 @@
   <!-- Budget Status -->
   <% current_year = Date.current.year %>
   <% current_month = Date.current.month %>
-  <div class="bg-white rounded-xl border border-slate-200 p-6">
-    <div class="flex justify-between items-center mb-4">
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="flex justify-between items-center px-4 py-3 border-b border-slate-200">
       <h2 class="text-lg font-semibold text-slate-800">Budget Status</h2>
       <%= link_to "Manage", budgets_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
     </div>
-    <% if @budgets.empty? %>
-      <p class="text-slate-500">No budgets set. <%= link_to "Create one", new_budget_path, class: "text-cyan-600 hover:underline" %>.</p>
-    <% else %>
-      <div class="space-y-4">
-        <% @budgets.each do |budget| %>
-          <% month_param = budget.monthly? ? current_month : nil %>
-          <div>
-            <div class="flex justify-between text-sm mb-1">
-              <span class="font-medium text-slate-700">
-                <%= budget.category.name.titleize %>
-                <span class="text-slate-400 text-xs">(<%= budget.monthly? ? "monthly" : "yearly" %>)</span>
-              </span>
-              <span class="text-slate-500">
-                <%= number_to_currency(budget.spent(current_year, month_param)) %> / <%= number_to_currency(budget.amount) %>
-              </span>
-            </div>
-            <div class="w-full bg-slate-100 rounded-full h-2">
-              <% percentage = [budget.percentage_used(current_year, month_param), 100].min %>
-              <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
-              <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
-            </div>
-          </div>
-        <% end %>
+    <% if @monthly_budgets.empty? && @yearly_budgets.empty? %>
+      <div class="p-8 text-center">
+        <p class="text-slate-500">No budgets set. <%= link_to "Create one", new_budget_path, class: "text-cyan-600 hover:underline" %>.</p>
       </div>
+    <% else %>
+      <% if @monthly_budgets.any? %>
+        <div class="px-4 py-1.5 bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-500">
+          Monthly Budgets
+          <span class="text-slate-400 ml-2"><%= Date::MONTHNAMES[current_month] %></span>
+        </div>
+        <div class="divide-y divide-slate-100">
+          <% @monthly_budgets.each do |budget| %>
+            <div class="px-4 py-3">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+                <span class="text-slate-500">
+                  <%= number_to_currency(budget.spent(current_year, current_month), unit: "") %> / <%= number_to_currency(budget.amount, unit: "") %>
+                </span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2">
+                <% percentage = [budget.percentage_used(current_year, current_month), 100].min %>
+                <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
+                <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+
+      <% if @yearly_budgets.any? %>
+        <div class="px-4 py-1.5 bg-slate-50 border-b border-t border-slate-200 text-xs font-medium text-slate-500">
+          Yearly Budgets
+          <span class="text-slate-400 ml-2"><%= current_year %></span>
+        </div>
+        <div class="divide-y divide-slate-100">
+          <% @yearly_budgets.each do |budget| %>
+            <div class="px-4 py-3">
+              <div class="flex justify-between text-sm mb-1">
+                <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+                <span class="text-slate-500">
+                  <%= number_to_currency(budget.spent(current_year, nil), unit: "") %> / <%= number_to_currency(budget.amount, unit: "") %>
+                </span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2">
+                <% percentage = [budget.percentage_used(current_year, nil), 100].min %>
+                <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
+                <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
     <% end %>
   </div>
 </div>

@@ -27,7 +27,7 @@
             <% group_assets.each do |asset| %>
               <div class="flex items-center px-4 py-3 hover:bg-slate-50 transition">
                 <div class="flex-1 min-w-0">
-                  <p class="font-medium text-slate-700 truncate"><%= asset.name %></p>
+                  <p class="font-medium text-slate-700 truncate"><%= link_to asset.name, asset, class: "hover:text-cyan-600" %></p>
                   <p class="text-sm text-slate-400"><%= asset.asset_type.name %></p>
                 </div>
                 <div class="flex items-center space-x-2">
@@ -50,7 +50,7 @@
             <% group_liabilities.each do |asset| %>
               <div class="flex items-center px-4 py-3 hover:bg-slate-50 transition">
                 <div class="flex-1 min-w-0">
-                  <p class="font-medium text-slate-700 truncate"><%= asset.name %></p>
+                  <p class="font-medium text-slate-700 truncate"><%= link_to asset.name, asset, class: "hover:text-cyan-600" %></p>
                   <p class="text-sm text-slate-400"><%= asset.asset_type.name %></p>
                 </div>
                 <div class="flex items-center space-x-2">
