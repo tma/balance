@@ -1,0 +1,31 @@
+<%= form_with(model: [:admin, currency], class: "contents") do |form| %>
+  <% if currency.errors.any? %>
+    <div class="bg-rose-50 text-rose-500 px-4 py-3 rounded-lg mb-4">
+      <h2 class="font-medium"><%= pluralize(currency.errors.count, "error") %> prohibited this currency from being saved:</h2>
+      <ul class="list-disc ml-6 mt-2">
+        <% currency.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :code, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.text_field :code, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "USD", maxlength: 3 %>
+    <p class="mt-1 text-sm text-slate-500">3-letter ISO 4217 code (e.g., USD, EUR, GBP)</p>
+  </div>
+
+  <div class="mb-4">
+    <label class="flex items-center">
+      <%= form.check_box :default, class: "rounded border-slate-300 text-cyan-600 shadow-sm focus:border-cyan-500 focus:ring-cyan-500" %>
+      <span class="ml-2 text-sm font-medium text-slate-700">Set as default currency</span>
+    </label>
+    <p class="mt-1 text-sm text-slate-500">The default currency will be pre-selected when creating new accounts</p>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
+    <%= link_to "Cancel", admin_currencies_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+  </div>
+<% end %>

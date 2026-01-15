@@ -1,0 +1,43 @@
+<%= form_with(model: account, class: "contents") do |form| %>
+  <% if account.errors.any? %>
+    <div class="bg-rose-50 text-rose-600 px-4 py-3 rounded-lg border border-rose-200 mb-4">
+      <h2 class="font-medium"><%= pluralize(account.errors.count, "error") %> prohibited this account from being saved:</h2>
+      <ul class="list-disc ml-6 mt-2">
+        <% account.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :name, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "My Checking Account" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :account_type_id, "Account Type", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.collection_select :account_type_id, AccountType.order(:name), :id, :name, { prompt: "Select account type" }, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :balance, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.number_field :balance, step: 0.01, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "0.00" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :currency, class: "block text-sm font-medium text-slate-700" %>
+    <% if account.persisted? %>
+      <%= form.select :currency, Currency.order(:code).pluck(:code), { selected: account.currency }, { class: "mt-1 block w-full rounded-lg border-slate-200 shadow-sm bg-slate-100 border px-3 py-2 cursor-not-allowed text-slate-500", disabled: true } %>
+      <%= form.hidden_field :currency %>
+      <p class="mt-1 text-xs text-slate-400">Currency cannot be changed after creation.</p>
+    <% else %>
+      <%= form.select :currency, Currency.order(:code).pluck(:code), { selected: account.currency || Currency.default&.code }, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+    <% end %>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+    <%= link_to "Cancel", accounts_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+  </div>
+<% end %>

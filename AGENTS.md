@@ -3,10 +3,43 @@
 ## Project Overview
 Personal finance budgeting app built with Ruby on Rails 8.x, SQLite, and Tailwind CSS. See `SPEC.md` for full specification.
 
+## Development Environment
+
+**IMPORTANT: Always use the devcontainer for running Rails commands.**
+
+The project uses a devcontainer for consistent development. The system Ruby is outdated and will not work.
+
+### Starting the Devcontainer
+```bash
+# Check if devcontainer is running
+docker ps | grep balance-devcontainer
+
+# If not running, start it (from project root)
+docker compose -f .devcontainer/docker-compose.yml up -d
+
+# Or use VS Code: Cmd+Shift+P -> "Dev Containers: Reopen in Container"
+```
+
+### Running Commands in Devcontainer
+```bash
+# All Rails commands must be run via docker exec
+docker exec balance-devcontainer bin/rails generate model Foo
+docker exec balance-devcontainer bin/rails db:migrate
+docker exec balance-devcontainer bin/rails test
+docker exec balance-devcontainer rubocop
+
+# Interactive shell in container
+docker exec -it balance-devcontainer bash
+```
+
+### Never
+- Run `rails`, `ruby`, or `bundle` commands directly on the host machine
+- Use system Ruby (it's outdated and incompatible)
+
 ## Development Principles
 
 ### Always
-- Run `rails test` before and after changes
+- Run `rails test` and `rubocop` before and after changes
 - Follow Rails conventions and best practices
 - Use RESTful routes and resourceful controllers
 - Keep controllers thin, models fat
@@ -95,26 +128,34 @@ app/
 ├── controllers/
 │   ├── admin/           # Admin namespace for master data
 │   ├── accounts_controller.rb
+│   ├── asset_groups_controller.rb
+│   ├── asset_valuations_controller.rb
 │   ├── assets_controller.rb
 │   ├── budgets_controller.rb
 │   ├── dashboard_controller.rb
 │   └── transactions_controller.rb
+├── helpers/
+│   └── application_helper.rb  # format_currency, format_amount
 ├── models/
 │   ├── account.rb
 │   ├── account_type.rb
 │   ├── asset.rb
+│   ├── asset_group.rb
 │   ├── asset_type.rb
 │   ├── asset_valuation.rb
 │   ├── budget.rb
 │   ├── category.rb
 │   ├── currency.rb
 │   └── transaction.rb
+├── services/
+│   └── exchange_rate_service.rb  # Frankfurter API integration
 └── views/
     ├── admin/
     ├── accounts/
+    ├── asset_groups/
     ├── assets/
     ├── budgets/
-    ├── dashboard/
+    ├── dashboard/       # cash_flow.html.erb, net_worth.html.erb
     └── transactions/
 ```
 
@@ -150,8 +191,8 @@ rails db: reset             # Drop, create, migrate, seed
 ## Validation Checklist
 Before completing any task: 
 - [ ] All tests pass (`rails test`)
+- [ ] No rubocop offenses (`rubocop`)
 - [ ] New code has test coverage
-- [ ] No rubocop/linting errors
 - [ ] `SPEC.md` updated if features changed
 - [ ] Migrations are reversible
 - [ ] No hardcoded values (use seeds/config)

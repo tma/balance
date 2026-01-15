@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+house:
+  name: My House
+  asset_type: property
+  asset_group: real_estate
+  value: 250000.00
+  currency: USD
+  notes: Primary residence
+
+home_mortgage:
+  name: Home Mortgage
+  asset_type: mortgage
+  asset_group: real_estate
+  value: 200000.00
+  currency: USD
+  notes: 30-year fixed

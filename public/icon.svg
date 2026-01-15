@@ -1,0 +1,20 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="256" fill="#f1f5f9"/>
+  
+  <!-- Wallet body -->
+  <rect x="96" y="160" width="320" height="224" rx="24" fill="#cbd5e1"/>
+  <rect x="112" y="176" width="288" height="192" rx="16" fill="#e2e8f0"/>
+  
+  <!-- Wallet flap -->
+  <path d="M112 200 Q112 160 152 160 L360 160 Q400 160 400 200 L400 220 Q400 240 360 240 L152 240 Q112 240 112 220 Z" fill="#cbd5e1"/>
+  
+  <!-- Card slot lines -->
+  <rect x="144" y="280" width="160" height="8" rx="4" fill="#94a3b8"/>
+  <rect x="144" y="304" width="120" height="8" rx="4" fill="#94a3b8"/>
+  
+  <!-- Coin/money circle accent -->
+  <circle cx="368" cy="304" r="40" fill="#a5f3fc"/>
+  <circle cx="368" cy="304" r="28" fill="#67e8f9"/>
+  <text x="368" y="316" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="#0e7490" text-anchor="middle">$</text>
+</svg>

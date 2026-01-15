@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+house_valuation:
+  asset: house
+  value: 250000.00
+  date: 2026-01-15
+
+mortgage_valuation:
+  asset: home_mortgage
+  value: 200000.00
+  date: 2026-01-15

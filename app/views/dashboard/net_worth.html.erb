@@ -1,0 +1,108 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Net Worth</h1>
+      <p class="text-sm text-slate-500">All values in <%= @default_currency %></p>
+    </div>
+    <%= link_to "Cash Flow", cash_flow_path, class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
+  </div>
+
+  <!-- Net Worth Summary -->
+  <% if @net_worth[:net_worth] == 0 && @net_worth[:cash] == 0 && @net_worth[:assets] == 0 %>
+    <div class="bg-white rounded-xl border border-slate-200 p-6">
+      <p class="text-slate-500">No financial data yet. Add accounts or assets to get started.</p>
+    </div>
+  <% else %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Cash (Accounts)</p>
+        <p class="text-xl font-semibold text-slate-700"><%= format_currency(@net_worth[:cash]) %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Assets</p>
+        <p class="text-xl font-semibold text-slate-700"><%= format_currency(@net_worth[:assets]) %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Liabilities</p>
+        <p class="text-xl font-semibold text-rose-500">-<%= format_currency(@net_worth[:liabilities]) %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Net Worth</p>
+        <p class="text-xl font-semibold <%= @net_worth[:net_worth] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>"><%= format_currency(@net_worth[:net_worth]) %></p>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Asset Groups Breakdown -->
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+      <h2 class="text-lg font-semibold text-slate-800">Assets</h2>
+      <%= link_to "Update Values", update_valuations_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
+    </div>
+
+    <% if @asset_groups.none? { |g| g.assets.any? } %>
+      <div class="p-6 text-center">
+        <p class="text-slate-500 mb-4">No assets yet.</p>
+        <%= link_to "Add your first asset", new_asset_path, class: "text-cyan-600 hover:underline" %>
+      </div>
+    <% else %>
+      <div class="divide-y divide-slate-100">
+        <% @asset_groups.each do |group| %>
+          <% next if group.assets.empty? %>
+          <div class="p-4">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="font-semibold text-slate-700"><%= group.name %></h3>
+                <% if group.description.present? %>
+                  <p class="text-sm text-slate-400"><%= group.description %></p>
+                <% end %>
+              </div>
+              <div class="text-right">
+                <% net_value = group.net_value_in_default_currency %>
+                <p class="font-bold text-slate-700"><%= format_currency(net_value) %></p>
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <% group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name).each do |asset| %>
+                <%= link_to asset, class: "flex justify-between items-center p-2 rounded-lg hover:bg-slate-50 transition" do %>
+                  <div class="flex items-center space-x-2">
+                    <div>
+                      <p class="text-sm font-medium text-slate-700"><%= asset.name %></p>
+                      <p class="text-xs text-slate-400"><%= asset.asset_type.name %></p>
+                    </div>
+                    <% if asset.asset_type.is_liability %>
+                      <span class="px-1.5 py-0.5 rounded text-xs bg-rose-100 text-rose-600">Liability</span>
+                    <% end %>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-sm text-slate-700">
+                      <%= asset.asset_type.is_liability ? '-' : '' %><%= format_currency(asset.value_in_default_currency || 0) %>
+                    </span>
+                    <% if asset.currency != @default_currency %>
+                      <p class="text-xs text-slate-400"><%= asset.currency %> <%= format_amount(asset.value) %></p>
+                    <% end %>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Totals -->
+      <div class="bg-slate-50 p-4 border-t border-slate-200">
+        <div class="flex justify-between items-center">
+          <span class="font-semibold text-slate-700">Total Assets (excluding cash)</span>
+          <div class="text-right">
+            <div class="flex items-center justify-end space-x-4 text-sm">
+              <span class="text-slate-600"><%= format_currency(@totals[:assets]) %></span>
+              <span class="text-rose-500">- <%= format_currency(@totals[:liabilities]) %></span>
+              <span class="font-bold <%= @totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">= <%= format_currency(@totals[:net]) %></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

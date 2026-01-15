@@ -1,0 +1,119 @@
+# This file is auto-generated from the current state of the database. Instead
+# of editing this file, please use the migrations feature of Active Record to
+# incrementally modify your database, and then regenerate this schema definition.
+#
+# This file is the source Rails uses to define your schema when running `bin/rails
+# db:schema:load`. When creating a new database, `bin/rails db:schema:load` tends to
+# be faster and is potentially less error prone than running all of your
+# migrations from scratch. Old migrations may fail to apply correctly if those
+# migrations use external dependencies or application code.
+#
+# It's strongly recommended that you check this file into your version control system.
+
+ActiveRecord::Schema[8.1].define(version: 2026_01_15_221022) do
+  create_table "account_types", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "accounts", force: :cascade do |t|
+    t.integer "account_type_id", null: false
+    t.decimal "balance"
+    t.decimal "balance_in_default_currency"
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.decimal "exchange_rate"
+    t.string "name"
+    t.datetime "updated_at", null: false
+    t.index ["account_type_id"], name: "index_accounts_on_account_type_id"
+  end
+
+  create_table "asset_groups", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "asset_types", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.boolean "is_liability"
+    t.string "name"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "asset_valuations", force: :cascade do |t|
+    t.integer "asset_id", null: false
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.decimal "exchange_rate"
+    t.datetime "updated_at", null: false
+    t.decimal "value"
+    t.decimal "value_in_default_currency"
+    t.index ["asset_id"], name: "index_asset_valuations_on_asset_id"
+  end
+
+  create_table "assets", force: :cascade do |t|
+    t.integer "asset_group_id", null: false
+    t.integer "asset_type_id", null: false
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.decimal "exchange_rate"
+    t.string "name"
+    t.text "notes"
+    t.datetime "updated_at", null: false
+    t.decimal "value"
+    t.decimal "value_in_default_currency"
+    t.index ["asset_group_id"], name: "index_assets_on_asset_group_id"
+    t.index ["asset_type_id"], name: "index_assets_on_asset_type_id"
+  end
+
+  create_table "budgets", force: :cascade do |t|
+    t.decimal "amount"
+    t.integer "category_id", null: false
+    t.datetime "created_at", null: false
+    t.string "period", default: "monthly", null: false
+    t.date "start_date"
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_budgets_on_category_id", unique: true
+  end
+
+  create_table "categories", force: :cascade do |t|
+    t.string "category_type"
+    t.datetime "created_at", null: false
+    t.string "name"
+    t.datetime "updated_at", null: false
+  end
+
+  create_table "currencies", force: :cascade do |t|
+    t.string "code"
+    t.datetime "created_at", null: false
+    t.boolean "default", default: false, null: false
+    t.datetime "updated_at", null: false
+    t.index ["code"], name: "index_currencies_on_code", unique: true
+  end
+
+  create_table "transactions", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.decimal "amount"
+    t.decimal "amount_in_default_currency"
+    t.integer "category_id", null: false
+    t.datetime "created_at", null: false
+    t.date "date"
+    t.string "description"
+    t.decimal "exchange_rate"
+    t.string "transaction_type"
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_transactions_on_account_id"
+    t.index ["category_id"], name: "index_transactions_on_category_id"
+  end
+
+  add_foreign_key "accounts", "account_types"
+  add_foreign_key "asset_valuations", "assets"
+  add_foreign_key "assets", "asset_groups"
+  add_foreign_key "assets", "asset_types"
+  add_foreign_key "budgets", "categories"
+  add_foreign_key "transactions", "accounts"
+  add_foreign_key "transactions", "categories"
+end

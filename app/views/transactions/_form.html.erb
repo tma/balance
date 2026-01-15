@@ -1,0 +1,51 @@
+<%= form_with(model: transaction, class: "contents") do |form| %>
+  <% if transaction.errors.any? %>
+    <div class="bg-rose-50 text-rose-600 px-4 py-3 rounded-lg border border-rose-200 mb-4">
+      <h2 class="font-medium"><%= pluralize(transaction.errors.count, "error") %> prohibited this transaction from being saved:</h2>
+      <ul class="list-disc ml-6 mt-2">
+        <% transaction.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :transaction_type, "Type", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.select :transaction_type, [["Income", "income"], ["Expense", "expense"]], {}, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :account_id, "Account", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.collection_select :account_id, Account.includes(:account_type).order(:name), :id, :name, { prompt: "Select account" }, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :category_id, "Category", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.grouped_collection_select :category_id, 
+        [["Income", Category.income.order(:name)], ["Expense", Category.expense.order(:name)]],
+        :last, :first, :id, :name, 
+        { prompt: "Select category" }, 
+        class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :amount, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.number_field :amount, step: 0.01, min: 0.01, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "0.00" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :date, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.date_field :date, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :description, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.text_field :description, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Optional description" %>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+    <%= link_to "Cancel", transactions_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+  </div>
+<% end %>

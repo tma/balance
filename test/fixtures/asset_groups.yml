@@ -1,0 +1,7 @@
+real_estate:
+  name: Real Estate
+  description: Properties and related mortgages
+
+investments:
+  name: Investments
+  description: Stocks, bonds, and other investments

@@ -1,0 +1,17 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+paycheck:
+  account: checking_account
+  category: salary
+  amount: 3000.00
+  transaction_type: income
+  date: 2026-01-15
+  description: January paycheck
+
+grocery_shopping:
+  account: checking_account
+  category: groceries
+  amount: 150.00
+  transaction_type: expense
+  date: 2026-01-15
+  description: Weekly groceries

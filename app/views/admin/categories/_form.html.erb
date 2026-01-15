@@ -1,0 +1,27 @@
+<%= form_with(model: [:admin, category], class: "contents") do |form| %>
+  <% if category.errors.any? %>
+    <div class="bg-rose-50 text-rose-500 px-4 py-3 rounded-lg mb-4">
+      <h2 class="font-medium"><%= pluralize(category.errors.count, "error") %> prohibited this category from being saved:</h2>
+      <ul class="list-disc ml-6 mt-2">
+        <% category.errors.each do |error| %>
+          <li><%= error.full_message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="mb-4">
+    <%= form.label :name, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "groceries" %>
+  </div>
+
+  <div class="mb-4">
+    <%= form.label :category_type, "Type", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.select :category_type, [["Income", "income"], ["Expense", "expense"]], {}, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
+    <%= link_to "Cancel", admin_categories_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+  </div>
+<% end %>

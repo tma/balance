@@ -1,0 +1,177 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Cash Flow</h1>
+      <p class="text-sm text-slate-500">All values in <%= @default_currency %></p>
+    </div>
+    <%= link_to "Net Worth", net_worth_path, class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
+  </div>
+
+  <!-- 12-Month Summary -->
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-sm text-slate-500">Income</p>
+      <p class="text-xl font-semibold text-slate-700"><%= format_currency(@twelve_month_totals[:income]) %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-sm text-slate-500">Expenses</p>
+      <p class="text-xl font-semibold text-slate-700"><%= format_currency(@twelve_month_totals[:expenses]) %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-sm text-slate-500">Net Savings</p>
+      <p class="text-xl font-semibold <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
+        <%= format_currency(@twelve_month_totals[:net]) %>
+      </p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-sm text-slate-500">Saving Rate</p>
+      <p class="text-xl font-semibold <%= @twelve_month_totals[:saving_rate] >= 0 ? 'text-slate-700' : 'text-rose-500' %>">
+        <%= @twelve_month_totals[:saving_rate] %>%
+      </p>
+    </div>
+  </div>
+
+  <!-- Monthly Breakdown Table -->
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="min-w-full divide-y divide-slate-200">
+        <thead class="bg-slate-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Month</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Income</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Expenses</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Net</th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Saving Rate</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-slate-100">
+          <% @monthly_data.each_with_index do |month, index| %>
+            <tr class="<%= index == 0 ? 'bg-cyan-50/50' : 'hover:bg-slate-50' %>">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <%= link_to month[:month_name], transactions_path(month: month[:date].strftime("%Y-%m")), class: "font-medium text-slate-700 hover:text-cyan-600" %>
+                <% if index == 0 %>
+                  <span class="ml-2 px-1.5 py-0.5 rounded text-xs bg-cyan-50 text-cyan-600">Current</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
+                <% if month[:income] > 0 %>
+                  <%= format_currency(month[:income]) %>
+                <% else %>
+                  <span class="text-slate-300">-</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
+                <% if month[:expenses] > 0 %>
+                  <%= format_currency(month[:expenses]) %>
+                <% else %>
+                  <span class="text-slate-300">-</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
+                <% if month[:income] > 0 || month[:expenses] > 0 %>
+                  <%= month[:net] >= 0 ? '+' : '' %><%= format_currency(month[:net]) %>
+                <% else %>
+                  <span class="text-slate-300">-</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
+                <% if month[:income] > 0 %>
+                  <%= month[:saving_rate] %>%
+                <% else %>
+                  <span class="text-slate-300">-</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="bg-slate-50 font-semibold">
+          <tr>
+            <td class="px-4 py-3 text-slate-700">12-Month Total</td>
+            <td class="px-4 py-3 text-right text-slate-700"><%= format_currency(@twelve_month_totals[:income]) %></td>
+            <td class="px-4 py-3 text-right text-slate-700"><%= format_currency(@twelve_month_totals[:expenses]) %></td>
+            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
+              <%= @twelve_month_totals[:net] >= 0 ? '+' : '' %><%= format_currency(@twelve_month_totals[:net]) %>
+            </td>
+            <td class="px-4 py-3 text-right text-slate-700">
+              <%= @twelve_month_totals[:saving_rate] %>%
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+
+  <!-- Budgets -->
+  <% current_year = Date.current.year %>
+  <% current_month = Date.current.month %>
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="flex justify-between items-center px-4 py-3 border-b border-slate-200">
+      <h2 class="text-lg font-semibold text-slate-800">Budgets</h2>
+      <%= link_to "Manage", budgets_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
+    </div>
+    <% if @monthly_budgets.empty? && @yearly_budgets.empty? %>
+      <div class="p-8 text-center">
+        <p class="text-slate-500">No budgets set. <%= link_to "Create one", new_budget_path, class: "text-cyan-600 hover:underline" %>.</p>
+      </div>
+    <% else %>
+      <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+        <div>
+          <div class="px-4 py-1.5 bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-500">
+            Monthly
+            <span class="text-slate-400 ml-2"><%= Date::MONTHNAMES[current_month] %></span>
+          </div>
+          <% if @monthly_budgets.any? %>
+            <div class="divide-y divide-slate-100">
+              <% @monthly_budgets.each do |budget| %>
+                <% monthly_transactions_path = transactions_path(month: Date.current.strftime("%Y-%m"), category_id: budget.category_id) %>
+                <%= link_to monthly_transactions_path, class: "block px-4 py-2 hover:bg-slate-50 transition" do %>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+                    <span class="text-slate-500">
+                      <%= format_currency(budget.spent(current_year, current_month)) %> / <%= format_currency(budget.amount) %>
+                    </span>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-2">
+                    <% percentage = [budget.percentage_used(current_year, current_month), 100].min %>
+                    <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
+                    <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="p-4 text-center text-sm text-slate-400">No monthly budgets</div>
+          <% end %>
+        </div>
+        <div>
+          <div class="px-4 py-1.5 bg-slate-50 border-b border-slate-200 text-xs font-medium text-slate-500">
+            Yearly
+            <span class="text-slate-400 ml-2"><%= current_year %></span>
+          </div>
+          <% if @yearly_budgets.any? %>
+            <div class="divide-y divide-slate-100">
+              <% @yearly_budgets.each do |budget| %>
+                <% yearly_transactions_path = transactions_path(start_date: "#{current_year}-01-01", end_date: "#{current_year}-12-31", category_id: budget.category_id) %>
+                <%= link_to yearly_transactions_path, class: "block px-4 py-2 hover:bg-slate-50 transition" do %>
+                  <div class="flex justify-between text-sm mb-1">
+                    <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+                    <span class="text-slate-500">
+                      <%= format_currency(budget.spent(current_year, nil)) %> / <%= format_currency(budget.amount) %>
+                    </span>
+                  </div>
+                  <div class="w-full bg-slate-100 rounded-full h-2">
+                    <% percentage = [budget.percentage_used(current_year, nil), 100].min %>
+                    <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
+                    <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
+                  </div>
+                <% end %>
+              <% end %>
+            </div>
+          <% else %>
+            <div class="p-4 text-center text-sm text-slate-400">No yearly budgets</div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>

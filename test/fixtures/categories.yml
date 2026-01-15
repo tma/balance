@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+salary:
+  name: salary
+  category_type: income
+
+groceries:
+  name: groceries
+  category_type: expense
+
+entertainment:
+  name: entertainment
+  category_type: expense

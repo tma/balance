@@ -1,0 +1,15 @@
+<% content_for :title, "Account Type - Admin" %>
+
+<div class="max-w-md">
+  <h1 class="text-2xl font-bold text-slate-800 mb-6">Account Type: <%= @account_type.name.capitalize %></h1>
+
+  <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+    <p class="text-slate-700"><strong>Name:</strong> <%= @account_type.name.capitalize %></p>
+  </div>
+
+  <div class="flex space-x-4">
+    <%= link_to "Edit", edit_admin_account_type_path(@account_type), class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
+    <%= link_to "Back", admin_account_types_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+    <%= button_to "Delete", admin_account_type_path(@account_type), method: :delete, class: "rounded-lg px-4 py-2 bg-red-600 hover:bg-rose-500 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+  </div>
+</div>

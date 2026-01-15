@@ -1,0 +1,12 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+groceries_budget:
+  category: groceries
+  amount: 500.00
+  period: monthly
+
+vacation_budget:
+  category: entertainment
+  amount: 3000.00
+  period: yearly
+  start_date: <%= Date.new(2026, 1, 1) %>
