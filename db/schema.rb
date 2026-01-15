@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_15_214843) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_15_214844) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -20,8 +20,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_214843) do
   create_table "accounts", force: :cascade do |t|
     t.integer "account_type_id", null: false
     t.decimal "balance"
+    t.decimal "balance_in_default_currency"
     t.datetime "created_at", null: false
     t.string "currency"
+    t.decimal "exchange_rate"
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["account_type_id"], name: "index_accounts_on_account_type_id"
@@ -45,8 +47,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_214843) do
     t.integer "asset_id", null: false
     t.datetime "created_at", null: false
     t.date "date"
+    t.decimal "exchange_rate"
     t.datetime "updated_at", null: false
     t.decimal "value"
+    t.decimal "value_in_default_currency"
     t.index ["asset_id"], name: "index_asset_valuations_on_asset_id"
   end
 
@@ -55,10 +59,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_214843) do
     t.integer "asset_type_id", null: false
     t.datetime "created_at", null: false
     t.string "currency"
+    t.decimal "exchange_rate"
     t.string "name"
     t.text "notes"
     t.datetime "updated_at", null: false
     t.decimal "value"
+    t.decimal "value_in_default_currency"
     t.index ["asset_group_id"], name: "index_assets_on_asset_group_id"
     t.index ["asset_type_id"], name: "index_assets_on_asset_type_id"
   end
@@ -91,10 +97,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_214843) do
   create_table "transactions", force: :cascade do |t|
     t.integer "account_id", null: false
     t.decimal "amount"
+    t.decimal "amount_in_default_currency"
     t.integer "category_id", null: false
     t.datetime "created_at", null: false
     t.date "date"
     t.string "description"
+    t.decimal "exchange_rate"
     t.string "transaction_type"
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_transactions_on_account_id"

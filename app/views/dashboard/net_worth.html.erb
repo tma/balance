@@ -1,41 +1,37 @@
 <div class="space-y-6">
   <div class="flex justify-between items-center">
-    <h1 class="text-2xl font-bold text-gray-900">Net Worth</h1>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Net Worth</h1>
+      <p class="text-sm text-gray-500">All values in <%= @default_currency %></p>
+    </div>
     <%= link_to "Cash Flow", cash_flow_path, class: "text-blue-600 hover:underline" %>
   </div>
 
   <!-- Net Worth Summary -->
   <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Summary by Currency</h2>
-    <% if @net_worth_by_currency.empty? %>
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Summary</h2>
+    <% if @net_worth[:net_worth] == 0 && @net_worth[:cash] == 0 && @net_worth[:assets] == 0 %>
       <p class="text-gray-500">No financial data yet. Add accounts or assets to get started.</p>
     <% else %>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <% @net_worth_by_currency.each do |currency, data| %>
-          <div class="border rounded-lg p-4">
-            <h3 class="text-lg font-semibold text-gray-900 mb-3"><%= currency %></h3>
-            <div class="space-y-2 text-sm">
-              <div class="flex justify-between">
-                <span class="text-gray-600">Cash (Accounts):</span>
-                <span class="font-medium"><%= number_to_currency(data[:cash], unit: "") %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Assets:</span>
-                <span class="font-medium text-green-600">+<%= number_to_currency(data[:assets], unit: "") %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Liabilities:</span>
-                <span class="font-medium text-red-600">-<%= number_to_currency(data[:liabilities], unit: "") %></span>
-              </div>
-              <div class="flex justify-between pt-2 border-t mt-2">
-                <span class="font-semibold">Net Worth:</span>
-                <span class="font-bold text-lg <%= data[:net_worth] >= 0 ? 'text-green-600' : 'text-red-600' %>">
-                  <%= number_to_currency(data[:net_worth], unit: "") %>
-                </span>
-              </div>
-            </div>
-          </div>
-        <% end %>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="border rounded-lg p-4 text-center">
+          <p class="text-2xl font-bold text-gray-900"><%= number_to_currency(@net_worth[:cash], unit: @default_currency + " ") %></p>
+          <p class="text-sm text-gray-500">Cash (Accounts)</p>
+        </div>
+        <div class="border rounded-lg p-4 text-center">
+          <p class="text-2xl font-bold text-green-600">+<%= number_to_currency(@net_worth[:assets], unit: @default_currency + " ") %></p>
+          <p class="text-sm text-gray-500">Assets</p>
+        </div>
+        <div class="border rounded-lg p-4 text-center">
+          <p class="text-2xl font-bold text-red-600">-<%= number_to_currency(@net_worth[:liabilities], unit: @default_currency + " ") %></p>
+          <p class="text-sm text-gray-500">Liabilities</p>
+        </div>
+        <div class="border rounded-lg p-4 text-center bg-gray-50">
+          <p class="text-2xl font-bold <%= @net_worth[:net_worth] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+            <%= number_to_currency(@net_worth[:net_worth], unit: @default_currency + " ") %>
+          </p>
+          <p class="text-sm text-gray-500">Net Worth</p>
+        </div>
       </div>
     <% end %>
   </div>
@@ -65,11 +61,10 @@
                 <% end %>
               </div>
               <div class="text-right">
-                <% group.net_value_by_currency.each do |currency, value| %>
-                  <p class="font-semibold <%= value >= 0 ? 'text-green-600' : 'text-red-600' %>">
-                    <%= currency %> <%= number_to_currency(value, unit: "") %>
-                  </p>
-                <% end %>
+                <% net_value = group.net_value_in_default_currency %>
+                <p class="font-semibold <%= net_value >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= @default_currency %> <%= number_to_currency(net_value, unit: "") %>
+                </p>
               </div>
             </div>
 
@@ -83,9 +78,14 @@
                       <p class="text-xs text-gray-500"><%= asset.asset_type.name %></p>
                     </div>
                   </div>
-                  <span class="text-sm font-medium <%= asset.asset_type.is_liability ? 'text-red-600' : 'text-green-600' %>">
-                    <%= asset.asset_type.is_liability ? '-' : '' %><%= asset.currency %> <%= number_to_currency(asset.value, unit: "") %>
-                  </span>
+                  <div class="text-right">
+                    <span class="text-sm font-medium <%= asset.asset_type.is_liability ? 'text-red-600' : 'text-green-600' %>">
+                      <%= asset.asset_type.is_liability ? '-' : '' %><%= @default_currency %> <%= number_to_currency(asset.value_in_default_currency || 0, unit: "") %>
+                    </span>
+                    <% if asset.currency != @default_currency %>
+                      <p class="text-xs text-gray-400"><%= asset.currency %> <%= number_to_currency(asset.value, unit: "") %></p>
+                    <% end %>
+                  </div>
                 <% end %>
               <% end %>
             </div>
@@ -93,21 +93,18 @@
         <% end %>
       </div>
 
-      <!-- Totals by Currency -->
+      <!-- Totals -->
       <div class="bg-gray-50 p-4 border-t">
         <div class="flex justify-between items-center">
           <span class="font-semibold text-gray-900">Total Assets (excluding cash)</span>
           <div class="text-right">
-            <% @totals_by_currency.each do |currency, data| %>
-              <div class="flex items-center justify-end space-x-4 text-sm">
-                <span class="text-gray-600"><%= currency %>:</span>
-                <span class="text-green-600">+<%= number_to_currency(data[:assets], unit: "") %></span>
-                <span class="text-red-600">-<%= number_to_currency(data[:liabilities], unit: "") %></span>
-                <span class="font-semibold <%= data[:net] >= 0 ? 'text-green-600' : 'text-red-600' %>">
-                  = <%= number_to_currency(data[:net], unit: "") %>
-                </span>
-              </div>
-            <% end %>
+            <div class="flex items-center justify-end space-x-4 text-sm">
+              <span class="text-green-600">+<%= number_to_currency(@totals[:assets], unit: @default_currency + " ") %></span>
+              <span class="text-red-600">-<%= number_to_currency(@totals[:liabilities], unit: @default_currency + " ") %></span>
+              <span class="font-semibold <%= @totals[:net] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                = <%= number_to_currency(@totals[:net], unit: @default_currency + " ") %>
+              </span>
+            </div>
           </div>
         </div>
       </div>

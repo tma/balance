@@ -1,6 +1,8 @@
 class DashboardController < ApplicationController
   def cash_flow
-    # Last 12 months data (including current month)
+    @default_currency = Currency.default&.code || "USD"
+
+    # Last 12 months data (including current month) - all in default currency
     @monthly_data = calculate_monthly_data(12)
     @twelve_month_totals = calculate_twelve_month_totals
 
@@ -12,58 +14,42 @@ class DashboardController < ApplicationController
   end
 
   def net_worth
-    # Net worth calculations grouped by currency
-    @net_worth_by_currency = calculate_net_worth_by_currency
+    @default_currency = Currency.default&.code || "USD"
+
+    # Net worth in default currency only
+    @net_worth = calculate_net_worth_in_default_currency
 
     # Asset groups with their assets
     @asset_groups = AssetGroup.includes(assets: :asset_type).order(:name)
 
-    # Overall totals by currency
-    @totals_by_currency = calculate_totals_by_currency
+    # Overall totals in default currency
+    @totals = calculate_totals_in_default_currency
   end
 
   private
 
-  def calculate_net_worth_by_currency
-    currencies = Currency.pluck(:code)
-    result = {}
+  def calculate_net_worth_in_default_currency
+    cash = Account.sum(:balance_in_default_currency) || 0
+    assets_value = Asset.assets_only.sum(:value_in_default_currency) || 0
+    liabilities_value = Asset.liabilities_only.sum(:value_in_default_currency) || 0
 
-    currencies.each do |currency|
-      cash = Account.by_currency(currency).sum(:balance)
-      assets_value = Asset.assets_only.by_currency(currency).sum(:value)
-      liabilities_value = Asset.liabilities_only.by_currency(currency).sum(:value)
-
-      next if cash.zero? && assets_value.zero? && liabilities_value.zero?
-
-      result[currency] = {
-        cash: cash,
-        assets: assets_value,
-        liabilities: liabilities_value,
-        net_worth: cash + assets_value - liabilities_value
-      }
-    end
-
-    result
+    {
+      cash: cash,
+      assets: assets_value,
+      liabilities: liabilities_value,
+      net_worth: cash + assets_value - liabilities_value
+    }
   end
 
-  def calculate_totals_by_currency
-    currencies = Currency.pluck(:code)
-    result = {}
+  def calculate_totals_in_default_currency
+    total_assets = Asset.assets_only.sum(:value_in_default_currency) || 0
+    total_liabilities = Asset.liabilities_only.sum(:value_in_default_currency) || 0
 
-    currencies.each do |currency|
-      total_assets = Asset.assets_only.by_currency(currency).sum(:value)
-      total_liabilities = Asset.liabilities_only.by_currency(currency).sum(:value)
-
-      next if total_assets.zero? && total_liabilities.zero?
-
-      result[currency] = {
-        assets: total_assets,
-        liabilities: total_liabilities,
-        net: total_assets - total_liabilities
-      }
-    end
-
-    result
+    {
+      assets: total_assets,
+      liabilities: total_liabilities,
+      net: total_assets - total_liabilities
+    }
   end
 
   def calculate_monthly_data(months)
@@ -75,8 +61,9 @@ class DashboardController < ApplicationController
       year = month_start.year
       month = month_start.month
 
-      income = Transaction.income.in_month(year, month).sum(:amount)
-      expenses = Transaction.expense.in_month(year, month).sum(:amount)
+      # Use amount_in_default_currency for consistent totals
+      income = Transaction.income.in_month(year, month).sum(:amount_in_default_currency) || 0
+      expenses = Transaction.expense.in_month(year, month).sum(:amount_in_default_currency) || 0
       net = income - expenses
       saving_rate = income > 0 ? ((income - expenses) / income * 100).round(1) : 0
 
@@ -98,8 +85,9 @@ class DashboardController < ApplicationController
   def calculate_twelve_month_totals
     twelve_months_ago = Date.current.beginning_of_month - 11.months
 
-    income = Transaction.income.where("date >= ?", twelve_months_ago).sum(:amount)
-    expenses = Transaction.expense.where("date >= ?", twelve_months_ago).sum(:amount)
+    # Use amount_in_default_currency for consistent totals
+    income = Transaction.income.where("date >= ?", twelve_months_ago).sum(:amount_in_default_currency) || 0
+    expenses = Transaction.expense.where("date >= ?", twelve_months_ago).sum(:amount_in_default_currency) || 0
     net = income - expenses
     saving_rate = income > 0 ? ((income - expenses) / income * 100).round(1) : 0
 

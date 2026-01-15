@@ -21,4 +21,21 @@ class AssetGroup < ApplicationRecord
     total_liabilities_value_by_currency.each { |currency, value| totals[currency] = (totals[currency] || 0) - value }
     totals
   end
+
+  # Default currency methods
+  def total_value_in_default_currency
+    assets.sum(:value_in_default_currency) || 0
+  end
+
+  def total_assets_in_default_currency
+    assets.assets_only.sum(:value_in_default_currency) || 0
+  end
+
+  def total_liabilities_in_default_currency
+    assets.liabilities_only.sum(:value_in_default_currency) || 0
+  end
+
+  def net_value_in_default_currency
+    total_assets_in_default_currency - total_liabilities_in_default_currency
+  end
 end

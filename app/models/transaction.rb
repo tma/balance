@@ -11,11 +11,33 @@ class Transaction < ApplicationRecord
   scope :in_month, ->(year, month) { where("strftime('%Y', date) = ? AND strftime('%m', date) = ?", year.to_s, month.to_s.rjust(2, "0")) }
   scope :recent, ->(limit = 10) { order(date: :desc, created_at: :desc).limit(limit) }
 
+  before_save :calculate_default_currency_amount
   after_create :update_account_balance_on_create
   after_update :update_account_balance_on_update, if: :saved_change_to_amount_or_type?
   after_destroy :update_account_balance_on_destroy
 
+  def currency
+    account&.currency
+  end
+
+  def default_currency
+    Currency.default&.code || "USD"
+  end
+
   private
+
+  def calculate_default_currency_amount
+    default_curr = default_currency
+    account_currency = currency
+
+    if account_currency == default_curr
+      self.exchange_rate = 1.0
+      self.amount_in_default_currency = amount
+    else
+      self.exchange_rate = ExchangeRateService.rate(account_currency, default_curr)
+      self.amount_in_default_currency = (amount * exchange_rate).round(2)
+    end
+  end
 
   def saved_change_to_amount_or_type?
     saved_change_to_amount? || saved_change_to_transaction_type? || saved_change_to_account_id?
