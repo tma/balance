@@ -17,34 +17,41 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 ### Prerequisites
 
 - Docker and Docker Compose installed
-- Rails master key (see below)
 
 ### Quick Start
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/tma/balance.git
-   cd balance
+1. Create a `docker-compose.yml` file:
+   ```yaml
+   services:
+     web:
+       image: ghcr.io/tma/balance:main
+       ports:
+         - "3000:80"
+       environment:
+         - RAILS_ENV=production
+         - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+         - RAILS_LOG_TO_STDOUT=1
+       volumes:
+         - balance_storage:/rails/storage
+       restart: unless-stopped
+   
+   volumes:
+     balance_storage:
    ```
 
-2. Set your Rails master key as an environment variable. If you have the `config/master.key` file:
+2. Set your Rails master key as an environment variable:
    ```bash
-   export RAILS_MASTER_KEY=$(cat config/master.key)
+   export RAILS_MASTER_KEY=your_master_key_here
    ```
    
-   If you don't have a master key, you can generate new credentials:
-   ```bash
-   # Generate new credentials (requires Ruby/Rails installed locally)
-   EDITOR=nano rails credentials:edit
-   # This creates config/master.key automatically
-   ```
+   > **Note:** If you don't have a master key, contact the repository maintainer or generate new credentials by cloning the repo and running `EDITOR=nano rails credentials:edit`
 
-3. Build and start the application:
+3. Start the application:
    ```bash
    docker compose up -d
    ```
 
-4. The application will be available at http://localhost:3000
+4. The application will be available at **http://localhost:3000**
 
 5. On first run, the database will be seeded with default currencies, categories, and account types.
 
@@ -56,7 +63,7 @@ docker compose down
 
 ### Persistent Data
 
-Transaction data, accounts, and assets are stored in the `rails_storage` Docker volume and persist between restarts.
+All data (transactions, accounts, assets) is stored in the `balance_storage` Docker volume and persists between restarts.
 
 ## Tech Stack
 
