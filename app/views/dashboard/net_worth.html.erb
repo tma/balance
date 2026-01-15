@@ -24,11 +24,11 @@
       </div>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Liabilities</p>
-        <p class="text-xl font-semibold text-slate-700">-<%= format_currency(@net_worth[:liabilities]) %></p>
+        <p class="text-xl font-semibold text-rose-500">-<%= format_currency(@net_worth[:liabilities]) %></p>
       </div>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Net Worth</p>
-        <p class="text-xl font-semibold text-slate-800"><%= format_currency(@net_worth[:net_worth]) %></p>
+        <p class="text-xl font-semibold <%= @net_worth[:net_worth] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>"><%= format_currency(@net_worth[:net_worth]) %></p>
       </div>
     </div>
   <% end %>
@@ -97,8 +97,8 @@
           <div class="text-right">
             <div class="flex items-center justify-end space-x-4 text-sm">
               <span class="text-slate-600"><%= format_currency(@totals[:assets]) %></span>
-              <span class="text-slate-600">- <%= format_currency(@totals[:liabilities]) %></span>
-              <span class="font-bold text-slate-700">= <%= format_currency(@totals[:net]) %></span>
+              <span class="text-rose-500">- <%= format_currency(@totals[:liabilities]) %></span>
+              <span class="font-bold <%= @totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">= <%= format_currency(@totals[:net]) %></span>
             </div>
           </div>
         </div>

@@ -11,21 +11,21 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="bg-white rounded-xl border border-slate-200 p-4">
       <p class="text-sm text-slate-500">Income</p>
-      <p class="text-xl font-semibold text-emerald-500"><%= format_currency(@twelve_month_totals[:income]) %></p>
+      <p class="text-xl font-semibold text-slate-700"><%= format_currency(@twelve_month_totals[:income]) %></p>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-4">
       <p class="text-sm text-slate-500">Expenses</p>
-      <p class="text-xl font-semibold text-rose-400"><%= format_currency(@twelve_month_totals[:expenses]) %></p>
+      <p class="text-xl font-semibold text-slate-700"><%= format_currency(@twelve_month_totals[:expenses]) %></p>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-4">
       <p class="text-sm text-slate-500">Net Savings</p>
-      <p class="text-xl font-semibold <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
+      <p class="text-xl font-semibold <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
         <%= format_currency(@twelve_month_totals[:net]) %>
       </p>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-4">
       <p class="text-sm text-slate-500">Saving Rate</p>
-      <p class="text-xl font-semibold <%= @twelve_month_totals[:saving_rate] >= 0 ? 'text-cyan-500' : 'text-rose-400' %>">
+      <p class="text-xl font-semibold <%= @twelve_month_totals[:saving_rate] >= 0 ? 'text-slate-700' : 'text-rose-500' %>">
         <%= @twelve_month_totals[:saving_rate] %>%
       </p>
     </div>
@@ -53,32 +53,30 @@
                   <span class="ml-2 px-1.5 py-0.5 rounded text-xs bg-cyan-50 text-cyan-600">Current</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right text-emerald-500">
+              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
                 <% if month[:income] > 0 %>
-                  +<%= format_currency(month[:income]) %>
+                  <%= format_currency(month[:income]) %>
                 <% else %>
                   <span class="text-slate-300">-</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right text-rose-400">
+              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
                 <% if month[:expenses] > 0 %>
-                  -<%= format_currency(month[:expenses]) %>
+                  <%= format_currency(month[:expenses]) %>
                 <% else %>
                   <span class="text-slate-300">-</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
+              <td class="px-4 py-3 whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
                 <% if month[:income] > 0 || month[:expenses] > 0 %>
                   <%= month[:net] >= 0 ? '+' : '' %><%= format_currency(month[:net]) %>
                 <% else %>
                   <span class="text-slate-300">-</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right">
+              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
                 <% if month[:income] > 0 %>
-                  <span class="<%= month[:saving_rate] >= 20 ? 'text-emerald-500' : month[:saving_rate] >= 0 ? 'text-amber-400' : 'text-rose-400' %>">
-                    <%= month[:saving_rate] %>%
-                  </span>
+                  <%= month[:saving_rate] %>%
                 <% else %>
                   <span class="text-slate-300">-</span>
                 <% end %>
@@ -89,12 +87,12 @@
         <tfoot class="bg-slate-50 font-semibold">
           <tr>
             <td class="px-4 py-3 text-slate-700">12-Month Total</td>
-            <td class="px-4 py-3 text-right text-emerald-500">+<%= format_currency(@twelve_month_totals[:income]) %></td>
-            <td class="px-4 py-3 text-right text-rose-400">-<%= format_currency(@twelve_month_totals[:expenses]) %></td>
-            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
+            <td class="px-4 py-3 text-right text-slate-700"><%= format_currency(@twelve_month_totals[:income]) %></td>
+            <td class="px-4 py-3 text-right text-slate-700"><%= format_currency(@twelve_month_totals[:expenses]) %></td>
+            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
               <%= @twelve_month_totals[:net] >= 0 ? '+' : '' %><%= format_currency(@twelve_month_totals[:net]) %>
             </td>
-            <td class="px-4 py-3 text-right <%= @twelve_month_totals[:saving_rate] >= 20 ? 'text-emerald-500' : @twelve_month_totals[:saving_rate] >= 0 ? 'text-amber-400' : 'text-rose-400' %>">
+            <td class="px-4 py-3 text-right text-slate-700">
               <%= @twelve_month_totals[:saving_rate] %>%
             </td>
           </tr>
