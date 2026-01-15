@@ -1,12 +1,5 @@
 class DashboardController < ApplicationController
-  def index
-    @accounts = Account.includes(:account_type).order(:name)
-    @assets = Asset.includes(:asset_type).assets_only.order(:name)
-    @liabilities = Asset.includes(:asset_type).liabilities_only.order(:name)
-
-    # Net worth calculations grouped by currency
-    @net_worth_by_currency = calculate_net_worth_by_currency
-
+  def cash_flow
     # Last 12 months data (including current month)
     @monthly_data = calculate_monthly_data(12)
     @twelve_month_totals = calculate_twelve_month_totals
@@ -16,6 +9,17 @@ class DashboardController < ApplicationController
 
     # Recent transactions
     @recent_transactions = Transaction.includes(:account, :category).recent(5)
+  end
+
+  def net_worth
+    # Net worth calculations grouped by currency
+    @net_worth_by_currency = calculate_net_worth_by_currency
+
+    # Asset groups with their assets
+    @asset_groups = AssetGroup.includes(assets: :asset_type).order(:name)
+
+    # Overall totals by currency
+    @totals_by_currency = calculate_totals_by_currency
   end
 
   private
@@ -36,6 +40,26 @@ class DashboardController < ApplicationController
         assets: assets_value,
         liabilities: liabilities_value,
         net_worth: cash + assets_value - liabilities_value
+      }
+    end
+
+    result
+  end
+
+  def calculate_totals_by_currency
+    currencies = Currency.pluck(:code)
+    result = {}
+
+    currencies.each do |currency|
+      total_assets = Asset.assets_only.by_currency(currency).sum(:value)
+      total_liabilities = Asset.liabilities_only.by_currency(currency).sum(:value)
+
+      next if total_assets.zero? && total_liabilities.zero?
+
+      result[currency] = {
+        assets: total_assets,
+        liabilities: total_liabilities,
+        net: total_assets - total_liabilities
       }
     end
 
@@ -73,7 +97,7 @@ class DashboardController < ApplicationController
 
   def calculate_twelve_month_totals
     twelve_months_ago = Date.current.beginning_of_month - 11.months
-    
+
     income = Transaction.income.where("date >= ?", twelve_months_ago).sum(:amount)
     expenses = Transaction.expense.where("date >= ?", twelve_months_ago).sum(:amount)
     net = income - expenses

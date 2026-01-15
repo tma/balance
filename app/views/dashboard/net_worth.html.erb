@@ -1,0 +1,127 @@
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">Net Worth</h1>
+    <%= link_to "Cash Flow", cash_flow_path, class: "text-blue-600 hover:underline" %>
+  </div>
+
+  <!-- Net Worth Summary -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Summary by Currency</h2>
+    <% if @net_worth_by_currency.empty? %>
+      <p class="text-gray-500">No financial data yet. Add accounts or assets to get started.</p>
+    <% else %>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <% @net_worth_by_currency.each do |currency, data| %>
+          <div class="border rounded-lg p-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-3"><%= currency %></h3>
+            <div class="space-y-2 text-sm">
+              <div class="flex justify-between">
+                <span class="text-gray-600">Cash (Accounts):</span>
+                <span class="font-medium"><%= number_to_currency(data[:cash], unit: "") %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Assets:</span>
+                <span class="font-medium text-green-600">+<%= number_to_currency(data[:assets], unit: "") %></span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-gray-600">Liabilities:</span>
+                <span class="font-medium text-red-600">-<%= number_to_currency(data[:liabilities], unit: "") %></span>
+              </div>
+              <div class="flex justify-between pt-2 border-t mt-2">
+                <span class="font-semibold">Net Worth:</span>
+                <span class="font-bold text-lg <%= data[:net_worth] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  <%= number_to_currency(data[:net_worth], unit: "") %>
+                </span>
+              </div>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Asset Groups Breakdown -->
+  <div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="p-4 border-b flex justify-between items-center">
+      <h2 class="text-lg font-semibold text-gray-900">Assets by Group</h2>
+      <%= link_to "Update Values", update_valuations_path, class: "text-sm text-blue-600 hover:underline" %>
+    </div>
+
+    <% if @asset_groups.none? { |g| g.assets.any? } %>
+      <div class="p-6 text-center">
+        <p class="text-gray-500 mb-4">No assets yet.</p>
+        <%= link_to "Add your first asset", new_asset_path, class: "text-blue-600 hover:underline" %>
+      </div>
+    <% else %>
+      <div class="divide-y">
+        <% @asset_groups.each do |group| %>
+          <% next if group.assets.empty? %>
+          <div class="p-4">
+            <div class="flex justify-between items-start mb-3">
+              <div>
+                <h3 class="font-semibold text-gray-900"><%= group.name %></h3>
+                <% if group.description.present? %>
+                  <p class="text-sm text-gray-500"><%= group.description %></p>
+                <% end %>
+              </div>
+              <div class="text-right">
+                <% group.net_value_by_currency.each do |currency, value| %>
+                  <p class="font-semibold <%= value >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                    <%= currency %> <%= number_to_currency(value, unit: "") %>
+                  </p>
+                <% end %>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <% group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name).each do |asset| %>
+                <%= link_to asset, class: "flex justify-between items-center p-2 rounded hover:bg-gray-50 transition" do %>
+                  <div class="flex items-center space-x-2">
+                    <span class="w-2 h-2 rounded-full <%= asset.asset_type.is_liability ? 'bg-red-500' : 'bg-green-500' %>"></span>
+                    <div>
+                      <p class="text-sm font-medium text-gray-900"><%= asset.name %></p>
+                      <p class="text-xs text-gray-500"><%= asset.asset_type.name %></p>
+                    </div>
+                  </div>
+                  <span class="text-sm font-medium <%= asset.asset_type.is_liability ? 'text-red-600' : 'text-green-600' %>">
+                    <%= asset.asset_type.is_liability ? '-' : '' %><%= asset.currency %> <%= number_to_currency(asset.value, unit: "") %>
+                  </span>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+      </div>
+
+      <!-- Totals by Currency -->
+      <div class="bg-gray-50 p-4 border-t">
+        <div class="flex justify-between items-center">
+          <span class="font-semibold text-gray-900">Total Assets (excluding cash)</span>
+          <div class="text-right">
+            <% @totals_by_currency.each do |currency, data| %>
+              <div class="flex items-center justify-end space-x-4 text-sm">
+                <span class="text-gray-600"><%= currency %>:</span>
+                <span class="text-green-600">+<%= number_to_currency(data[:assets], unit: "") %></span>
+                <span class="text-red-600">-<%= number_to_currency(data[:liabilities], unit: "") %></span>
+                <span class="font-semibold <%= data[:net] >= 0 ? 'text-green-600' : 'text-red-600' %>">
+                  = <%= number_to_currency(data[:net], unit: "") %>
+                </span>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="bg-white rounded-lg shadow p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+    <div class="flex flex-wrap gap-3">
+      <%= link_to "Update Valuations", update_valuations_path, class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium" %>
+      <%= link_to "Add Asset", new_asset_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-200 font-medium" %>
+      <%= link_to "Add Group", new_asset_group_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-200 font-medium" %>
+      <%= link_to "View Accounts", accounts_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-200 font-medium" %>
+    </div>
+  </div>
+</div>

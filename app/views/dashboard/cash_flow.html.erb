@@ -1,5 +1,8 @@
 <div class="space-y-6">
-  <h1 class="text-2xl font-bold text-gray-900">Dashboard</h1>
+  <div class="flex justify-between items-center">
+    <h1 class="text-2xl font-bold text-gray-900">Cash Flow</h1>
+    <%= link_to "Net Worth", net_worth_path, class: "text-blue-600 hover:underline" %>
+  </div>
 
   <!-- 12-Month Summary -->
   <div class="bg-white rounded-lg shadow p-6">
@@ -101,42 +104,6 @@
         </tfoot>
       </table>
     </div>
-  </div>
-
-  <!-- Net Worth Summary -->
-  <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Net Worth</h2>
-    <% if @net_worth_by_currency.empty? %>
-      <p class="text-gray-500">No financial data yet. Add accounts or assets to get started.</p>
-    <% else %>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <% @net_worth_by_currency.each do |currency, data| %>
-          <div class="border rounded-lg p-4">
-            <h3 class="text-sm font-medium text-gray-500 mb-2"><%= currency %></h3>
-            <div class="space-y-1 text-sm">
-              <div class="flex justify-between">
-                <span class="text-gray-600">Cash:</span>
-                <span class="font-medium"><%= number_to_currency(data[:cash], unit: "") %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Assets:</span>
-                <span class="font-medium text-green-600">+<%= number_to_currency(data[:assets], unit: "") %></span>
-              </div>
-              <div class="flex justify-between">
-                <span class="text-gray-600">Liabilities:</span>
-                <span class="font-medium text-red-600">-<%= number_to_currency(data[:liabilities], unit: "") %></span>
-              </div>
-              <div class="flex justify-between pt-2 border-t mt-2">
-                <span class="font-semibold">Net Worth:</span>
-                <span class="font-bold <%= data[:net_worth] >= 0 ? 'text-green-600' : 'text-red-600' %>">
-                  <%= number_to_currency(data[:net_worth], unit: "") %>
-                </span>
-              </div>
-            </div>
-          </div>
-        <% end %>
-      </div>
-    <% end %>
   </div>
 
   <!-- Budget Status -->
