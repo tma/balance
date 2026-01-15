@@ -1,7 +1,13 @@
-<div>
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">Update Asset Valuations</h1>
+<div class="space-y-6">
+  <div class="flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800">Update Valuations</h1>
+      <p class="text-sm text-slate-500">As of <%= @date.strftime("%B %d, %Y") %></p>
+    </div>
+    <%= link_to "Net Worth", net_worth_path, class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
+  </div>
 
-  <%= form_with url: update_valuations_path, method: :patch, class: "space-y-8" do |form| %>
+  <%= form_with url: update_valuations_path, method: :patch, class: "space-y-6" do |form| %>
     <%= form.hidden_field :date, value: @date %>
 
     <% @asset_groups.each do |group| %>
@@ -9,76 +15,44 @@
       <% next if assets.empty? %>
 
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200">
-          <h2 class="font-semibold text-lg text-slate-700"><%= group.name %></h2>
-          <% if group.description.present? %>
-            <p class="text-sm text-slate-400"><%= group.description %></p>
-          <% end %>
+        <div class="p-4 border-b border-slate-200 flex justify-between items-start">
+          <div>
+            <h3 class="font-semibold text-slate-700"><%= group.name %></h3>
+            <% if group.description.present? %>
+              <p class="text-sm text-slate-400"><%= group.description %></p>
+            <% end %>
+          </div>
+          <div class="text-right">
+            <% net_value = group.net_value_in_default_currency %>
+            <p class="font-bold <%= net_value >= 0 ? 'text-emerald-600' : 'text-rose-500' %>"><%= format_currency(net_value) %></p>
+          </div>
         </div>
 
         <div class="divide-y divide-slate-100">
-          <% group_assets = assets.select { |a| !a.asset_type.is_liability } %>
-          <% group_liabilities = assets.select { |a| a.asset_type.is_liability } %>
-
-          <% if group_assets.any? %>
-            <div class="px-4 py-2 bg-emerald-50">
-              <span class="text-sm font-medium text-emerald-600">Assets</span>
-            </div>
-            <% group_assets.each do |asset| %>
-              <div class="flex items-center px-4 py-3 hover:bg-slate-50 transition">
-                <div class="flex-1 min-w-0">
-                  <p class="font-medium text-slate-700 truncate"><%= link_to asset.name, asset, class: "hover:text-cyan-600" %></p>
-                  <p class="text-sm text-slate-400"><%= asset.asset_type.name %></p>
+          <% assets.each do |asset| %>
+            <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition">
+              <div class="flex items-center space-x-2">
+                <div>
+                  <%= link_to asset, class: "block" do %>
+                    <p class="text-sm font-medium text-slate-700 hover:text-cyan-600"><%= asset.name %></p>
+                    <p class="text-xs text-slate-400"><%= asset.asset_type.name %></p>
+                  <% end %>
                 </div>
-                <div class="flex items-center space-x-2">
-                  <span class="text-sm text-slate-400"><%= asset.currency %></span>
-                  <input type="number"
-                         name="assets[<%= asset.id %>]"
-                         value="<%= asset.value.to_f %>"
-                         step="0.01"
-                         class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2"
-                         placeholder="0.00">
-                </div>
+                <% if asset.asset_type.is_liability %>
+                  <span class="px-1.5 py-0.5 rounded text-xs bg-rose-100 text-rose-600">Liability</span>
+                <% end %>
               </div>
-            <% end %>
-          <% end %>
-
-          <% if group_liabilities.any? %>
-            <div class="px-4 py-2 bg-rose-50">
-              <span class="text-sm font-medium text-rose-500">Liabilities</span>
-            </div>
-            <% group_liabilities.each do |asset| %>
-              <div class="flex items-center px-4 py-3 hover:bg-slate-50 transition">
-                <div class="flex-1 min-w-0">
-                  <p class="font-medium text-slate-700 truncate"><%= link_to asset.name, asset, class: "hover:text-cyan-600" %></p>
-                  <p class="text-sm text-slate-400"><%= asset.asset_type.name %></p>
-                </div>
-                <div class="flex items-center space-x-2">
-                  <span class="text-sm text-slate-400"><%= asset.currency %></span>
-                  <input type="number"
-                         name="assets[<%= asset.id %>]"
-                         value="<%= asset.value.to_f %>"
-                         step="0.01"
-                         class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2"
-                         placeholder="0.00">
-                </div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm text-slate-400"><%= asset.currency %></span>
+                <input type="number"
+                       name="assets[<%= asset.id %>]"
+                       value="<%= asset.value.to_f %>"
+                       step="0.01"
+                       class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-1.5 text-sm"
+                       placeholder="0.00">
               </div>
-            <% end %>
-          <% end %>
-        </div>
-
-        <!-- Group totals -->
-        <div class="bg-slate-50 px-4 py-3 border-t border-slate-200">
-          <div class="flex justify-between text-sm">
-            <span class="text-slate-500">Net Value:</span>
-            <div class="text-right">
-              <% group.net_value_by_currency.each do |currency, value| %>
-                <span class="<%= value >= 0 ? 'text-emerald-500' : 'text-rose-400' %> font-medium">
-                  <%= format_currency(value, currency: currency) %>
-                </span>
-              <% end %>
             </div>
-          </div>
+          <% end %>
         </div>
       </div>
     <% end %>
@@ -90,8 +64,8 @@
       </div>
     <% else %>
       <div class="flex justify-end space-x-4">
-        <%= link_to "Cancel", root_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
-        <%= form.submit "Save All Changes", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+        <%= link_to "Cancel", net_worth_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+        <%= form.submit "Save All", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
       </div>
     <% end %>
   <% end %>
