@@ -29,9 +29,9 @@ class Transaction < ApplicationRecord
     old_amount = saved_change_to_amount? ? amount_before_last_save : amount
     old_type = saved_change_to_transaction_type? ? transaction_type_before_last_save : transaction_type
     old_account_id = saved_change_to_account_id? ? account_id_before_last_save : account_id
-    old_account = Account.find(old_account_id)
+    old_account = Account.find_by(id: old_account_id)
 
-    reverse_account_balance(old_account, old_amount, old_type)
+    reverse_account_balance(old_account, old_amount, old_type) if old_account
     adjust_account_balance(account, amount, transaction_type)
   end
 
