@@ -68,7 +68,7 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+            <div class="space-y-1">
               <% group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name).each do |asset| %>
                 <%= link_to asset, class: "flex justify-between items-center p-2 rounded-lg hover:bg-slate-50 transition" do %>
                   <div class="flex items-center space-x-2">

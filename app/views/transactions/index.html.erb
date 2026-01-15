@@ -68,7 +68,9 @@
 
   <!-- Summary -->
   <% if @transactions.any? %>
-    <div class="grid grid-cols-3 gap-4 mb-4">
+    <% net = @total_income - @total_expenses %>
+    <% saving_rate = @total_income > 0 ? (net / @total_income * 100).round(1) : 0 %>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Income</p>
         <p class="text-xl font-semibold text-emerald-500">+<%= number_to_currency(@total_income) %></p>
@@ -79,9 +81,14 @@
       </div>
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">Net</p>
-        <% net = @total_income - @total_expenses %>
         <p class="text-xl font-semibold <%= net >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
           <%= net >= 0 ? '+' : '' %><%= number_to_currency(net) %>
+        </p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500">Saving Rate</p>
+        <p class="text-xl font-semibold <%= saving_rate >= 0 ? 'text-cyan-500' : 'text-rose-400' %>">
+          <%= saving_rate %>%
         </p>
       </div>
     </div>
