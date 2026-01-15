@@ -27,16 +27,16 @@ A personal finance budgeting application for tracking income, expenses, budgets,
    cd balance
    ```
 
-2. Set your Rails master key as an environment variable:
+2. Set your Rails master key as an environment variable. If you have the `config/master.key` file:
    ```bash
-   export RAILS_MASTER_KEY=your_master_key_here
+   export RAILS_MASTER_KEY=$(cat config/master.key)
    ```
    
-   If you don't have a master key, you can generate credentials:
+   If you don't have a master key, you can generate new credentials:
    ```bash
    # Generate new credentials (requires Ruby/Rails installed locally)
    EDITOR=nano rails credentials:edit
-   # This creates config/master.key - use its contents
+   # This creates config/master.key automatically
    ```
 
 3. Build and start the application:
