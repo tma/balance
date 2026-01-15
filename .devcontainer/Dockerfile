@@ -15,7 +15,20 @@ RUN apt-get update -qq && \
     curl \
     pkg-config \
     watchman \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
+
+# Ensure tmp directory exists and has proper permissions for gem builds
+RUN mkdir -p /tmp && chmod 1777 /tmp
+ENV TMPDIR=/tmp
+
+# Install Node.js (for OpenCode)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install OpenCode CLI
+RUN npm install -g opencode-ai
 
 # Set working directory
 WORKDIR /workspaces/balance
