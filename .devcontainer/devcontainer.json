@@ -1,0 +1,24 @@
+{
+  "name": "Balance Rails App",
+  "build": {
+    "context": "..",
+    "dockerfile": "Dockerfile"
+  },
+  "workspaceFolder": "/workspaces/balance",
+  "forwardPorts": [3000],
+  "postCreateCommand": "bundle install && bin/setup",
+  "postStartCommand": "git config --global --add safe.directory /workspaces/balance",
+  "containerEnv": {
+    "RAILS_ENV": "development",
+    "RUBY_DEBUG_OPEN": "true",
+    "RUBY_DEBUG_LAZY": "true"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Shopify.ruby-lsp",
+        "bradlc.vscode-tailwindcss"
+      ]
+    }
+  }
+}
