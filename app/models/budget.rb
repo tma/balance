@@ -4,7 +4,7 @@ class Budget < ApplicationRecord
   validates :amount, numericality: { greater_than: 0 }
   validates :month, presence: true, inclusion: { in: 1..12 }
   validates :year, presence: true, numericality: { greater_than: 2000 }
-  validates :category_id, uniqueness: { scope: [:month, :year], message: "already has a budget for this month/year" }
+  validates :category_id, uniqueness: { scope: [ :month, :year ], message: "already has a budget for this month/year" }
 
   scope :for_month, ->(year, month) { where(year: year, month: month) }
   scope :current_month, -> { for_month(Date.current.year, Date.current.month) }
