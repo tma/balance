@@ -18,7 +18,12 @@
         <tbody class="bg-white divide-y divide-gray-200">
           <% @currencies.each do |currency| %>
             <tr>
-              <td class="px-6 py-4 whitespace-nowrap font-medium"><%= currency.code %></td>
+              <td class="px-6 py-4 whitespace-nowrap font-medium">
+                <%= currency.code %>
+                <% if currency.default? %>
+                  <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">Default</span>
+                <% end %>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm space-x-2">
                 <%= link_to "Edit", edit_admin_currency_path(currency), class: "text-blue-600 hover:underline" %>
                 <%= button_to "Delete", admin_currency_path(currency), method: :delete, class: "text-red-600 hover:underline", data: { turbo_confirm: "Are you sure?" } %>

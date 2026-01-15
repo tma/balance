@@ -45,6 +45,6 @@ class Admin::CurrenciesController < ApplicationController
   end
 
   def currency_params
-    params.expect(currency: [ :code ])
+    params.expect(currency: [ :code, :default ])
   end
 end

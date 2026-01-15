@@ -16,6 +16,14 @@
     <p class="mt-1 text-sm text-gray-500">3-letter ISO 4217 code (e.g., USD, EUR, GBP)</p>
   </div>
 
+  <div class="mb-4">
+    <label class="flex items-center">
+      <%= form.check_box :default, class: "rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500" %>
+      <span class="ml-2 text-sm font-medium text-gray-700">Set as default currency</span>
+    </label>
+    <p class="mt-1 text-sm text-gray-500">The default currency will be pre-selected when creating new accounts</p>
+  </div>
+
   <div class="flex space-x-4">
     <%= form.submit class: "rounded-md px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium cursor-pointer" %>
     <%= link_to "Cancel", admin_currencies_path, class: "rounded-md px-4 py-2 bg-gray-100 hover:bg-gray-50 font-medium" %>

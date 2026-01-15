@@ -3,8 +3,14 @@
 # The data can then be loaded with the bin/rails db:seed command (or created alongside the database with db:setup).
 
 # Currencies (ISO 4217)
-%w[USD EUR GBP JPY CAD AUD CHF CNY INR MXN BRL].each do |code|
-  Currency.find_or_create_by!(code: code)
+[
+  { code: "USD", default: true },
+  { code: "EUR", default: false },
+  { code: "CHF", default: false }
+].each do |attrs|
+  Currency.find_or_create_by!(code: attrs[:code]) do |currency|
+    currency.default = attrs[:default]
+  end
 end
 
 # Account Types
