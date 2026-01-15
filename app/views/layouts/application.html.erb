@@ -32,7 +32,7 @@
       <nav class="flex-1 px-2 py-4 space-y-1">
         <%= link_to "Dashboard", root_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path == root_path ? 'bg-slate-700' : ''}" %>
         <%= link_to "Accounts", accounts_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path.start_with?('/accounts') ? 'bg-slate-700' : ''}" %>
-        <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path.start_with?('/financial_assets') ? 'bg-slate-700' : ''}" %>
+        <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path.start_with?('/financial-assets') ? 'bg-slate-700' : ''}" %>
         <%= link_to "Transactions", transactions_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path.start_with?('/transactions') ? 'bg-slate-700' : ''}" %>
         <%= link_to "Budgets", budgets_path, class: "flex items-center px-4 py-2 rounded-lg hover:bg-slate-700 #{request.path.start_with?('/budgets') ? 'bg-slate-700' : ''}" %>
         <div class="pt-4 mt-4 border-t border-slate-700">

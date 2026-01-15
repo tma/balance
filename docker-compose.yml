@@ -8,10 +8,8 @@ services:
       - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
       - RAILS_LOG_TO_STDOUT=1
     volumes:
-      - db_data:/rails/storage
       - rails_storage:/rails/storage
     restart: unless-stopped
 
 volumes:
-  db_data:
   rails_storage:
