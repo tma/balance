@@ -45,7 +45,13 @@
 
 # Ignore development files
 /.devcontainer
+/docker-compose*.yml
 
 # Ignore Docker-related files
 /.dockerignore
 /Dockerfile*
+
+# Ignore documentation and non-essential files
+*.md
+/LICENSE*
+/CHANGELOG*
