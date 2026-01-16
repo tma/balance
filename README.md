@@ -31,7 +31,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
          - "3000:80"
        environment:
          - RAILS_ENV=production
-         - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
+         - SECRET_KEY_BASE=${SECRET_KEY_BASE}
          - RAILS_LOG_TO_STDOUT=1
          - TZ=Europe/Berlin  # Timezone (e.g., America/New_York, Asia/Tokyo)
          - OLLAMA_HOST=http://host.docker.internal:11434
@@ -45,12 +45,10 @@ A personal finance budgeting application for tracking income, expenses, budgets,
      balance_storage:
    ```
 
-2. Set your Rails master key as an environment variable:
+2. Generate a secret key and set it as an environment variable:
    ```bash
-   export RAILS_MASTER_KEY=your_master_key_here
+   export SECRET_KEY_BASE=$(ruby -rsecurerandom -e 'puts SecureRandom.hex(64)')
    ```
-   
-   > **Note:** The Rails master key is required to decrypt encrypted credentials. If deploying your own instance, you'll need to generate your own credentials by cloning the repository and running `EDITOR=nano rails credentials:edit`, which creates a `config/master.key` file.
 
 3. Start the application:
    ```bash
