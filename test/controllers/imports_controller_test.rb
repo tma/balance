@@ -12,7 +12,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
   test "should get index" do
     get imports_path
     assert_response :success
-    assert_select "h1", "Import History"
+    assert_select "h1", "Imports"
   end
 
   test "should get new" do
