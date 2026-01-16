@@ -1,0 +1,128 @@
+<% content_for :title, "Import" %>
+
+<div class="w-full">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">Import</h1>
+    <%= link_to "History", imports_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+  </div>
+
+  <% if @pending_imports.any? %>
+    <!-- Pending Imports -->
+    <div class="mb-6">
+      <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Needs Attention</h2>
+      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+        <table class="min-w-full">
+          <tbody class="bg-white divide-y divide-slate-100">
+            <% @pending_imports.each do |import| %>
+              <tr class="hover:bg-slate-50 transition">
+                <td class="px-4 py-3 text-sm text-slate-700">
+                  <div class="flex items-center">
+                    <% if import.pdf? %>
+                      <svg class="h-5 w-5 text-rose-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                      </svg>
+                    <% else %>
+                      <svg class="h-5 w-5 text-emerald-500 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
+                      </svg>
+                    <% end %>
+                    <%= truncate(import.original_filename, length: 40) %>
+                  </div>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-500">
+                  <%= import.account.name %>
+                </td>
+                <td class="px-4 py-3 text-sm">
+                  <% case import.status %>
+                  <% when "pending" %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+                      Queued
+                    </span>
+                  <% when "processing" %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-800">
+                      <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Processing
+                    </span>
+                  <% when "completed" %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+                      Ready for Review
+                    </span>
+                  <% when "failed" %>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
+                      Failed
+                    </span>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-400">
+                  <%= time_ago_in_words(import.created_at) %> ago
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-right text-sm space-x-2">
+                  <% if import.completed? %>
+                    <%= link_to "Review", import_path(import), class: "rounded-lg px-3 py-1.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition text-xs" %>
+                    <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 hover:text-rose-600 text-xs", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
+                  <% elsif import.failed? %>
+                    <%= link_to "View", import_path(import), class: "text-cyan-600 hover:text-cyan-700" %>
+                    <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 hover:text-rose-600 text-xs", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
+                  <% else %>
+                    <%= link_to "View", import_path(import), class: "text-cyan-600 hover:text-cyan-700" %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Upload Form -->
+  <div class="mb-6">
+    <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">Upload Statement</h2>
+    <%= form_with url: imports_path, method: :post, multipart: true do |form| %>
+      <div class="bg-white rounded-xl border border-slate-200 p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <%= form.label :account_id, "Target Account", class: "block text-sm font-medium text-slate-700 mb-1" %>
+            <p class="text-sm text-slate-500 mb-2">Transactions will be added to this account.</p>
+            <%= form.collection_select :account_id, @accounts, :id, :name, 
+                { prompt: "Select account" }, 
+                class: "block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2",
+                required: true %>
+          </div>
+
+          <div>
+            <%= form.label :file, "Bank Statement", class: "block text-sm font-medium text-slate-700 mb-1" %>
+            <p class="text-sm text-slate-500 mb-2">PDF or CSV file (max 5MB)</p>
+            <div class="flex items-center gap-3">
+              <%= form.file_field :file, 
+                  accept: ".pdf,.csv,application/pdf,text/csv",
+                  class: "block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 file:cursor-pointer",
+                  required: true %>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-6 flex items-center justify-end">
+          <%= form.submit "Extract Transactions", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- How it works -->
+  <div class="bg-slate-50 rounded-xl border border-slate-200 p-6">
+    <h2 class="font-semibold text-slate-700 mb-2">How it works</h2>
+    <ol class="list-decimal ml-5 text-sm text-slate-600 space-y-1">
+      <li>Upload your bank statement (PDF or CSV format)</li>
+      <li>AI extracts transactions and matches them to categories</li>
+      <li>Review the extracted transactions and make any adjustments</li>
+      <li>Select which transactions to import and click Import</li>
+    </ol>
+    <p class="mt-4 text-sm text-slate-500">
+      <strong>Note:</strong> Duplicate transactions (same date, amount, and description) will be detected and marked.
+    </p>
+  </div>
+</div>

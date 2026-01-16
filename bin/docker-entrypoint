@@ -2,7 +2,14 @@
 
 # If running the rails server then create or migrate existing database
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  ./bin/rails db:prepare
+  # Check if database exists and has schema
+  if ./bin/rails db:version > /dev/null 2>&1; then
+    # Database exists, just run migrations
+    ./bin/rails db:migrate
+  else
+    # Fresh database - load schema only, NO seeds in production
+    ./bin/rails db:schema:load
+  fi
 fi
 
 exec "${@}"

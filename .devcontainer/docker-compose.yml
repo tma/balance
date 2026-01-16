@@ -1,0 +1,26 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    container_name: balance-devcontainer
+    volumes:
+      - ..:/workspaces/balance:cached
+      - bundle_cache:/usr/local/bundle
+    ports:
+      - "3000:3000"
+    environment:
+      - RAILS_ENV=development
+      - RUBY_DEBUG_OPEN=true
+      - RUBY_DEBUG_LAZY=true
+      # Timezone (e.g., America/New_York, Europe/London, Asia/Tokyo)
+      - TZ=Europe/Berlin
+      # Use host's native Ollama for Metal GPU acceleration on Apple Silicon
+      - OLLAMA_HOST=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.1:8b
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command: sleep infinity
+
+volumes:
+  bundle_cache:

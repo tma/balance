@@ -59,7 +59,7 @@ puts "Creating expense categories..."
 expense_categories = {}
 [ "rent", "mortgage", "utilities", "groceries", "dining", "transportation", "gas", "insurance", "healthcare",
   "entertainment", "subscriptions", "clothing", "education", "personal", "travel", "gifts", "charity", "taxes",
-  "fees", "maintenance", "other expense" ].each do |name|
+  "fees", "maintenance", "savings", "other expense" ].each do |name|
   expense_categories[name] = Category.find_or_create_by!(name: name, category_type: "expense")
 end
 
@@ -809,7 +809,7 @@ if Rails.env.development?
     # Cash transactions - ATM and small purchases
     create_transaction(
       account: accounts[:wallet],
-      category: income_categories["other_income"],
+      category: income_categories["other income"],
       amount: (100 + rand * 100).round(2),
       transaction_type: "income",
       date: month_start + (1 + rand(5)).days,
@@ -871,7 +871,7 @@ if Rails.env.development?
     "maintenance" => 2400.00,   # $200/month equivalent - home repairs
     "personal" => 1800.00,      # $150/month equivalent
     "fees" => 600.00,           # $50/month equivalent - bank fees, etc.
-    "other_expense" => 1200.00  # $100/month equivalent - miscellaneous
+    "other expense" => 1200.00  # $100/month equivalent - miscellaneous
   }
 
   yearly_budgets.each do |category_name, amount|
@@ -979,6 +979,83 @@ if Rails.env.development?
         v.value = 15000 + ((i + 1) * 250)
       end
     end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Import Sample Transactions via Import Feature (demonstrates full flow)
+  # ---------------------------------------------------------------------------
+  if OllamaService.available?
+    puts "\nImporting transactions via Import feature..."
+
+    csv_path = Rails.root.join("test/fixtures/files/sample_bank_statement.csv")
+    if File.exist?(csv_path)
+      account = accounts[:main_checking]
+
+      # Create an Import record (simulates file upload)
+      import = Import.create!(
+        account: account,
+        original_filename: "sample_bank_statement.csv",
+        file_content_type: "text/csv",
+        file_data: File.read(csv_path),
+        status: "pending"
+      )
+      puts "  Created Import ##{import.id}"
+
+      # Process the import synchronously (in production this runs async)
+      begin
+        TransactionImportJob.perform_now(import.id)
+        import.reload
+
+        if import.completed?
+          puts "  AI extraction completed in #{import.duration&.round(1)}s"
+          puts "  Extracted #{import.transactions_count} transactions"
+
+          # Import non-duplicate transactions
+          imported_count = 0
+          skipped_count = 0
+
+          import.extracted_transactions.each do |txn_data|
+            next if txn_data[:is_duplicate]
+
+            # Find category or fall back to "other income"/"other expense"
+            category_id = txn_data[:category_id]
+            unless category_id
+              fallback = txn_data[:transaction_type] == "income" ? "other income" : "other expense"
+              category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
+            end
+
+            begin
+              Transaction.create!(
+                account: account,
+                import: import,
+                category_id: category_id,
+                date: txn_data[:date],
+                description: txn_data[:description],
+                amount: txn_data[:amount],
+                transaction_type: txn_data[:transaction_type]
+              )
+              imported_count += 1
+            rescue ActiveRecord::RecordInvalid
+              skipped_count += 1
+            end
+          end
+
+          # Mark import as done since we've imported the transactions
+          import.update!(status: "done", transactions_count: imported_count)
+
+          puts "  Imported: #{imported_count}, Skipped: #{skipped_count}"
+        elsif import.failed?
+          puts "  Import failed: #{import.error_message}"
+        end
+      rescue StandardError => e
+        puts "  Import job error: #{e.message}"
+      end
+    else
+      puts "  Sample CSV not found, skipping import"
+    end
+  else
+    puts "\nSkipping AI import (Ollama not available)"
+    puts "  To enable: brew install ollama && ollama pull llama3.1:8b && brew services start ollama"
   end
 
   puts "\nDevelopment sample data loaded!"

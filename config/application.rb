@@ -21,7 +21,10 @@ module Balance
     # These settings can be overridden in specific environments using the files
     # in config/environments, which are processed later.
     #
-    # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
+
+    # Set timezone from TZ environment variable (e.g., "America/New_York", "Europe/London")
+    # Falls back to UTC if not set
+    config.time_zone = ENV.fetch("TZ", "UTC")
   end
 end

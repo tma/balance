@@ -28,9 +28,19 @@ docker exec balance-devcontainer bin/rails db:migrate
 docker exec balance-devcontainer bin/rails test
 docker exec balance-devcontainer rubocop
 
+# Start the development server (runs in background)
+docker exec -d balance-devcontainer bin/dev
+
 # Interactive shell in container
 docker exec -it balance-devcontainer bash
 ```
+
+### Always Start the Server
+When beginning a session, always ensure the dev server is running:
+```bash
+docker exec -d balance-devcontainer bin/dev
+```
+The app will be available at http://localhost:3000
 
 ### Never
 - Run `rails`, `ruby`, or `bundle` commands directly on the host machine
@@ -133,6 +143,7 @@ app/
 │   ├── assets_controller.rb
 │   ├── budgets_controller.rb
 │   ├── dashboard_controller.rb
+│   ├── imports_controller.rb       # Transaction import from bank statements
 │   └── transactions_controller.rb
 ├── helpers/
 │   └── application_helper.rb  # format_currency, format_amount
@@ -148,7 +159,12 @@ app/
 │   ├── currency.rb
 │   └── transaction.rb
 ├── services/
-│   └── exchange_rate_service.rb  # Frankfurter API integration
+│   ├── csv_parser_service.rb            # CSV text extraction
+│   ├── duplicate_detection_service.rb   # Transaction duplicate detection
+│   ├── exchange_rate_service.rb         # Frankfurter API integration
+│   ├── ollama_service.rb                # Ollama LLM client
+│   ├── pdf_parser_service.rb            # PDF text extraction
+│   └── transaction_extractor_service.rb # LLM-powered transaction extraction
 └── views/
     ├── admin/
     ├── accounts/
@@ -156,6 +172,7 @@ app/
     ├── assets/
     ├── budgets/
     ├── dashboard/       # cash_flow.html.erb, net_worth.html.erb
+    ├── imports/         # new.html.erb, preview.html.erb
     └── transactions/
 ```
 
