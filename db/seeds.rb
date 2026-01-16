@@ -59,7 +59,7 @@ puts "Creating expense categories..."
 expense_categories = {}
 [ "rent", "mortgage", "utilities", "groceries", "dining", "transportation", "gas", "insurance", "healthcare",
   "entertainment", "subscriptions", "clothing", "education", "personal", "travel", "gifts", "charity", "taxes",
-  "fees", "maintenance", "other expense" ].each do |name|
+  "fees", "maintenance", "savings", "other expense" ].each do |name|
   expense_categories[name] = Category.find_or_create_by!(name: name, category_type: "expense")
 end
 
@@ -809,7 +809,7 @@ if Rails.env.development?
     # Cash transactions - ATM and small purchases
     create_transaction(
       account: accounts[:wallet],
-      category: income_categories["other_income"],
+      category: income_categories["other income"],
       amount: (100 + rand * 100).round(2),
       transaction_type: "income",
       date: month_start + (1 + rand(5)).days,
@@ -871,7 +871,7 @@ if Rails.env.development?
     "maintenance" => 2400.00,   # $200/month equivalent - home repairs
     "personal" => 1800.00,      # $150/month equivalent
     "fees" => 600.00,           # $50/month equivalent - bank fees, etc.
-    "other_expense" => 1200.00  # $100/month equivalent - miscellaneous
+    "other expense" => 1200.00  # $100/month equivalent - miscellaneous
   }
 
   yearly_budgets.each do |category_name, amount|
@@ -979,6 +979,70 @@ if Rails.env.development?
         v.value = 15000 + ((i + 1) * 250)
       end
     end
+  end
+
+  # ---------------------------------------------------------------------------
+  # Import Sample Transactions via AI Extraction (demonstrates import feature)
+  # ---------------------------------------------------------------------------
+  if OllamaService.available?
+    puts "\nImporting transactions from sample CSV via AI extraction..."
+
+    csv_path = Rails.root.join("test/fixtures/files/sample_bank_statement.csv")
+    if File.exist?(csv_path)
+      csv_text = File.read(csv_path)
+      account = accounts[:main_checking]
+
+      begin
+        extractor = TransactionExtractorService.new(csv_text, account)
+        extracted = extractor.extract
+
+        imported_count = 0
+        skipped_count = 0
+
+        extracted.each do |txn_data|
+          # Check for duplicates using the duplicate hash
+          temp_txn = Transaction.new(
+            date: txn_data[:date],
+            amount: txn_data[:amount],
+            description: txn_data[:description]
+          )
+          temp_txn.send(:calculate_duplicate_hash)
+
+          if Transaction.exists?(duplicate_hash: temp_txn.duplicate_hash)
+            skipped_count += 1
+            next
+          end
+
+          # Find category or fall back to "other income"/"other expense"
+          category_id = txn_data[:category_id]
+          unless category_id
+            fallback = txn_data[:transaction_type] == "income" ? "other income" : "other expense"
+            category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
+          end
+
+          Transaction.create!(
+            account: account,
+            category_id: category_id,
+            date: txn_data[:date],
+            description: txn_data[:description],
+            amount: txn_data[:amount],
+            transaction_type: txn_data[:transaction_type]
+          )
+          imported_count += 1
+        end
+
+        puts "  AI extracted #{extracted.length} transactions"
+        puts "  Imported: #{imported_count}, Skipped (duplicates): #{skipped_count}"
+      rescue TransactionExtractorService::ExtractionError => e
+        puts "  AI extraction failed: #{e.message}"
+        puts "  Skipping AI import (Ollama may need more time to warm up)"
+      end
+    else
+      puts "  Sample CSV not found, skipping AI import"
+    end
+  else
+    puts "\nSkipping AI import (Ollama not available)"
+    puts "  To enable: brew install ollama && ollama pull mistral && brew services start ollama"
   end
 
   puts "\nDevelopment sample data loaded!"
