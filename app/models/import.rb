@@ -57,7 +57,19 @@ class Import < ApplicationRecord
   end
 
   def mark_processing!
-    update!(status: "processing", started_at: Time.current)
+    update!(status: "processing", started_at: Time.current, progress: nil)
+  end
+
+  def update_progress!(current, total)
+    update_column(:progress, "#{current}/#{total}")
+  end
+
+  def progress_info
+    return nil if progress.blank?
+    current, total = progress.split("/").map(&:to_i)
+    { current: current, total: total, percent: (current.to_f / total * 100).round }
+  rescue
+    nil
   end
 
   def mark_completed!(transactions_data, count: 0)

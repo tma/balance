@@ -25,7 +25,8 @@ class OllamaService
         "#{config.host}/api/generate",
         body: body.to_json,
         headers: { "Content-Type" => "application/json" },
-        timeout: config.timeout
+        open_timeout: 30,
+        read_timeout: config.timeout
       )
 
       if response.success?

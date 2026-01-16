@@ -121,10 +121,10 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Import is not ready for confirmation.", flash[:alert]
   end
 
-  test "show pending import includes refresh meta" do
+  test "show pending import includes auto-refresh polling" do
     get import_path(@pending_import)
     assert_response :success
-    # The page should include auto-refresh script
-    assert_includes @response.body, "window.location.reload()"
+    # The page should include Stimulus polling controller
+    assert_includes @response.body, 'data-controller="poll"'
   end
 end

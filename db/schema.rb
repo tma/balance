@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_16_002726) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_16_014529) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -103,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_16_002726) do
     t.string "file_content_type"
     t.binary "file_data"
     t.string "original_filename"
+    t.string "progress"
     t.datetime "started_at"
     t.string "status", default: "pending", null: false
     t.integer "transactions_count", default: 0

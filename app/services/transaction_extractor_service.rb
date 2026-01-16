@@ -2,32 +2,54 @@ class TransactionExtractorService
   class Error < StandardError; end
   class ExtractionError < Error; end
 
-  attr_reader :text, :account
+  attr_reader :chunks, :account, :on_progress
 
-  def initialize(text, account)
-    @text = text
+  # Initialize with text chunks and account
+  # @param chunks [Array<String>, String] Text chunks to process (or single string for backward compatibility)
+  # @param account [Account] The account for transactions
+  # @param on_progress [Proc, nil] Optional callback called with (current_chunk, total_chunks)
+  def initialize(chunks, account, on_progress: nil)
+    @chunks = chunks.is_a?(Array) ? chunks : [ chunks ]
     @account = account
+    @on_progress = on_progress
   end
 
-  # Extract transactions from the text using Ollama
+  # For backward compatibility - returns first chunk's text
+  def text
+    @chunks.first
+  end
+
+  # Extract transactions from all chunks using Ollama
   # @return [Array<Hash>] Array of transaction hashes
   def extract
     unless OllamaService.available?
       raise ExtractionError, "Ollama is not available. Please ensure it is running."
     end
 
-    prompt = build_prompt
-    response = OllamaService.generate_json(prompt)
+    all_transactions = []
+    total = @chunks.size
 
-    transactions = parse_response(response)
-    validate_and_normalize(transactions)
+    @chunks.each_with_index do |chunk, index|
+      current = index + 1
+      Rails.logger.info "Processing chunk #{current}/#{total}"
+      @on_progress&.call(current, total)
+
+      prompt = build_prompt(chunk)
+      response = OllamaService.generate_json(prompt)
+
+      transactions = parse_response(response)
+      normalized = validate_and_normalize(transactions)
+      all_transactions.concat(normalized)
+    end
+
+    all_transactions
   rescue OllamaService::Error => e
     raise ExtractionError, "Failed to extract transactions: #{e.message}"
   end
 
   private
 
-  def build_prompt
+  def build_prompt(chunk_text)
     expense_categories = Category.expense.pluck(:name).join(", ")
     income_categories = Category.income.pluck(:name).join(", ")
 
@@ -62,7 +84,7 @@ class TransactionExtractorService
 
       BANK STATEMENT TEXT:
       ---
-      #{text.truncate(8000)}
+      #{chunk_text.truncate(8000)}
       ---
     PROMPT
   end

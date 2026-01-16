@@ -13,11 +13,16 @@ class TransactionImportJob < ApplicationJob
     import.mark_processing!
 
     begin
-      # Parse file based on content type
-      raw_text = extract_text_from_import(import)
+      # Parse file into chunks based on content type
+      chunks = extract_chunks_from_import(import)
 
-      # Extract transactions using Ollama
-      extractor = TransactionExtractorService.new(raw_text, import.account)
+      Rails.logger.info "Import #{import_id}: Processing #{chunks.size} chunk(s)"
+
+      # Progress callback to update import status
+      progress_callback = ->(current, total) { import.update_progress!(current, total) }
+
+      # Extract transactions using Ollama (processes all chunks)
+      extractor = TransactionExtractorService.new(chunks, import.account, on_progress: progress_callback)
       transactions = extractor.extract
 
       # Mark duplicates
@@ -40,7 +45,7 @@ class TransactionImportJob < ApplicationJob
 
   private
 
-  def extract_text_from_import(import)
+  def extract_chunks_from_import(import)
     # Create a temporary file from the stored binary data
     Tempfile.create([ "import", extension_for(import) ]) do |temp_file|
       temp_file.binmode
@@ -48,9 +53,9 @@ class TransactionImportJob < ApplicationJob
       temp_file.rewind
 
       if import.pdf?
-        PdfParserService.extract_text(temp_file)
+        PdfParserService.extract_pages(temp_file)
       else
-        CsvParserService.extract_text(temp_file)
+        CsvParserService.extract_chunks(temp_file)
       end
     end
   end

@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   resources :imports, only: [ :index, :new, :create, :show ] do
     member do
       post :confirm
+      get :status
     end
   end
 

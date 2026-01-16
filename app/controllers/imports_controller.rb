@@ -1,5 +1,5 @@
 class ImportsController < ApplicationController
-  before_action :set_import, only: %i[show confirm]
+  before_action :set_import, only: %i[show confirm status]
 
   def index
     @imports = Import.recent.includes(:account).limit(20)
@@ -10,14 +10,16 @@ class ImportsController < ApplicationController
   end
 
   def show
-    # For pending/processing imports, set up auto-refresh
-    @refresh = @import.pending? || @import.processing?
-
     if @import.completed?
       @transactions = @import.extracted_transactions
       @expense_categories = Category.expense.order(:name)
       @income_categories = Category.income.order(:name)
     end
+  end
+
+  # Returns just the progress/status partial for Turbo Frame updates
+  def status
+    render partial: "imports/status", locals: { import: @import }, formats: [:html], layout: false
   end
 
   # Create the import record and enqueue the job

@@ -6,14 +6,38 @@ class PdfParserService
   MAX_FILE_SIZE = 5.megabytes
 
   class << self
-    # Extract text from a PDF file
+    # Extract text from a PDF file, returning an array of pages
+    # @param file [ActionDispatch::Http::UploadedFile, File, IO, String] The PDF file or path
+    # @return [Array<String>] Array of text content per page
+    def extract_pages(file)
+      validate_file_size!(file)
+
+      io = normalize_io(file)
+      reader = PDF::Reader.new(io)
+      pages = reader.pages.map(&:text).reject { |text| text.strip.empty? }
+
+      if pages.empty?
+        raise Error, "No text could be extracted from the PDF. It may be image-based."
+      end
+
+      pages
+    rescue PDF::Reader::MalformedPDFError => e
+      raise Error, "Invalid or corrupted PDF file: #{e.message}"
+    rescue PDF::Reader::EncryptedPDFError
+      raise Error, "Cannot read encrypted PDF files"
+    end
+
+    # Extract all text as a single string (legacy method)
     # @param file [ActionDispatch::Http::UploadedFile, File, IO, String] The PDF file or path
     # @return [String] The extracted text
     def extract_text(file)
-      validate_file_size!(file)
+      extract_pages(file).join("\n\n")
+    end
 
-      # Handle ActionDispatch::Http::UploadedFile from form uploads
-      io = if file.respond_to?(:tempfile)
+    private
+
+    def normalize_io(file)
+      if file.respond_to?(:tempfile)
         file.tempfile.rewind
         file.tempfile
       elsif file.respond_to?(:read)
@@ -23,22 +47,7 @@ class PdfParserService
         # Assume it's a file path
         file
       end
-
-      reader = PDF::Reader.new(io)
-      text = reader.pages.map(&:text).join("\n\n")
-
-      if text.strip.empty?
-        raise Error, "No text could be extracted from the PDF. It may be image-based."
-      end
-
-      text
-    rescue PDF::Reader::MalformedPDFError => e
-      raise Error, "Invalid or corrupted PDF file: #{e.message}"
-    rescue PDF::Reader::EncryptedPDFError
-      raise Error, "Cannot read encrypted PDF files"
     end
-
-    private
 
     def validate_file_size!(file)
       size = if file.respond_to?(:size)
