@@ -2,7 +2,36 @@ class ImportsController < ApplicationController
   before_action :set_import, only: %i[show confirm status]
 
   def index
-    @imports = Import.recent.includes(:account).limit(20)
+    # Determine current year from params or default to current year
+    @current_year = if params[:year].present?
+      params[:year].to_i
+    else
+      Date.current.year
+    end
+
+    # Fetch imports and filter by year based on transaction_month or created_at
+    all_imports = Import.recent.includes(:account)
+
+    # Filter imports: completed ones by transaction month year, others by created_at year
+    imports = all_imports.select do |import|
+      if import.transaction_month
+        import.transaction_month.year == @current_year
+      else
+        import.created_at.year == @current_year
+      end
+    end
+
+    # Group imports by transaction month
+    @imports_by_month = imports.group_by(&:transaction_month)
+
+    # Sort months descending (most recent first), with nil (ungrouped) at the end
+    @sorted_months = @imports_by_month.keys.compact.sort.reverse
+    @has_ungrouped = @imports_by_month.key?(nil)
+
+    # Determine available years for navigation
+    @available_years = all_imports.map do |import|
+      import.transaction_month&.year || import.created_at.year
+    end.uniq.sort.reverse
   end
 
   def new

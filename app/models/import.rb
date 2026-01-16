@@ -88,4 +88,29 @@ class Import < ApplicationRecord
       completed_at: Time.current
     )
   end
+
+  # Returns the most recent month from extracted transactions
+  # @return [Date, nil] First day of the most recent transaction month, or nil
+  def transaction_month
+    return nil unless completed?
+
+    dates = extracted_transactions.map { |t| parse_transaction_date(t[:date]) }.compact
+    return nil if dates.empty?
+
+    most_recent = dates.max
+    most_recent.beginning_of_month
+  end
+
+  private
+
+  def parse_transaction_date(date_value)
+    case date_value
+    when Date
+      date_value
+    when String
+      Date.parse(date_value)
+    end
+  rescue ArgumentError, TypeError
+    nil
+  end
 end
