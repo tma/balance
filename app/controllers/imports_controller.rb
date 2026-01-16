@@ -1,5 +1,5 @@
 class ImportsController < ApplicationController
-  before_action :set_import, only: %i[show confirm status destroy]
+  before_action :set_import, only: %i[show confirm reprocess status destroy]
 
   def index
     # Determine current year from params or default to current year
@@ -147,6 +147,21 @@ class ImportsController < ApplicationController
 
     @import.destroy
     redirect_to new_import_path, notice: "Import deleted."
+  end
+
+  def reprocess
+    unless @import.failed?
+      redirect_to import_path(@import), alert: "Only failed imports can be reprocessed."
+      return
+    end
+
+    # Reset the import status and clear error
+    @import.update!(status: "pending", error_message: nil)
+
+    # Enqueue the background job again
+    TransactionImportJob.perform_later(@import.id)
+
+    redirect_to import_path(@import), notice: "Reprocessing import..."
   end
 
   private

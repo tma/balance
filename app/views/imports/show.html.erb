@@ -80,7 +80,13 @@
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3">
-          <%= link_to new_import_path, class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition text-sm" do %>
+          <%= button_to reprocess_import_path(@import), method: :post, class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition text-sm" do %>
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reprocess
+          <% end %>
+          <%= link_to new_import_path, class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm" do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
