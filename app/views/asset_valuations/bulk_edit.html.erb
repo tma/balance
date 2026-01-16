@@ -68,7 +68,7 @@
     <% if @asset_groups.joins(:assets).distinct.none? %>
       <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
         <p class="text-slate-500 mb-4">No assets found.</p>
-        <%= link_to "Create your first asset", new_asset_path, class: "text-cyan-600 hover:text-cyan-700" %>
+        <%= link_to "Create an asset", new_asset_path, class: "text-cyan-600 hover:text-cyan-700" %>
       </div>
     <% else %>
       <div class="flex justify-end space-x-4">
