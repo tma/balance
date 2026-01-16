@@ -43,8 +43,8 @@ gem "thruster", require: false
 gem "image_processing", "~> 1.2"
 
 # Transaction import
-gem "pdf-reader"    # PDF text extraction
 gem "httparty"      # HTTP client for Ollama API
+gem "rtesseract"    # OCR for PDF text extraction (via Tesseract)
 
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem

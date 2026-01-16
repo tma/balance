@@ -1,30 +1,29 @@
-require "pdf-reader"
-
 class PdfParserService
   class Error < StandardError; end
 
   MAX_FILE_SIZE = 5.megabytes
 
   class << self
-    # Extract text from a PDF file, returning an array of pages
+    # Extract text from a PDF file using OCR, returning an array of pages
     # @param file [ActionDispatch::Http::UploadedFile, File, IO, String] The PDF file or path
     # @return [Array<String>] Array of text content per page
     def extract_pages(file)
       validate_file_size!(file)
 
+      unless OcrService.available?
+        raise Error, "OCR is not available. Please ensure Tesseract and Poppler are installed."
+      end
+
       io = normalize_io(file)
-      reader = PDF::Reader.new(io)
-      pages = reader.pages.map(&:text).reject { |text| text.strip.empty? }
+      pages = OcrService.extract_pages(io)
 
       if pages.empty?
-        raise Error, "No text could be extracted from the PDF. It may be image-based."
+        raise Error, "No text could be extracted from the PDF. It may be blank or corrupted."
       end
 
       pages
-    rescue PDF::Reader::MalformedPDFError => e
-      raise Error, "Invalid or corrupted PDF file: #{e.message}"
-    rescue PDF::Reader::EncryptedPDFError
-      raise Error, "Cannot read encrypted PDF files"
+    rescue OcrService::Error => e
+      raise Error, "PDF extraction failed: #{e.message}"
     end
 
     # Extract all text as a single string (legacy method)
@@ -32,6 +31,11 @@ class PdfParserService
     # @return [String] The extracted text
     def extract_text(file)
       extract_pages(file).join("\n\n")
+    end
+
+    # Alias for consistency (now that OCR is the only method)
+    def extract_pages_with_ocr(file)
+      extract_pages(file)
     end
 
     private
