@@ -7,12 +7,24 @@ class PdfParserService
 
   class << self
     # Extract text from a PDF file
-    # @param file [ActionDispatch::Http::UploadedFile, File, IO] The PDF file
+    # @param file [ActionDispatch::Http::UploadedFile, File, IO, String] The PDF file or path
     # @return [String] The extracted text
     def extract_text(file)
       validate_file_size!(file)
 
-      reader = PDF::Reader.new(file)
+      # Handle ActionDispatch::Http::UploadedFile from form uploads
+      io = if file.respond_to?(:tempfile)
+        file.tempfile.rewind
+        file.tempfile
+      elsif file.respond_to?(:read)
+        file.rewind if file.respond_to?(:rewind)
+        file
+      else
+        # Assume it's a file path
+        file
+      end
+
+      reader = PDF::Reader.new(io)
       text = reader.pages.map(&:text).join("\n\n")
 
       if text.strip.empty?
