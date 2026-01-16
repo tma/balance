@@ -2,6 +2,8 @@ class TransactionExtractorService
   class Error < StandardError; end
   class ExtractionError < Error; end
 
+  CATEGORY_BATCH_SIZE = 10
+
   attr_reader :chunks, :account, :on_progress
 
   # Initialize with text chunks and account
@@ -26,21 +28,11 @@ class TransactionExtractorService
       raise ExtractionError, "Ollama is not available. Please ensure it is running."
     end
 
-    all_transactions = []
-    total = @chunks.size
+    # Step 1: Extract transactions from PDF chunks
+    all_transactions = extract_from_chunks
 
-    @chunks.each_with_index do |chunk, index|
-      current = index + 1
-      Rails.logger.info "Processing chunk #{current}/#{total}"
-      @on_progress&.call(current, total)
-
-      prompt = build_prompt(chunk)
-      response = OllamaService.generate_json(prompt)
-
-      transactions = parse_response(response)
-      normalized = validate_and_normalize(transactions)
-      all_transactions.concat(normalized)
-    end
+    # Step 2: Assign categories in batches
+    categorize_transactions(all_transactions)
 
     all_transactions
   rescue OllamaService::Error => e
@@ -49,70 +41,127 @@ class TransactionExtractorService
 
   private
 
-  def build_prompt(chunk_text)
-    expense_categories = Category.expense.pluck(:name).join(", ")
-    income_categories = Category.income.pluck(:name).join(", ")
+  # Step 1: Extract raw transactions from document chunks
+  def extract_from_chunks
+    all_transactions = []
+    total_steps = @chunks.size + 1 # +1 for categorization step
 
+    @chunks.each_with_index do |chunk, index|
+      current = index + 1
+      Rails.logger.info "Extracting from chunk #{current}/#{@chunks.size}"
+      @on_progress&.call(current, total_steps)
+
+      prompt = build_extraction_prompt(chunk)
+      response = OllamaService.generate_json(prompt)
+
+      transactions = parse_response(response)
+      normalized = validate_and_normalize(transactions)
+      all_transactions.concat(normalized)
+    end
+
+    all_transactions
+  end
+
+  # Step 2: Assign categories in batches
+  def categorize_transactions(transactions)
+    return if transactions.empty?
+
+    total_steps = @chunks.size + 1
+    @on_progress&.call(total_steps, total_steps)
+    Rails.logger.info "Categorizing #{transactions.size} transactions"
+
+    expense_categories = Category.expense.pluck(:name)
+    income_categories = Category.income.pluck(:name)
+
+    transactions.each_slice(CATEGORY_BATCH_SIZE) do |batch|
+      categorize_batch(batch, expense_categories, income_categories)
+    end
+  end
+
+  def categorize_batch(transactions, expense_categories, income_categories)
+    prompt = build_categorization_prompt(transactions, expense_categories, income_categories)
+    response = OllamaService.generate_json(prompt)
+
+    categories = parse_categories_response(response)
+
+    transactions.each_with_index do |txn, index|
+      category_name = categories[index]
+      next unless category_name
+
+      category = find_category(category_name, txn[:transaction_type])
+      txn[:category_id] = category&.id
+      txn[:category_name] = category&.name || category_name
+    end
+  rescue OllamaService::Error => e
+    Rails.logger.warn "Failed to categorize batch: #{e.message}"
+    # Leave transactions without categories rather than failing
+  end
+
+  def build_extraction_prompt(chunk_text)
     <<~PROMPT
-      You are a financial transaction parser. Extract all transactions from the following bank statement or financial document.
+      You are a financial transaction parser. Extract all transactions from the following financial statement.
 
       ACCOUNT CURRENCY: #{account.currency}
 
-      IMPORTANT RULES:
+      RULES:
       1. Extract EVERY transaction you can find
-      2. Dates should be in YYYY-MM-DD format
-      3. Amounts should be positive numbers with exactly two decimal places (e.g., 123.45, 10.00), no currency symbols
-      4. For type: use "expense" for money going out (purchases, payments, withdrawals) and "income" for money coming in (deposits, transfers in, refunds)
-      5. Match each transaction to the most appropriate category from the lists below
-      6. If no category fits well, use "Other" as the category
-      7. When a transaction shows both a foreign currency amount AND an amount in #{account.currency}, always use the #{account.currency} amount
-      8. IGNORE summary lines like "Total", "Subtotal", "Balance", "Zwischensumme", "Saldo", or any aggregated amounts - only extract individual transactions
-      9. If a transaction has multiple dates, use the "Date" or "Datum" field, NOT "Valuta", "Value Date", or "Buchungsdatum"
+      2. Dates must be in YYYY-MM-DD format
+      3. Amounts must be positive numbers with two decimal places (e.g., 123.45), no currency symbols
+      4. Type: "expense" for money out, "income" for money in
+      5. When both foreign currency and #{account.currency} amounts shown, use the #{account.currency} amount
+      6. IGNORE summary lines (Total, Subtotal, Balance, Zwischensumme, Saldo)
+      7. If multiple dates per line, use "Date"/"Datum", NOT "Valuta"/"Value Date"
 
-      DATE PARSING RULES (CRITICAL - PAY CLOSE ATTENTION):
-      - This is a EUROPEAN document. Dates are ALWAYS in format DD.MM.YY or DD.MM.YYYY
-      - The FIRST number is the DAY (1-31), the SECOND number is the MONTH (1-12)
-      - Example: "07.11.25" → Day=07, Month=11 (November) → output "2025-11-07"
-      - Example: "23.01.25" → Day=23, Month=01 (January) → output "2025-01-23"
-      - Example: "15.03.2025" → Day=15, Month=03 (March) → output "2025-03-15"
-      - NEVER interpret the first number as month - that would be American format which is NOT used here
-      - Two-digit years (e.g., "25") mean 20XX (2025, not 1925)
-      - Bank statements typically cover 1-2 consecutive months, so all dates should be within a reasonable range
-      - Determine the year from the document header, statement date, or other context in the document
+      DATE FORMAT (CRITICAL):
+      - European format: DD.MM.YY or DD.MM.YYYY (day FIRST, then month)
+      - "07.11.25" → Day=07, Month=11 → "2025-11-07"
+      - "23.01.25" → Day=23, Month=01 → "2025-01-23"
+      - NEVER interpret first number as month
+      - Two-digit year "25" means 2025
+      - Get the year from document header/statement date
 
-      AVAILABLE EXPENSE CATEGORIES: #{expense_categories.presence || "Other"}
-      AVAILABLE INCOME CATEGORIES: #{income_categories.presence || "Other"}
-
-      OUTPUT FORMAT (JSON only, no other text):
+      OUTPUT FORMAT (JSON only):
       {
         "transactions": [
-          {
-            "date": "YYYY-MM-DD",
-            "description": "merchant or description",
-            "amount": 123.45,
-            "type": "expense",
-            "category": "category name"
-          }
+          {"date": "YYYY-MM-DD", "description": "merchant", "amount": 123.45, "type": "expense"}
         ]
       }
 
-      If you cannot find any transactions, return: {"transactions": []}
+      Return {"transactions": []} if no transactions found.
 
-      BANK STATEMENT TEXT:
+      BANK STATEMENT:
       ---
       #{chunk_text.truncate(8000)}
       ---
     PROMPT
   end
 
+  def build_categorization_prompt(transactions, expense_categories, income_categories)
+    txn_list = transactions.map.with_index do |txn, i|
+      "#{i + 1}. [#{txn[:transaction_type].upcase}] #{txn[:description]} (#{txn[:amount]})"
+    end.join("\n")
+
+    <<~PROMPT
+      Categorize these financial transactions. Pick the single best category for each.
+
+      EXPENSE CATEGORIES: #{expense_categories.join(", ")}
+      INCOME CATEGORIES: #{income_categories.join(", ")}
+
+      TRANSACTIONS:
+      #{txn_list}
+
+      OUTPUT FORMAT (JSON array of category names, same order as input):
+      ["category1", "category2", ...]
+
+      Use "Other" if no category fits well.
+    PROMPT
+  end
+
   def parse_response(response)
-    # Handle various response formats from the LLM
     transactions = case response
     when Array
-      # LLM returned array directly
       response
     when Hash
-      # Try common wrapper keys
       response["transactions"] || response["data"] || response["results"] || []
     else
       raise ExtractionError, "Invalid response format: expected Hash or Array, got #{response.class}"
@@ -125,12 +174,21 @@ class TransactionExtractorService
     transactions
   end
 
+  def parse_categories_response(response)
+    case response
+    when Array
+      response.map(&:to_s)
+    when Hash
+      response["categories"] || response.values.first || []
+    else
+      []
+    end
+  end
+
   def validate_and_normalize(transactions)
     transactions.filter_map do |txn|
-      # Normalize field names first
       txn = normalize_field_names(txn)
 
-      # Skip transactions missing required data (instead of failing entirely)
       unless valid_transaction?(txn)
         Rails.logger.warn "Skipping invalid transaction: #{txn.inspect}"
         next
@@ -141,18 +199,15 @@ class TransactionExtractorService
   end
 
   def normalize_field_names(txn)
-    # Handle various field name formats the LLM might use
     {
       "date" => txn["date"] || txn["transaction_date"] || txn["Date"],
       "description" => txn["description"] || txn["name"] || txn["merchant"] || txn["Description"] || txn["memo"],
       "amount" => txn["amount"] || txn["value"] || txn["Amount"],
-      "type" => txn["type"] || txn["transaction_type"] || txn["Type"] || infer_type(txn),
-      "category" => txn["category"] || txn["Category"]
+      "type" => txn["type"] || txn["transaction_type"] || txn["Type"] || infer_type(txn)
     }
   end
 
   def infer_type(txn)
-    # Try to infer type from other fields if not explicitly provided
     if txn["credit"].present? || txn["deposit"].present?
       "income"
     elsif txn["debit"].present? || txn["withdrawal"].present?
@@ -169,15 +224,14 @@ class TransactionExtractorService
   def normalize_transaction(txn)
     date = parse_date(txn["date"])
     type = txn["type"].to_s.downcase == "income" ? "income" : "expense"
-    category = find_category(txn["category"], type)
 
     {
       date: date,
       description: txn["description"].to_s.strip,
       amount: txn["amount"].to_f.abs.round(2),
       transaction_type: type,
-      category_id: category&.id,
-      category_name: category&.name || txn["category"],
+      category_id: nil,
+      category_name: nil,
       account_id: account.id
     }
   end
@@ -185,7 +239,6 @@ class TransactionExtractorService
   def parse_date(date_str)
     Date.parse(date_str.to_s)
   rescue ArgumentError
-    # Try to be flexible with date parsing
     Date.today
   end
 
