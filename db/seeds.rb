@@ -1042,7 +1042,7 @@ if Rails.env.development?
     end
   else
     puts "\nSkipping AI import (Ollama not available)"
-    puts "  To enable: brew install ollama && ollama pull mistral && brew services start ollama"
+    puts "  To enable: brew install ollama && ollama pull llama3.1:8b && brew services start ollama"
   end
 
   puts "\nDevelopment sample data loaded!"

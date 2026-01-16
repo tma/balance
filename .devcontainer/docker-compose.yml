@@ -15,7 +15,7 @@ services:
       - RUBY_DEBUG_LAZY=true
       # Use host's native Ollama for Metal GPU acceleration on Apple Silicon
       - OLLAMA_HOST=http://host.docker.internal:11434
-      - OLLAMA_MODEL=mistral
+      - OLLAMA_MODEL=llama3.1:8b
     extra_hosts:
       - "host.docker.internal:host-gateway"
     command: sleep infinity
