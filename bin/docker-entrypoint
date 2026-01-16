@@ -7,9 +7,8 @@ if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
     # Database exists, just run migrations
     ./bin/rails db:migrate
   else
-    # Fresh database - load schema and seed master data only
-    # Note: Seeds are environment-aware; development sample data only loads in development
-    ./bin/rails db:schema:load db:seed
+    # Fresh database - load schema only, NO seeds in production
+    ./bin/rails db:schema:load
   fi
 fi
 
