@@ -24,9 +24,9 @@ Rails.application.routes.draw do
   resources :budgets
 
   # Transaction import
-  resources :imports, only: [ :new, :create ] do
-    collection do
-      post :preview
+  resources :imports, only: [ :index, :new, :create, :show ] do
+    member do
+      post :confirm
     end
   end
 

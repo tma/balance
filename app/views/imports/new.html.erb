@@ -1,10 +1,15 @@
 <% content_for :title, "Import Transactions" %>
 
 <div>
-  <h1 class="text-2xl font-bold text-slate-800 mb-2">Import Transactions</h1>
-  <p class="text-slate-600 mb-6">Upload a PDF or CSV bank statement to automatically extract transactions.</p>
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800 mb-2">Import Transactions</h1>
+      <p class="text-slate-600">Upload a PDF or CSV bank statement to automatically extract transactions.</p>
+    </div>
+    <%= link_to "Import History", imports_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+  </div>
 
-  <%= form_with url: preview_imports_path, method: :post, multipart: true, class: "space-y-6" do |form| %>
+  <%= form_with url: imports_path, method: :post, multipart: true, class: "space-y-6" do |form| %>
     <div class="bg-white rounded-xl border border-slate-200 p-6">
       <div class="mb-6">
         <%= form.label :account_id, "Target Account", class: "block text-sm font-medium text-slate-700 mb-1" %>

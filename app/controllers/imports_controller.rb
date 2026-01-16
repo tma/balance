@@ -1,9 +1,27 @@
 class ImportsController < ApplicationController
+  before_action :set_import, only: %i[show confirm]
+
+  def index
+    @imports = Import.recent.includes(:account).limit(20)
+  end
+
   def new
     @accounts = Account.order(:name)
   end
 
-  def preview
+  def show
+    # For pending/processing imports, set up auto-refresh
+    @refresh = @import.pending? || @import.processing?
+
+    if @import.completed?
+      @transactions = @import.extracted_transactions
+      @expense_categories = Category.expense.order(:name)
+      @income_categories = Category.income.order(:name)
+    end
+  end
+
+  # Create the import record and enqueue the job
+  def create
     @account = Account.find(params[:account_id])
     file = params[:file]
 
@@ -12,39 +30,31 @@ class ImportsController < ApplicationController
       return
     end
 
-    # Extract text based on file type
-    begin
-      @raw_text = extract_text_from_file(file)
-    rescue PdfParserService::Error, CsvParserService::Error => e
-      redirect_to new_import_path, alert: e.message
+    # Create import record with file data
+    @import = Import.new(
+      account: @account,
+      original_filename: file.original_filename,
+      file_content_type: determine_content_type(file),
+      file_data: file.read
+    )
+
+    if @import.save
+      # Enqueue the background job
+      TransactionImportJob.perform_later(@import.id)
+      redirect_to import_path(@import), notice: "Import started. Processing your file..."
+    else
+      redirect_to new_import_path, alert: "Failed to create import: #{@import.errors.full_messages.join(', ')}"
+    end
+  end
+
+  # Actually create transactions from the extracted data
+  def confirm
+    unless @import.completed?
+      redirect_to import_path(@import), alert: "Import is not ready for confirmation."
       return
     end
 
-    # Try to extract transactions using Ollama
-    begin
-      extractor = TransactionExtractorService.new(@raw_text, @account)
-      @transactions = extractor.extract
-      @transactions = DuplicateDetectionService.mark_duplicates(@transactions)
-      @extraction_successful = true
-    rescue TransactionExtractorService::ExtractionError, OllamaService::Error => e
-      @extraction_error = e.message
-      @extraction_successful = false
-      @transactions = []
-    end
-
-    # For category dropdowns in the preview
-    @expense_categories = Category.expense.order(:name)
-    @income_categories = Category.income.order(:name)
-
-    # Store raw text and account in session for manual fallback
-    session[:import_raw_text] = @raw_text
-    session[:import_account_id] = @account.id
-  end
-
-  def create
-    @account = Account.find(params[:account_id])
     transactions_data = params[:transactions]&.values || []
-
     imported_count = 0
     errors = []
 
@@ -53,7 +63,8 @@ class ImportsController < ApplicationController
       next unless txn_data[:selected] == "1"
 
       transaction = Transaction.new(
-        account_id: @account.id,
+        account_id: @import.account_id,
+        import_id: @import.id,
         category_id: txn_data[:category_id],
         amount: txn_data[:amount].to_f,
         transaction_type: txn_data[:transaction_type],
@@ -69,9 +80,8 @@ class ImportsController < ApplicationController
       end
     end
 
-    # Clear session data
-    session.delete(:import_raw_text)
-    session.delete(:import_account_id)
+    # Update import with final count
+    @import.update!(transactions_count: imported_count)
 
     if errors.any?
       flash[:alert] = "Imported #{imported_count} transactions. #{errors.size} failed: #{errors.first(3).join('; ')}"
@@ -84,17 +94,20 @@ class ImportsController < ApplicationController
 
   private
 
-  def extract_text_from_file(file)
+  def set_import
+    @import = Import.find(params[:id])
+  end
+
+  def determine_content_type(file)
     content_type = file.content_type
     filename = file.original_filename.downcase
 
     if content_type == "application/pdf" || filename.end_with?(".pdf")
-      PdfParserService.extract_text(file)
+      "application/pdf"
     elsif content_type == "text/csv" || filename.end_with?(".csv")
-      CsvParserService.extract_text(file)
+      "text/csv"
     else
-      # Try to read as plain text
-      CsvParserService.extract_text(file)
+      "text/plain"
     end
   end
 end

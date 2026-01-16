@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_15_233407) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_16_002726) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -94,6 +94,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_233407) do
     t.index ["code"], name: "index_currencies_on_code", unique: true
   end
 
+  create_table "imports", force: :cascade do |t|
+    t.integer "account_id", null: false
+    t.datetime "completed_at"
+    t.datetime "created_at", null: false
+    t.text "error_message"
+    t.text "extracted_data"
+    t.string "file_content_type"
+    t.binary "file_data"
+    t.string "original_filename"
+    t.datetime "started_at"
+    t.string "status", default: "pending", null: false
+    t.integer "transactions_count", default: 0
+    t.datetime "updated_at", null: false
+    t.index ["account_id"], name: "index_imports_on_account_id"
+    t.index ["status"], name: "index_imports_on_status"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.integer "account_id", null: false
     t.decimal "amount"
@@ -104,11 +121,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_233407) do
     t.string "description"
     t.string "duplicate_hash"
     t.decimal "exchange_rate"
+    t.integer "import_id"
     t.string "transaction_type"
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_transactions_on_account_id"
     t.index ["category_id"], name: "index_transactions_on_category_id"
     t.index ["duplicate_hash"], name: "index_transactions_on_duplicate_hash"
+    t.index ["import_id"], name: "index_transactions_on_import_id"
   end
 
   add_foreign_key "accounts", "account_types"
@@ -116,6 +135,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_15_233407) do
   add_foreign_key "assets", "asset_groups"
   add_foreign_key "assets", "asset_types"
   add_foreign_key "budgets", "categories"
+  add_foreign_key "imports", "accounts"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
+  add_foreign_key "transactions", "imports"
 end
