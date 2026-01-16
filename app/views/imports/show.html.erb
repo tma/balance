@@ -15,6 +15,8 @@
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Ready</span>
         <% when "failed" %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">Failed</span>
+        <% when "done" %>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Done</span>
         <% end %>
       </div>
       <p class="text-sm text-slate-500">
@@ -182,13 +184,15 @@
                            <%= txn[:is_duplicate] ? '' : 'checked' %>
                            class="transaction-checkbox rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0"
                            data-action="change->import-table#checkboxChanged">
-                    <%= hidden_field_tag "transactions[#{index}][date]", txn[:date] %>
                     <%= hidden_field_tag "transactions[#{index}][description]", txn[:description] %>
                     <%= hidden_field_tag "transactions[#{index}][amount]", txn[:amount] %>
                     <%= hidden_field_tag "transactions[#{index}][duplicate_hash]", txn[:duplicate_hash] %>
                   </td>
-                  <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
-                    <%= txn[:date].is_a?(Date) ? txn[:date].strftime("%b %d, %Y") : txn[:date] %>
+                  <td class="px-4 py-3">
+                    <input type="date" 
+                           name="transactions[<%= index %>][date]" 
+                           value="<%= txn[:date].is_a?(Date) ? txn[:date].strftime('%Y-%m-%d') : txn[:date] %>"
+                           class="text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
                   </td>
                   <td class="px-4 py-3 text-sm text-slate-800">
                     <div class="flex items-center gap-2">
@@ -234,12 +238,21 @@
 
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500">
-          <span class="font-medium text-slate-700" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected for import
-        </p>
+        <div class="flex items-center gap-4">
+          <p class="text-sm text-slate-500">
+            <span class="font-medium text-slate-700" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected
+          </p>
+          <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
+            <input type="checkbox" 
+                   name="mark_as_done" 
+                   value="1"
+                   class="rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0">
+            <span>Mark as done</span>
+          </label>
+        </div>
         <div class="flex items-center gap-3">
-          <%= link_to "Cancel", imports_path, class: "rounded-lg px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition text-sm" %>
-          <%= form.submit "Import Selected Transactions", class: "rounded-lg px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition text-sm" %>
+          <%= link_to "Cancel", new_import_path, class: "rounded-lg px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition text-sm" %>
+          <%= form.submit "Import", class: "rounded-lg px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition text-sm" %>
         </div>
       </div>
     <% end %>
@@ -273,6 +286,93 @@
             Add Manually
           <% end %>
         </div>
+      </div>
+    </div>
+
+  <% elsif @import.done? %>
+    <!-- Done State - Read-only view of imported transactions -->
+    <% 
+      income_txns = @imported_transactions.select { |t| t.transaction_type == 'income' }
+      expense_txns = @imported_transactions.select { |t| t.transaction_type == 'expense' }
+      total_income = income_txns.sum(&:amount)
+      total_expense = expense_txns.sum(&:amount)
+    %>
+    
+    <!-- Summary Stats -->
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500 mb-1">Imported</p>
+        <p class="text-2xl font-semibold text-slate-800"><%= @imported_transactions.size %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500 mb-1">Income</p>
+        <p class="text-2xl font-semibold text-emerald-500">+<%= number_with_delimiter(total_income.round(2), delimiter: "'") %></p>
+      </div>
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <p class="text-sm text-slate-500 mb-1">Expenses</p>
+        <p class="text-2xl font-semibold text-rose-400">-<%= number_with_delimiter(total_expense.round(2), delimiter: "'") %></p>
+      </div>
+    </div>
+
+    <!-- Imported Transactions Table -->
+    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+        <span class="font-medium text-slate-700">Imported Transactions</span>
+        <% if @import.completed_at %>
+          <span class="text-xs text-slate-400">Completed <%= time_ago_in_words(@import.completed_at) %> ago</span>
+        <% end %>
+      </div>
+
+      <% if @imported_transactions.any? %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+            <thead class="bg-slate-50 border-b border-slate-200">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <% @imported_transactions.each do |txn| %>
+                <tr class="hover:bg-slate-50 transition-colors">
+                  <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
+                    <%= txn.date.strftime("%b %d, %Y") %>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-slate-800">
+                    <%= link_to txn.description, edit_transaction_path(txn), class: "hover:text-cyan-600" %>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-slate-600">
+                    <%= txn.category&.name&.titleize || "—" %>
+                  </td>
+                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium <%= txn.transaction_type == 'income' ? 'text-emerald-600' : 'text-slate-700' %>">
+                    <%= txn.transaction_type == 'income' ? '+' : '' %><%= number_with_delimiter(txn.amount, delimiter: "'") %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      <% else %>
+        <div class="p-8 text-center text-slate-500">
+          No transactions were imported from this file.
+        </div>
+      <% end %>
+    </div>
+
+    <!-- Actions -->
+    <div class="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-sm text-slate-500">
+        This import has been reviewed and completed.
+      </p>
+      <div class="flex items-center gap-3">
+        <%= link_to transactions_path, class: "rounded-lg px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition text-sm" do %>
+          View All Transactions
+        <% end %>
+        <%= button_to import_path(@import), method: :delete, class: "rounded-lg px-4 py-2 text-rose-500 hover:bg-rose-50 font-medium transition text-sm", form: { data: { turbo_confirm: "Delete this import? The imported transactions will remain." } } do %>
+          Delete Import
+        <% end %>
       </div>
     </div>
   <% end %>

@@ -6,6 +6,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     @completed_import = imports(:one) # completed status
     @pending_import = imports(:two)   # pending status
     @failed_import = imports(:three)  # failed status
+    @done_import = imports(:four)     # done status
   end
 
   test "should get index" do
@@ -81,6 +82,38 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     # Check the transaction is linked to the import
     created_txn = Transaction.last
     assert_equal @completed_import.id, created_txn.import_id
+
+    # Without mark_as_done, status should remain completed
+    @completed_import.reload
+    assert_equal "completed", @completed_import.status
+  end
+
+  test "confirm with mark_as_done sets status to done" do
+    @completed_import.update!(
+      extracted_data: [
+        { date: "2026-01-15", description: "Coffee", amount: 5.50, transaction_type: "expense", category_id: categories(:groceries).id }
+      ].to_json
+    )
+
+    category = categories(:groceries)
+
+    post confirm_import_path(@completed_import), params: {
+      mark_as_done: "1",
+      transactions: {
+        "0" => {
+          selected: "1",
+          date: "2026-01-15",
+          description: "Coffee",
+          amount: "5.50",
+          transaction_type: "expense",
+          category_id: category.id,
+          duplicate_hash: "test_hash_1"
+        }
+      }
+    }
+
+    @completed_import.reload
+    assert_equal "done", @completed_import.status
   end
 
   test "confirm handles no transactions param" do
@@ -141,6 +174,15 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
   test "destroy deletes failed import" do
     assert_difference("Import.count", -1) do
       delete import_path(@failed_import)
+    end
+
+    assert_redirected_to new_import_path
+    assert_equal "Import deleted.", flash[:notice]
+  end
+
+  test "destroy deletes done import" do
+    assert_difference("Import.count", -1) do
+      delete import_path(@done_import)
     end
 
     assert_redirected_to new_import_path

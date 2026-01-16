@@ -35,3 +35,15 @@ three:
   transactions_count: 0
   started_at: 2026-01-16 00:25:38
   completed_at: 2026-01-16 00:25:40
+
+four:
+  account: checking_account
+  status: done
+  original_filename: imported_statement.csv
+  file_content_type: text/csv
+  file_data: "date,description,amount\n2026-01-01,Test,100.00"
+  extracted_data: "[]"
+  error_message: 
+  transactions_count: 5
+  started_at: 2026-01-16 00:25:38
+  completed_at: 2026-01-16 00:25:38

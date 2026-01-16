@@ -32,11 +32,15 @@
       </span>
     <% when "completed" %>
       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-        Completed
+        Ready
       </span>
     <% when "failed" %>
       <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-800">
         Failed
+      </span>
+    <% when "done" %>
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
+        Done
       </span>
     <% end %>
   </td>
@@ -48,7 +52,7 @@
   </td>
   <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
     <%= link_to "View", import_path(import), class: "text-cyan-600 hover:text-cyan-700" %>
-    <% if import.completed? || import.failed? %>
+    <% if import.completed? || import.failed? || import.done? %>
       <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
     <% end %>
   </td>

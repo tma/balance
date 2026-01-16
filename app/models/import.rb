@@ -3,7 +3,7 @@ class Import < ApplicationRecord
   has_many :transactions, dependent: :nullify
 
   # Status constants
-  STATUSES = %w[pending processing completed failed].freeze
+  STATUSES = %w[pending processing completed failed done].freeze
 
   validates :status, presence: true, inclusion: { in: STATUSES }
   validates :original_filename, presence: true
@@ -15,6 +15,7 @@ class Import < ApplicationRecord
   scope :processing, -> { where(status: "processing") }
   scope :completed, -> { where(status: "completed") }
   scope :failed, -> { where(status: "failed") }
+  scope :done, -> { where(status: "done") }
 
   def pending?
     status == "pending"
@@ -30,6 +31,10 @@ class Import < ApplicationRecord
 
   def failed?
     status == "failed"
+  end
+
+  def done?
+    status == "done"
   end
 
   def pdf?
@@ -92,7 +97,7 @@ class Import < ApplicationRecord
   # Returns the most recent month from extracted transactions
   # @return [Date, nil] First day of the most recent transaction month, or nil
   def transaction_month
-    return nil unless completed?
+    return nil unless completed? || done?
 
     dates = extracted_transactions.map { |t| parse_transaction_date(t[:date]) }.compact
     return nil if dates.empty?

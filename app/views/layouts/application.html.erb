@@ -48,9 +48,9 @@
         <%= link_to "Cash Flow", cash_flow_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == '/' || request.path == '/cash-flow' ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
         <%= link_to "Net Worth", net_worth_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == '/net-worth' ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
 
-        <!-- Quick Actions -->
+        <!-- Actions -->
         <div class="pt-4 mt-4 border-t border-slate-200">
-          <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Quick Actions</span>
+          <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Actions</span>
           <%= link_to "Import", new_import_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path.start_with?('/imports') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
           <%= link_to "Valuations", update_valuations_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == update_valuations_path ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
         </div>

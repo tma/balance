@@ -9,10 +9,10 @@ class ImportsController < ApplicationController
       Date.current.year
     end
 
-    # Only show "finalized" imports: completed with transactions imported, or failed
-    # Pending, processing, and ready-for-review imports are shown on the Import (new) page
+    # Only show "finalized" imports: done (reviewed and imported) or failed
+    # Pending, processing, and completed (ready-for-review) imports are shown on the Import (new) page
     all_imports = Import.recent.includes(:account).select do |import|
-      import.failed? || (import.completed? && import.transactions_count > 0)
+      import.failed? || import.done?
     end
 
     # Filter by year based on transaction_month or created_at
@@ -41,18 +41,20 @@ class ImportsController < ApplicationController
     @accounts = Account.order(:name)
     # Load imports that need attention:
     # - pending/processing (in progress)
-    # - completed with 0 transactions imported (ready for review)
+    # - completed (ready for human review)
     # - failed (can be deleted)
     @pending_imports = Import.includes(:account).recent.limit(20).select do |import|
-      import.pending? || import.processing? || import.failed? || (import.completed? && import.transactions_count == 0)
+      import.pending? || import.processing? || import.failed? || import.completed?
     end
   end
 
   def show
     if @import.completed?
-      @transactions = @import.extracted_transactions
+      @transactions = @import.extracted_transactions.sort_by { |t| t[:date] }
       @expense_categories = Category.expense.order(:name)
       @income_categories = Category.income.order(:name)
+    elsif @import.done?
+      @imported_transactions = @import.transactions.includes(:category).order(:date)
     end
   end
 
@@ -121,8 +123,12 @@ class ImportsController < ApplicationController
       end
     end
 
-    # Update import with final count
-    @import.update!(transactions_count: imported_count)
+    # Update import with count, optionally mark as done
+    if params[:mark_as_done] == "1"
+      @import.update!(transactions_count: @import.transactions_count + imported_count, status: "done")
+    else
+      @import.update!(transactions_count: @import.transactions_count + imported_count)
+    end
 
     if errors.any?
       flash[:alert] = "Imported #{imported_count} transactions. #{errors.size} failed: #{errors.first(3).join('; ')}"
@@ -134,7 +140,7 @@ class ImportsController < ApplicationController
   end
 
   def destroy
-    unless @import.completed? || @import.failed?
+    unless @import.completed? || @import.failed? || @import.done?
       redirect_to import_path(@import), alert: "Cannot delete an import that is still processing."
       return
     end
