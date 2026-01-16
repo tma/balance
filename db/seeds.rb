@@ -982,63 +982,73 @@ if Rails.env.development?
   end
 
   # ---------------------------------------------------------------------------
-  # Import Sample Transactions via AI Extraction (demonstrates import feature)
+  # Import Sample Transactions via Import Feature (demonstrates full flow)
   # ---------------------------------------------------------------------------
   if OllamaService.available?
-    puts "\nImporting transactions from sample CSV via AI extraction..."
+    puts "\nImporting transactions via Import feature..."
 
     csv_path = Rails.root.join("test/fixtures/files/sample_bank_statement.csv")
     if File.exist?(csv_path)
-      csv_text = File.read(csv_path)
       account = accounts[:main_checking]
 
+      # Create an Import record (simulates file upload)
+      import = Import.create!(
+        account: account,
+        original_filename: "sample_bank_statement.csv",
+        file_content_type: "text/csv",
+        file_data: File.read(csv_path),
+        status: "pending"
+      )
+      puts "  Created Import ##{import.id}"
+
+      # Process the import synchronously (in production this runs async)
       begin
-        extractor = TransactionExtractorService.new(csv_text, account)
-        extracted = extractor.extract
+        TransactionImportJob.perform_now(import.id)
+        import.reload
 
-        imported_count = 0
-        skipped_count = 0
+        if import.completed?
+          puts "  AI extraction completed in #{import.duration&.round(1)}s"
+          puts "  Extracted #{import.transactions_count} transactions"
 
-        extracted.each do |txn_data|
-          # Check for duplicates using the duplicate hash
-          temp_txn = Transaction.new(
-            date: txn_data[:date],
-            amount: txn_data[:amount],
-            description: txn_data[:description]
-          )
-          temp_txn.send(:calculate_duplicate_hash)
+          # Import non-duplicate transactions
+          imported_count = 0
+          skipped_count = 0
 
-          if Transaction.exists?(duplicate_hash: temp_txn.duplicate_hash)
-            skipped_count += 1
-            next
+          import.extracted_transactions.each do |txn_data|
+            next if txn_data[:is_duplicate]
+
+            # Find category or fall back to "other income"/"other expense"
+            category_id = txn_data[:category_id]
+            unless category_id
+              fallback = txn_data[:transaction_type] == "income" ? "other income" : "other expense"
+              category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
+            end
+
+            begin
+              Transaction.create!(
+                account: account,
+                import: import,
+                category_id: category_id,
+                date: txn_data[:date],
+                description: txn_data[:description],
+                amount: txn_data[:amount],
+                transaction_type: txn_data[:transaction_type]
+              )
+              imported_count += 1
+            rescue ActiveRecord::RecordInvalid
+              skipped_count += 1
+            end
           end
 
-          # Find category or fall back to "other income"/"other expense"
-          category_id = txn_data[:category_id]
-          unless category_id
-            fallback = txn_data[:transaction_type] == "income" ? "other income" : "other expense"
-            category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
-          end
-
-          Transaction.create!(
-            account: account,
-            category_id: category_id,
-            date: txn_data[:date],
-            description: txn_data[:description],
-            amount: txn_data[:amount],
-            transaction_type: txn_data[:transaction_type]
-          )
-          imported_count += 1
+          puts "  Imported: #{imported_count}, Skipped: #{skipped_count}"
+        elsif import.failed?
+          puts "  Import failed: #{import.error_message}"
         end
-
-        puts "  AI extracted #{extracted.length} transactions"
-        puts "  Imported: #{imported_count}, Skipped (duplicates): #{skipped_count}"
-      rescue TransactionExtractorService::ExtractionError => e
-        puts "  AI extraction failed: #{e.message}"
-        puts "  Skipping AI import (Ollama may need more time to warm up)"
+      rescue StandardError => e
+        puts "  Import job error: #{e.message}"
       end
     else
-      puts "  Sample CSV not found, skipping AI import"
+      puts "  Sample CSV not found, skipping import"
     end
   else
     puts "\nSkipping AI import (Ollama not available)"
