@@ -1,17 +1,17 @@
 <% if import.pending? || import.processing? %>
   <h2 class="text-xl font-semibold text-slate-800 mb-2">
-    <%= import.pending? ? "Waiting in Queue" : "Analyzing Your Statement" %>
+    <%= import.pending? ? "Waiting in Queue" : "Analyzing Statement" %>
   </h2>
   
   <p class="text-slate-500 mb-6">
     <% if import.processing? %>
       <% if (progress = import.progress_info) %>
-        Processing page <%= progress[:current] %> of <%= progress[:total] %>...
+        Processing step <%= progress[:current] %> of <%= progress[:total] %>...
       <% else %>
-        AI is extracting transactions from your bank statement. This typically takes 30-60 seconds per page.
+        AI is extracting and categorizing transactions.
       <% end %>
     <% else %>
-      Your import is queued and will begin processing shortly.
+      Import is queued and will begin processing shortly.
     <% end %>
   </p>
 
