@@ -28,9 +28,19 @@ docker exec balance-devcontainer bin/rails db:migrate
 docker exec balance-devcontainer bin/rails test
 docker exec balance-devcontainer rubocop
 
+# Start the development server (runs in background)
+docker exec -d balance-devcontainer bin/dev
+
 # Interactive shell in container
 docker exec -it balance-devcontainer bash
 ```
+
+### Always Start the Server
+When beginning a session, always ensure the dev server is running:
+```bash
+docker exec -d balance-devcontainer bin/dev
+```
+The app will be available at http://localhost:3000
 
 ### Never
 - Run `rails`, `ruby`, or `bundle` commands directly on the host machine
