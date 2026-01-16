@@ -175,14 +175,17 @@ class TransactionExtractorService
   end
 
   def parse_categories_response(response)
-    case response
+    categories = case response
     when Array
-      response.map(&:to_s)
+      response
     when Hash
       response["categories"] || response.values.first || []
     else
       []
     end
+
+    # Ensure all categories are strings
+    categories.map { |c| c.to_s.presence }
   end
 
   def validate_and_normalize(transactions)
@@ -245,19 +248,22 @@ class TransactionExtractorService
   def find_category(name, type)
     return nil if name.blank?
 
+    name_str = name.to_s.strip
+    return nil if name_str.empty?
+
     # Try exact match first
-    category = Category.find_by(name: name, category_type: type)
+    category = Category.find_by(name: name_str, category_type: type)
     return category if category
 
     # Try case-insensitive match
     category = Category.where(category_type: type)
-                       .where("LOWER(name) = ?", name.downcase.strip)
+                       .where("LOWER(name) = ?", name_str.downcase)
                        .first
     return category if category
 
     # Try partial match
     Category.where(category_type: type)
-            .where("LOWER(name) LIKE ?", "%#{name.downcase.strip}%")
+            .where("LOWER(name) LIKE ?", "%#{name_str.downcase}%")
             .first
   end
 end
