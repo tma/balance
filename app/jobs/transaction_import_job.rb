@@ -29,7 +29,7 @@ class TransactionImportJob < ApplicationJob
       transactions = DuplicateDetectionService.mark_duplicates(transactions)
 
       # Store extracted data for user review
-      import.mark_completed!(transactions, count: transactions.size)
+      import.mark_completed!(transactions)
 
     rescue PdfParserService::Error, CsvParserService::Error => e
       import.mark_failed!("File parsing error: #{e.message}")

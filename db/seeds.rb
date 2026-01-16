@@ -1040,6 +1040,9 @@ if Rails.env.development?
             end
           end
 
+          # Mark import as done since we've imported the transactions
+          import.update!(status: "done", transactions_count: imported_count)
+
           puts "  Imported: #{imported_count}, Skipped: #{skipped_count}"
         elsif import.failed?
           puts "  Import failed: #{import.error_message}"

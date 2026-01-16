@@ -77,11 +77,10 @@ class Import < ApplicationRecord
     nil
   end
 
-  def mark_completed!(transactions_data, count: 0)
+  def mark_completed!(transactions_data)
     update!(
       status: "completed",
       extracted_data: transactions_data.to_json,
-      transactions_count: count,
       completed_at: Time.current
     )
   end

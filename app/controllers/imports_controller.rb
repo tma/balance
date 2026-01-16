@@ -125,7 +125,7 @@ class ImportsController < ApplicationController
 
     # Update import with count, optionally mark as done
     if params[:mark_as_done] == "1"
-      @import.update!(transactions_count: @import.transactions_count + imported_count, status: "done")
+      @import.update!(transactions_count: imported_count, status: "done")
     else
       @import.update!(transactions_count: @import.transactions_count + imported_count)
     end
