@@ -150,13 +150,13 @@ class ImportsController < ApplicationController
   end
 
   def reprocess
-    unless @import.failed?
-      redirect_to import_path(@import), alert: "Only failed imports can be reprocessed."
+    unless @import.failed? || @import.completed?
+      redirect_to import_path(@import), alert: "Only failed or ready-for-review imports can be reprocessed."
       return
     end
 
     # Reset the import status and clear error
-    @import.update!(status: "pending", error_message: nil)
+    @import.update!(status: "pending", error_message: nil, extracted_data: "[]")
 
     # Enqueue the background job again
     TransactionImportJob.perform_later(@import.id)
