@@ -17,7 +17,7 @@ Rails.application.routes.draw do
   # Main resources
   resources :accounts, except: :show
   resources :assets, path: "financial-assets" do
-    resources :valuations, only: :destroy, controller: "asset_valuations"
+    resources :valuations, only: [ :edit, :update, :destroy ], controller: "asset_valuations"
   end
   resources :asset_groups, path: "asset-groups", except: [ :index, :show ]
   resources :transactions
@@ -32,8 +32,8 @@ Rails.application.routes.draw do
   end
 
   # Bulk update valuations for all assets
-  get "valuations", to: "asset_valuations#edit", as: :update_valuations
-  patch "valuations", to: "asset_valuations#update"
+  get "valuations", to: "asset_valuations#bulk_edit", as: :update_valuations
+  patch "valuations", to: "asset_valuations#bulk_update"
 
   # Admin namespace for master data
   namespace :admin do

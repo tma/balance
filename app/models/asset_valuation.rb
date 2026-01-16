@@ -6,13 +6,17 @@ class AssetValuation < ApplicationRecord
 
   default_scope { order(date: :desc) }
 
-  before_save :calculate_default_currency_value, unless: :value_in_default_currency?
+  before_save :calculate_default_currency_value, if: :should_recalculate_default_currency_value?
 
   def default_currency
     Currency.default&.code || "USD"
   end
 
   private
+
+  def should_recalculate_default_currency_value?
+    value_in_default_currency.blank? || value_changed?
+  end
 
   def calculate_default_currency_value
     default_curr = default_currency

@@ -3,6 +3,9 @@ class Asset < ApplicationRecord
   belongs_to :asset_group
   has_many :asset_valuations, dependent: :destroy
 
+  # Allow setting a custom date for valuation creation (defaults to current date)
+  attr_accessor :valuation_date
+
   validates :name, presence: true
   validates :currency, presence: true
   validates :value, numericality: true
@@ -53,7 +56,7 @@ class Asset < ApplicationRecord
       value: value,
       value_in_default_currency: value_in_default_currency,
       exchange_rate: exchange_rate,
-      date: Date.current
+      date: valuation_date || Date.current
     )
   end
 end
