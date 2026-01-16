@@ -8,6 +8,7 @@ module ApplicationHelper
       unit: "#{currency} ",
       delimiter: "'",
       separator: ".",
+      precision: 2,
       format: "%u%n"
     )
   end
@@ -20,6 +21,7 @@ module ApplicationHelper
       unit: "",
       delimiter: "'",
       separator: ".",
+      precision: 2,
       format: "%n"
     )
   end
