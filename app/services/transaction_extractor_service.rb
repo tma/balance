@@ -52,13 +52,11 @@ class TransactionExtractorService
   def build_prompt(chunk_text)
     expense_categories = Category.expense.pluck(:name).join(", ")
     income_categories = Category.income.pluck(:name).join(", ")
-    current_year = Date.today.year
 
     <<~PROMPT
       You are a financial transaction parser. Extract all transactions from the following bank statement or financial document.
 
       ACCOUNT CURRENCY: #{account.currency}
-      CURRENT YEAR: #{current_year}
 
       IMPORTANT RULES:
       1. Extract EVERY transaction you can find
@@ -80,7 +78,7 @@ class TransactionExtractorService
       - NEVER interpret the first number as month - that would be American format which is NOT used here
       - Two-digit years (e.g., "25") mean 20XX (2025, not 1925)
       - Bank statements typically cover 1-2 consecutive months, so all dates should be within a reasonable range
-      - If only day and month are shown, assume the year is #{current_year} or #{current_year - 1} based on context
+      - Determine the year from the document header, statement date, or other context in the document
 
       AVAILABLE EXPENSE CATEGORIES: #{expense_categories.presence || "Other"}
       AVAILABLE INCOME CATEGORIES: #{income_categories.presence || "Other"}
