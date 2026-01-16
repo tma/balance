@@ -19,7 +19,7 @@ class ImportsController < ApplicationController
 
   # Returns just the progress/status partial for Turbo Frame updates
   def status
-    render partial: "imports/status", locals: { import: @import }, formats: [:html], layout: false
+    render partial: "imports/status", locals: { import: @import }, formats: [ :html ], layout: false
   end
 
   # Create the import record and enqueue the job

@@ -1,62 +1,48 @@
 <% if import.pending? || import.processing? %>
-  <!-- Processing State -->
-  <div class="bg-white rounded-xl border border-slate-200 p-8 md:p-12">
-    <div class="max-w-md mx-auto text-center">
-      <!-- Animated spinner -->
-      <div class="relative mx-auto w-16 h-16 mb-6">
-        <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
-        <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-500 animate-spin"></div>
-        <% if import.processing? %>
-          <div class="absolute inset-2 rounded-full border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
-        <% end %>
-      </div>
-      
-      <h2 class="text-xl font-semibold text-slate-800 mb-2">
-        <%= import.pending? ? "Waiting in Queue" : "Analyzing Your Statement" %>
-      </h2>
-      
-      <p class="text-slate-500 mb-6">
-        <% if import.processing? %>
-          <% if (progress = import.progress_info) %>
-            Processing page <%= progress[:current] %> of <%= progress[:total] %>...
-          <% else %>
-            AI is extracting transactions from your bank statement. This typically takes 30-60 seconds per page.
-          <% end %>
-        <% else %>
-          Your import is queued and will begin processing shortly.
-        <% end %>
-      </p>
-
-      <% if import.processing? && (progress = import.progress_info) %>
-        <!-- Progress bar -->
-        <div class="w-full max-w-xs mx-auto mb-6">
-          <div class="flex justify-between text-xs text-slate-500 mb-1">
-            <span>Progress</span>
-            <span><%= progress[:percent] %>%</span>
-          </div>
-          <div class="w-full bg-slate-200 rounded-full h-2">
-            <div class="bg-cyan-500 h-2 rounded-full transition-all duration-500" style="width: <%= progress[:percent] %>%"></div>
-          </div>
-        </div>
+  <h2 class="text-xl font-semibold text-slate-800 mb-2">
+    <%= import.pending? ? "Waiting in Queue" : "Analyzing Your Statement" %>
+  </h2>
+  
+  <p class="text-slate-500 mb-6">
+    <% if import.processing? %>
+      <% if (progress = import.progress_info) %>
+        Processing page <%= progress[:current] %> of <%= progress[:total] %>...
+      <% else %>
+        AI is extracting transactions from your bank statement. This typically takes 30-60 seconds per page.
       <% end %>
+    <% else %>
+      Your import is queued and will begin processing shortly.
+    <% end %>
+  </p>
 
-      <!-- Progress indicators -->
-      <div class="flex items-center justify-center gap-6 text-sm">
-        <div class="flex items-center gap-2 <%= import.pending? || import.processing? ? 'text-cyan-600' : 'text-slate-400' %>">
-          <div class="w-2 h-2 rounded-full <%= import.pending? ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500' %>"></div>
-          <span>Upload</span>
-        </div>
-        <div class="w-8 h-px bg-slate-200"></div>
-        <div class="flex items-center gap-2 <%= import.processing? ? 'text-cyan-600' : 'text-slate-400' %>">
-          <div class="w-2 h-2 rounded-full <%= import.processing? ? 'bg-cyan-500 animate-pulse' : 'bg-slate-300' %>"></div>
-          <span>Extract</span>
-        </div>
-        <div class="w-8 h-px bg-slate-200"></div>
-        <div class="flex items-center gap-2 text-slate-400">
-          <div class="w-2 h-2 rounded-full bg-slate-300"></div>
-          <span>Review</span>
-        </div>
+  <% if import.processing? && (progress = import.progress_info) %>
+    <!-- Progress bar -->
+    <div class="w-full max-w-xs mx-auto mb-6">
+      <div class="flex justify-between text-xs text-slate-500 mb-1">
+        <span>Progress</span>
+        <span><%= progress[:percent] %>%</span>
       </div>
+      <div class="w-full bg-slate-200 rounded-full h-2">
+        <div class="bg-cyan-500 h-2 rounded-full transition-all duration-500" style="width: <%= progress[:percent] %>%"></div>
+      </div>
+    </div>
+  <% end %>
+
+  <!-- Progress indicators -->
+  <div class="flex items-center justify-center gap-6 text-sm">
+    <div class="flex items-center gap-2 <%= import.pending? || import.processing? ? 'text-cyan-600' : 'text-slate-400' %>">
+      <div class="w-2 h-2 rounded-full <%= import.pending? ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500' %>"></div>
+      <span>Upload</span>
+    </div>
+    <div class="w-8 h-px bg-slate-200"></div>
+    <div class="flex items-center gap-2 <%= import.processing? ? 'text-cyan-600' : 'text-slate-400' %>">
+      <div class="w-2 h-2 rounded-full <%= import.processing? ? 'bg-cyan-500 animate-pulse' : 'bg-slate-300' %>"></div>
+      <span>Extract</span>
+    </div>
+    <div class="w-8 h-px bg-slate-200"></div>
+    <div class="flex items-center gap-2 text-slate-400">
+      <div class="w-2 h-2 rounded-full bg-slate-300"></div>
+      <span>Review</span>
     </div>
   </div>
 <% else %>

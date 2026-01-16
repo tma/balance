@@ -35,11 +35,23 @@
 
   <% if @import.pending? || @import.processing? %>
     <!-- Processing State with Turbo Frame polling -->
-    <div id="import-status" 
-         data-controller="poll" 
-         data-poll-url-value="<%= status_import_path(@import) %>"
-         data-poll-interval-value="2000">
-      <%= render partial: "imports/status", locals: { import: @import } %>
+    <div class="bg-white rounded-xl border border-slate-200 p-8 md:p-12">
+      <div class="max-w-md mx-auto text-center">
+        <!-- Animated spinner (kept outside polling to stay smooth) -->
+        <div class="relative mx-auto w-16 h-16 mb-6">
+          <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+          <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-500 animate-spin"></div>
+          <div class="absolute inset-2 rounded-full border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+        </div>
+        
+        <!-- Polled content (text and progress bar only) -->
+        <div id="import-status" 
+             data-controller="poll" 
+             data-poll-url-value="<%= status_import_path(@import) %>"
+             data-poll-interval-value="2000">
+          <%= render partial: "imports/status", locals: { import: @import } %>
+        </div>
+      </div>
     </div>
 
   <% elsif @import.failed? %>
@@ -111,7 +123,7 @@
     </div>
 
     <!-- Review Transactions -->
-    <%= form_with url: confirm_import_path(@import), method: :post do |form| %>
+    <%= form_with url: confirm_import_path(@import), method: :post, data: { controller: "import-table" } do |form| %>
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
         <!-- Table Header -->
         <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
@@ -121,10 +133,22 @@
               <span class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Processed in <%= @import.duration.round(1) %>s</span>
             <% end %>
           </div>
-          <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
-            <input type="checkbox" id="select-all" checked class="rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0">
-            <span>Select all non-duplicates</span>
-          </label>
+          <div class="flex items-center gap-4">
+            <span class="text-xs text-slate-400 hidden sm:inline">
+              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">j</kbd>/<kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">k</kbd> navigate
+              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 ml-2">space</kbd> toggle
+              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 ml-2">t</kbd> type
+              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 ml-2">c</kbd> category
+            </span>
+            <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
+              <input type="checkbox" 
+                     checked 
+                     class="rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0"
+                     data-import-table-target="selectAll"
+                     data-action="change->import-table#selectAllChanged">
+              <span>Select all</span>
+            </label>
+          </div>
         </div>
 
         <!-- Transactions Table -->
@@ -142,13 +166,16 @@
             </thead>
             <tbody class="divide-y divide-slate-100">
               <% @transactions.each_with_index do |txn, index| %>
-                <tr class="<%= txn[:is_duplicate] ? 'bg-amber-50/50' : 'hover:bg-slate-50' %> transition-colors">
+                <tr class="<%= txn[:is_duplicate] ? 'bg-amber-50/50 duplicate-row' : 'hover:bg-slate-50' %> transition-colors cursor-pointer"
+                    data-import-table-target="row"
+                    data-action="click->import-table#rowClicked">
                   <td class="px-4 py-3">
                     <input type="checkbox" 
                            name="transactions[<%= index %>][selected]" 
                            value="1"
                            <%= txn[:is_duplicate] ? '' : 'checked' %>
-                           class="transaction-checkbox rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0">
+                           class="transaction-checkbox rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0"
+                           data-action="change->import-table#checkboxChanged">
                     <%= hidden_field_tag "transactions[#{index}][date]", txn[:date] %>
                     <%= hidden_field_tag "transactions[#{index}][description]", txn[:description] %>
                     <%= hidden_field_tag "transactions[#{index}][amount]", txn[:amount] %>
@@ -169,14 +196,14 @@
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][transaction_type]" 
-                            class="w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
+                            class="transaction-type w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
                       <option value="expense" <%= txn[:transaction_type] == 'expense' ? 'selected' : '' %>>Expense</option>
                       <option value="income" <%= txn[:transaction_type] == 'income' ? 'selected' : '' %>>Income</option>
                     </select>
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][category_id]" 
-                            class="w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
+                            class="transaction-category w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
                       <optgroup label="Expense">
                         <% @expense_categories.each do |cat| %>
                           <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name.titleize %></option>
@@ -202,7 +229,7 @@
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl border border-slate-200 p-4">
         <p class="text-sm text-slate-500">
-          <span class="font-medium text-slate-700" id="selected-count"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected for import
+          <span class="font-medium text-slate-700" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected for import
         </p>
         <div class="flex items-center gap-3">
           <%= link_to "Cancel", imports_path, class: "rounded-lg px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition text-sm" %>
@@ -244,31 +271,3 @@
     </div>
   <% end %>
 </div>
-
-<script>
-  // Select all / deselect all functionality
-  const selectAllCheckbox = document.getElementById('select-all');
-  const transactionCheckboxes = document.querySelectorAll('.transaction-checkbox');
-  const selectedCountEl = document.getElementById('selected-count');
-  
-  function updateSelectedCount() {
-    if (selectedCountEl) {
-      const count = document.querySelectorAll('.transaction-checkbox:checked').length;
-      selectedCountEl.textContent = count;
-    }
-  }
-  
-  selectAllCheckbox?.addEventListener('change', function(e) {
-    transactionCheckboxes.forEach(cb => {
-      const row = cb.closest('tr');
-      if (!row.classList.contains('bg-amber-50/50')) {
-        cb.checked = e.target.checked;
-      }
-    });
-    updateSelectedCount();
-  });
-  
-  transactionCheckboxes.forEach(cb => {
-    cb.addEventListener('change', updateSelectedCount);
-  });
-</script>
