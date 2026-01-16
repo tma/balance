@@ -1,3 +1,2 @@
-web: bin/rails server
-css: bin/rails tailwindcss:watch
-worker: bin/rails solid_queue:work
+web: bin/rails server -b 0.0.0.0
+worker: bin/rails solid_queue:start
