@@ -13,38 +13,12 @@ services:
       - RAILS_ENV=development
       - RUBY_DEBUG_OPEN=true
       - RUBY_DEBUG_LAZY=true
-      - OLLAMA_HOST=http://ollama:11434
+      # Use host's native Ollama for Metal GPU acceleration on Apple Silicon
+      - OLLAMA_HOST=http://host.docker.internal:11434
       - OLLAMA_MODEL=mistral
-    depends_on:
-      ollama:
-        condition: service_healthy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: sleep infinity
-
-  ollama:
-    image: ollama/ollama
-    container_name: balance-ollama
-    ports:
-      - "11434:11434"
-    volumes:
-      - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD-SHELL", "ollama list || exit 1"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 10s
-
-  # One-time model pull service
-  ollama-pull:
-    image: curlimages/curl:latest
-    container_name: balance-ollama-pull
-    depends_on:
-      ollama:
-        condition: service_healthy
-    entrypoint: >
-      sh -c "curl -X POST http://ollama:11434/api/pull -d '{\"name\": \"mistral\"}' && echo 'Model pulled successfully'"
-    restart: "no"
 
 volumes:
   bundle_cache:
-  ollama_data:
