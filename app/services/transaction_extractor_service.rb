@@ -90,10 +90,20 @@ class TransactionExtractorService
   end
 
   def parse_response(response)
-    transactions = response["transactions"]
+    # Handle various response formats from the LLM
+    transactions = case response
+    when Array
+      # LLM returned array directly
+      response
+    when Hash
+      # Try common wrapper keys
+      response["transactions"] || response["data"] || response["results"] || []
+    else
+      raise ExtractionError, "Invalid response format: expected Hash or Array, got #{response.class}"
+    end
 
     unless transactions.is_a?(Array)
-      raise ExtractionError, "Invalid response format: expected 'transactions' array"
+      raise ExtractionError, "Invalid response format: expected 'transactions' array, got #{transactions.class}"
     end
 
     transactions
