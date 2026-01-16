@@ -33,6 +33,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
          - RAILS_ENV=production
          - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
          - RAILS_LOG_TO_STDOUT=1
+         - TZ=Europe/Berlin  # Timezone (e.g., America/New_York, Asia/Tokyo)
          - OLLAMA_HOST=http://host.docker.internal:11434
        volumes:
          - balance_storage:/rails/storage

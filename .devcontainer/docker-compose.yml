@@ -13,6 +13,8 @@ services:
       - RAILS_ENV=development
       - RUBY_DEBUG_OPEN=true
       - RUBY_DEBUG_LAZY=true
+      # Timezone (e.g., America/New_York, Europe/London, Asia/Tokyo)
+      - TZ=Europe/Berlin
       # Use host's native Ollama for Metal GPU acceleration on Apple Silicon
       - OLLAMA_HOST=http://host.docker.internal:11434
       - OLLAMA_MODEL=llama3.1:8b
