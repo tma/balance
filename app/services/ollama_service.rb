@@ -45,9 +45,71 @@ class OllamaService
     # @return [Hash] The parsed JSON response
     def generate_json(prompt)
       response = generate(prompt, format: "json")
+      parse_json_response(response)
+    end
+
+    # Attempt to parse JSON, with repair for truncated responses
+    # @param response [String] The JSON string to parse
+    # @return [Hash, Array] The parsed JSON
+    def parse_json_response(response)
       JSON.parse(response)
     rescue JSON::ParserError => e
-      raise ParseError, "Failed to parse Ollama response as JSON: #{e.message}"
+      # Try to repair truncated JSON
+      repaired = repair_truncated_json(response)
+      begin
+        JSON.parse(repaired)
+      rescue JSON::ParserError
+        # Log the original response for debugging
+        Rails.logger.error "Failed to parse Ollama JSON response: #{response.truncate(500)}"
+        raise ParseError, "Failed to parse Ollama response as JSON: #{e.message}"
+      end
+    end
+
+    # Attempt to repair truncated JSON by closing open brackets/braces
+    # @param json_str [String] The potentially truncated JSON
+    # @return [String] The repaired JSON string
+    def repair_truncated_json(json_str)
+      return json_str if json_str.blank?
+
+      # Track open brackets and braces
+      stack = []
+      in_string = false
+      escape_next = false
+
+      json_str.each_char do |char|
+        if escape_next
+          escape_next = false
+          next
+        end
+
+        case char
+        when "\\"
+          escape_next = true if in_string
+        when '"'
+          in_string = !in_string unless escape_next
+        when "{", "["
+          stack.push(char) unless in_string
+        when "}"
+          stack.pop if !in_string && stack.last == "{"
+        when "]"
+          stack.pop if !in_string && stack.last == "["
+        end
+      end
+
+      # Close any remaining open structures
+      repaired = json_str.dup
+
+      # If we're in a string, close it
+      if in_string
+        repaired += '"'
+      end
+
+      # Close remaining brackets/braces in reverse order
+      stack.reverse_each do |open_char|
+        repaired += (open_char == "{" ? "}" : "]")
+      end
+
+      repaired
     end
 
     # Check if Ollama is available and responding
