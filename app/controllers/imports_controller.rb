@@ -36,6 +36,18 @@ class ImportsController < ApplicationController
 
   def new
     @accounts = Account.order(:name)
+    # Load imports that need attention (pending review or still processing)
+    @pending_imports = Import.includes(:account)
+                             .where(status: %w[pending processing completed])
+                             .where.not(status: "completed", transactions_count: 1..)
+                             .or(Import.where(status: %w[pending processing]))
+                             .recent
+                             .limit(10)
+
+    # Simpler query: completed with 0 transactions imported, or still in progress
+    @pending_imports = Import.includes(:account).recent.limit(20).select do |import|
+      import.pending? || import.processing? || (import.completed? && import.transactions_count == 0)
+    end
   end
 
   def show

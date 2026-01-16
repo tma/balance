@@ -16,7 +16,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
   test "should get new" do
     get new_import_path
     assert_response :success
-    assert_select "h1", "Import Transactions"
+    assert_select "h1", "Import"
   end
 
   test "should show import" do
