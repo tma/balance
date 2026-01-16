@@ -7,6 +7,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 - **Cash Flow Dashboard** - 12-month income/expense overview with saving rate tracking
 - **Net Worth Tracking** - Monitor cash accounts, assets, and liabilities
 - **Transactions** - Record and categorize income and expenses across multiple accounts
+- **AI-Powered Import** - Import transactions from bank statements (CSV/PDF) using local LLM
 - **Budget Management** - Set monthly and yearly budgets with visual progress indicators
 - **Multi-Currency Support** - Track accounts and assets in different currencies (USD, EUR, GBP, CHF, etc.)
 - **Asset Tracking** - Monitor investments, property, and liabilities with value history
@@ -17,6 +18,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 ### Prerequisites
 
 - Docker and Docker Compose installed
+- (Optional) [Ollama](https://ollama.ai) for AI-powered transaction import
 
 ### Quick Start
 
@@ -31,8 +33,11 @@ A personal finance budgeting application for tracking income, expenses, budgets,
          - RAILS_ENV=production
          - RAILS_MASTER_KEY=${RAILS_MASTER_KEY}
          - RAILS_LOG_TO_STDOUT=1
+         - OLLAMA_HOST=http://host.docker.internal:11434
        volumes:
          - balance_storage:/rails/storage
+       extra_hosts:
+         - "host.docker.internal:host-gateway"
        restart: unless-stopped
    
    volumes:
@@ -55,6 +60,17 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
 5. On first run, the database will be seeded with default currencies, categories, and account types.
 
+### AI-Powered Transaction Import
+
+To enable AI-powered transaction import from bank statements:
+
+1. Install and run [Ollama](https://ollama.ai) on your host machine
+2. Pull the recommended model:
+   ```bash
+   ollama pull llama3.1:8b
+   ```
+3. The app will automatically connect to Ollama via `host.docker.internal:11434`
+
 ### Stopping the Application
 
 ```bash
@@ -65,12 +81,40 @@ docker compose down
 
 All data (transactions, accounts, assets) is stored in the `balance_storage` Docker volume and persists between restarts.
 
+## Development
+
+### Prerequisites
+
+- Docker and Docker Compose
+
+### Setup
+
+1. Clone the repository
+2. Start the devcontainer:
+   ```bash
+   docker compose -f .devcontainer/docker-compose.yml up -d
+   ```
+3. Start the development server:
+   ```bash
+   docker exec -d balance-devcontainer bin/dev
+   ```
+4. Open http://localhost:3000
+
+### Running Tests
+
+```bash
+docker exec balance-devcontainer bin/rails test
+docker exec balance-devcontainer rubocop
+```
+
 ## Tech Stack
 
 - Ruby on Rails 8.x
 - SQLite database
 - Tailwind CSS
 - Hotwire (Turbo + Stimulus)
+- Solid Queue (background jobs)
+- Ollama (local LLM for AI features)
 
 ## License
 
