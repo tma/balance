@@ -5,6 +5,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     @account = accounts(:checking_account)
     @completed_import = imports(:one) # completed status
     @pending_import = imports(:two)   # pending status
+    @failed_import = imports(:three)  # failed status
   end
 
   test "should get index" do
@@ -126,5 +127,32 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
     # The page should include Stimulus polling controller
     assert_includes @response.body, 'data-controller="poll"'
+  end
+
+  test "destroy deletes completed import" do
+    assert_difference("Import.count", -1) do
+      delete import_path(@completed_import)
+    end
+
+    assert_redirected_to new_import_path
+    assert_equal "Import deleted.", flash[:notice]
+  end
+
+  test "destroy deletes failed import" do
+    assert_difference("Import.count", -1) do
+      delete import_path(@failed_import)
+    end
+
+    assert_redirected_to new_import_path
+    assert_equal "Import deleted.", flash[:notice]
+  end
+
+  test "destroy prevents deletion of pending import" do
+    assert_no_difference("Import.count") do
+      delete import_path(@pending_import)
+    end
+
+    assert_redirected_to import_path(@pending_import)
+    assert_equal "Cannot delete an import that is still processing.", flash[:alert]
   end
 end

@@ -1,5 +1,5 @@
 class ImportsController < ApplicationController
-  before_action :set_import, only: %i[show confirm status]
+  before_action :set_import, only: %i[show confirm status destroy]
 
   def index
     # Determine current year from params or default to current year
@@ -9,10 +9,13 @@ class ImportsController < ApplicationController
       Date.current.year
     end
 
-    # Fetch imports and filter by year based on transaction_month or created_at
-    all_imports = Import.recent.includes(:account)
+    # Only show "finalized" imports: completed with transactions imported, or failed
+    # Pending, processing, and ready-for-review imports are shown on the Import (new) page
+    all_imports = Import.recent.includes(:account).select do |import|
+      import.failed? || (import.completed? && import.transactions_count > 0)
+    end
 
-    # Filter imports: completed ones by transaction month year, others by created_at year
+    # Filter by year based on transaction_month or created_at
     imports = all_imports.select do |import|
       if import.transaction_month
         import.transaction_month.year == @current_year
@@ -36,17 +39,12 @@ class ImportsController < ApplicationController
 
   def new
     @accounts = Account.order(:name)
-    # Load imports that need attention (pending review or still processing)
-    @pending_imports = Import.includes(:account)
-                             .where(status: %w[pending processing completed])
-                             .where.not(status: "completed", transactions_count: 1..)
-                             .or(Import.where(status: %w[pending processing]))
-                             .recent
-                             .limit(10)
-
-    # Simpler query: completed with 0 transactions imported, or still in progress
+    # Load imports that need attention:
+    # - pending/processing (in progress)
+    # - completed with 0 transactions imported (ready for review)
+    # - failed (can be deleted)
     @pending_imports = Import.includes(:account).recent.limit(20).select do |import|
-      import.pending? || import.processing? || (import.completed? && import.transactions_count == 0)
+      import.pending? || import.processing? || import.failed? || (import.completed? && import.transactions_count == 0)
     end
   end
 
@@ -133,6 +131,16 @@ class ImportsController < ApplicationController
     end
 
     redirect_to transactions_path
+  end
+
+  def destroy
+    unless @import.completed? || @import.failed?
+      redirect_to import_path(@import), alert: "Cannot delete an import that is still processing."
+      return
+    end
+
+    @import.destroy
+    redirect_to new_import_path, notice: "Import deleted."
   end
 
   private

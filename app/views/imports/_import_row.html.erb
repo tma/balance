@@ -46,7 +46,10 @@
   <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-400">
     <%= time_ago_in_words(import.created_at) %> ago
   </td>
-  <td class="px-4 py-2 whitespace-nowrap text-right text-sm">
+  <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
     <%= link_to "View", import_path(import), class: "text-cyan-600 hover:text-cyan-700" %>
+    <% if import.completed? || import.failed? %>
+      <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
+    <% end %>
   </td>
 </tr>
