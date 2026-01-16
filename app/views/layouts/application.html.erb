@@ -26,8 +26,21 @@
   <body class="bg-slate-50 min-h-screen">
     <!-- Desktop sidebar -->
     <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200">
-      <div class="flex items-center h-16 px-4 border-b border-slate-200">
-        <h1 class="text-xl font-bold text-slate-700">Balance</h1>
+      <div class="flex items-center h-16 px-2 border-b border-slate-200">
+        <a href="/" class="flex items-center gap-3 px-4">
+          <svg class="flex-shrink-0" viewBox="0 0 32 20" fill="none" width="32" height="20">
+            <defs>
+              <linearGradient id="logo-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#06b6d4"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="32" height="20" rx="3" fill="url(#logo-gradient)"/>
+            <rect x="0" y="6" width="32" height="4" fill="rgba(255,255,255,0.3)"/>
+            <circle cx="26" cy="14" r="3" fill="white"/>
+          </svg>
+          <span class="text-xl font-semibold tracking-tight text-slate-800">Balance</span>
+        </a>
       </div>
       <nav class="flex-1 px-2 py-4 space-y-1">
         <!-- Dashboard - Overview & Analysis -->
@@ -65,7 +78,20 @@
     <!-- Mobile header -->
     <header class="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50">
       <div class="flex items-center justify-between h-14 px-4">
-        <h1 class="text-lg font-bold text-slate-700">Balance</h1>
+        <a href="/" class="flex items-center gap-2.5 pl-1">
+          <svg class="flex-shrink-0" viewBox="0 0 32 20" fill="none" width="28" height="17">
+            <defs>
+              <linearGradient id="logo-gradient-mobile" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#06b6d4"/>
+                <stop offset="100%" style="stop-color:#3b82f6"/>
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="32" height="20" rx="3" fill="url(#logo-gradient-mobile)"/>
+            <rect x="0" y="6" width="32" height="4" fill="rgba(255,255,255,0.3)"/>
+            <circle cx="26" cy="14" r="3" fill="white"/>
+          </svg>
+          <span class="text-lg font-semibold tracking-tight text-slate-800">Balance</span>
+        </a>
       </div>
     </header>
 
