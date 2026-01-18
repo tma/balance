@@ -25,7 +25,7 @@
     end
   %>
 
-  <div class="flex justify-between items-start">
+  <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
     <div>
       <div class="flex items-center space-x-4 mb-2">
         <%= link_to net_worth_path(month: (@valuation_date - 1.month).strftime("%Y-%m")), class: "text-slate-400 hover:text-slate-600" do %>
@@ -49,8 +49,8 @@
     </div>
     
     <% if group_data.any? %>
-      <div class="flex items-center">
-        <svg width="100" height="100" viewBox="0 0 160 160">
+      <div class="flex flex-col sm:flex-row items-center gap-4">
+        <svg class="w-24 h-24 sm:w-[100px] sm:h-[100px] flex-shrink-0" viewBox="0 0 160 160">
           <% offset = 0 %>
           <% group_data.each do |group| %>
             <% arc_length = (group[:pct] * 3.77).round(2) %>
@@ -63,13 +63,13 @@
           <% end %>
         </svg>
         
-        <div class="space-y-2" style="margin-left: 2rem;">
+        <div class="space-y-1 sm:space-y-2">
           <% group_data.each do |group| %>
-            <div class="flex items-center">
-              <svg class="flex-shrink-0" width="16" height="16"><rect width="16" height="16" fill="<%= group[:color] %>"/></svg>
-              <span class="text-sm text-slate-600 whitespace-nowrap ml-3 w-32"><%= group[:name] %></span>
-              <span class="text-sm text-slate-700 whitespace-nowrap w-28 text-right"><%= format_currency(group[:value], precision: 0) %></span>
-              <span class="text-sm text-slate-400 whitespace-nowrap w-12 text-right"><%= group[:pct] %>%</span>
+            <div class="flex items-center gap-2 sm:gap-3">
+              <svg class="flex-shrink-0" width="12" height="12"><rect width="12" height="12" fill="<%= group[:color] %>"/></svg>
+              <span class="text-xs sm:text-sm text-slate-600 truncate max-w-[80px] sm:max-w-[128px]"><%= group[:name] %></span>
+              <span class="text-xs sm:text-sm text-slate-700 whitespace-nowrap ml-auto"><%= format_currency(group[:value], precision: 0) %></span>
+              <span class="text-xs sm:text-sm text-slate-400 whitespace-nowrap w-10 sm:w-12 text-right"><%= group[:pct] %>%</span>
             </div>
           <% end %>
         </div>
@@ -99,7 +99,7 @@
         @asset_groups.sum { |g| [@history_by_group_quarterly[g.id][q] || 0, 0].max }
       }.max || 1
     %>
-    <div class="grid grid-cols-2 gap-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Monthly Chart -->
       <div class="bg-white rounded-xl border border-slate-200 p-4">
         <h2 class="text-sm font-semibold text-slate-800 mb-3">Monthly</h2>

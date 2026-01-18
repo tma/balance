@@ -114,23 +114,23 @@
     <!-- Mobile bottom navigation -->
     <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
       <div class="flex justify-around py-2">
-        <%= link_to cash_flow_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/' || request.path == '/cash-flow' ? 'text-cyan-600' : 'text-slate-400'}" do %>
-          <span class="text-xl">$</span>
-          <span class="text-xs">Cash Flow</span>
-        <% end %>
         <%= link_to net_worth_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/net-worth' ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">#</span>
           <span class="text-xs">Net Worth</span>
         <% end %>
-        <%= link_to new_transaction_path, class: "flex flex-col items-center px-3 py-1 #{request.path == new_transaction_path ? 'text-cyan-600' : 'text-slate-400'}" do %>
-          <span class="text-xl">+</span>
-          <span class="text-xs">Add</span>
+        <%= link_to cash_flow_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/cash-flow' ? 'text-cyan-600' : 'text-slate-400'}" do %>
+          <span class="text-xl">$</span>
+          <span class="text-xs">Cash Flow</span>
         <% end %>
-        <%= link_to transactions_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/transactions') && request.path != new_transaction_path ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to assets_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'text-cyan-600' : 'text-slate-400'}" do %>
+          <span class="text-xl">~</span>
+          <span class="text-xs">Assets</span>
+        <% end %>
+        <%= link_to transactions_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/transactions') || request.path.start_with?('/imports') ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">=</span>
-          <span class="text-xs">History</span>
+          <span class="text-xs">Transactions</span>
         <% end %>
-        <%= link_to accounts_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/accounts', '/financial-assets', '/budgets', '/admin', '/valuations') ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to accounts_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/accounts', '/budgets', '/admin', '/valuations') ? 'text-cyan-600' : 'text-slate-400'}" do %>
           <span class="text-xl">*</span>
           <span class="text-xs">More</span>
         <% end %>
