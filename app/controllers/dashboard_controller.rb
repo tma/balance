@@ -2,8 +2,8 @@ class DashboardController < ApplicationController
   def home
     @default_currency = Currency.default&.code || "USD"
 
-    # Net worth data for latest month
-    @valuation_date = Date.current.end_of_month
+    # Net worth data for latest complete month (last month end)
+    @valuation_date = (Date.current.beginning_of_month - 1.day).end_of_month
     @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations ]).order(:position, :name)
 
     # Build valuations lookup for current month
@@ -56,11 +56,11 @@ class DashboardController < ApplicationController
   def net_worth
     @default_currency = Currency.default&.code || "USD"
 
-    # Current viewing month (default to current month)
+    # Current viewing month (default to last complete month)
     if params[:month].present?
       @valuation_date = Date.parse("#{params[:month]}-01").end_of_month
     else
-      @valuation_date = Date.current.end_of_month
+      @valuation_date = (Date.current.beginning_of_month - 1.day).end_of_month
     end
     @current_month = @valuation_date.strftime("%Y-%m")
 
