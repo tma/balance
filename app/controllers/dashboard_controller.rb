@@ -16,15 +16,48 @@ class DashboardController < ApplicationController
 
   def net_worth
     @default_currency = Currency.default&.code || "USD"
-
-    # Net worth in default currency only
-    @net_worth = calculate_net_worth_in_default_currency
+    
+    # Current viewing month (default to current month)
+    if params[:month].present?
+      @valuation_date = Date.parse("#{params[:month]}-01").end_of_month
+    else
+      @valuation_date = Date.current.end_of_month
+    end
+    @current_month = @valuation_date.strftime("%Y-%m")
 
     # Asset groups with their assets
-    @asset_groups = AssetGroup.includes(assets: :asset_type).order(:name)
+    @asset_groups = AssetGroup.includes(assets: [:asset_type, :asset_valuations]).order(:position, :name)
+    
+    # Build valuations lookup for selected month
+    @valuations_by_asset = {}
+    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+      valuation = asset.asset_valuations.find { |v| v.date == @valuation_date }
+      @valuations_by_asset[asset.id] = valuation
+    end
 
-    # Overall totals in default currency
-    @totals = calculate_totals_in_default_currency
+    # Net worth for selected month
+    @net_worth = calculate_net_worth_for_month(@valuation_date)
+    
+    # Previous month net worth for comparison
+    previous_month = @valuation_date - 1.month
+    @previous_month_net_worth = calculate_net_worth_for_month(previous_month)[:net_worth]
+    @net_worth_change = @net_worth[:net_worth] - @previous_month_net_worth
+
+    # Overall totals for selected month
+    @totals = calculate_totals_for_month(@valuation_date)
+    
+    # Group totals for selected month
+    @group_totals = {}
+    @asset_groups.each do |group|
+      net = 0
+      group.assets.each do |asset|
+        valuation = @valuations_by_asset[asset.id]
+        next unless valuation
+        value = valuation.value_in_default_currency || 0
+        net += asset.asset_type.is_liability ? -value : value
+      end
+      @group_totals[group.id] = net
+    end
   end
 
   private
@@ -51,6 +84,77 @@ class DashboardController < ApplicationController
       liabilities: total_liabilities,
       net: total_assets - total_liabilities
     }
+  end
+
+  def calculate_net_worth_for_month(date)
+    month_end = date.end_of_month
+    
+    assets_value = 0
+    liabilities_value = 0
+    
+    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+      valuation = asset.asset_valuations.find { |v| v.date == month_end }
+      next unless valuation
+      
+      value = valuation.value_in_default_currency || 0
+      if asset.asset_type.is_liability
+        liabilities_value += value
+      else
+        assets_value += value
+      end
+    end
+    
+    {
+      cash: 0,
+      assets: assets_value,
+      liabilities: liabilities_value,
+      net_worth: assets_value - liabilities_value
+    }
+  end
+
+  def calculate_totals_for_month(date)
+    month_end = date.end_of_month
+    
+    total_assets = 0
+    total_liabilities = 0
+    
+    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+      valuation = asset.asset_valuations.find { |v| v.date == month_end }
+      next unless valuation
+      
+      value = valuation.value_in_default_currency || 0
+      if asset.asset_type.is_liability
+        total_liabilities += value
+      else
+        total_assets += value
+      end
+    end
+    
+    {
+      assets: total_assets,
+      liabilities: total_liabilities,
+      net: total_assets - total_liabilities
+    }
+  end
+
+  def calculate_previous_month_net_worth
+    previous_month = Date.current.end_of_month - 1.month
+    
+    # Sum valuations from previous month
+    total = 0
+    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+      valuation = asset.asset_valuations.find { |v| v.date == previous_month }
+      next unless valuation
+      
+      value = valuation.value_in_default_currency || 0
+      if asset.asset_type.is_liability
+        total -= value
+      else
+        total += value
+      end
+    end
+    
+    total
   end
 
   def calculate_monthly_data(months)
