@@ -28,6 +28,12 @@
     <% has_assets = @asset_groups.joins(:assets).distinct.any? %>
 
     <% if has_assets %>
+      <%# Build flat list of all assets for tabindex calculation (column-first order) %>
+      <% all_assets = @asset_groups.flat_map { |g| g.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name) } %>
+      <% total_assets = all_assets.size %>
+      <% asset_row_index = {} %>
+      <% all_assets.each_with_index { |a, i| asset_row_index[a.id] = i } %>
+
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div class="overflow-x-auto" data-controller="scroll-right">
           <table class="w-full">
@@ -70,24 +76,27 @@
                         </p>
                       <% end %>
                     </td>
-                    <% @months.each_with_index do |month, idx| %>
+                    <% @months.each_with_index do |month, month_idx| %>
                       <td class="px-2 py-2">
                         <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
                         <% is_liability = asset.asset_type.is_liability %>
-                        <% is_last = idx == @months.length - 1 %>
-                        <% is_second_last = idx == @months.length - 2 %>
+                        <% is_last = month_idx == @months.length - 1 %>
+                        <% is_second_last = month_idx == @months.length - 2 %>
+                        <% tab_index = (month_idx * total_assets) + asset_row_index[asset.id] + 1 %>
                         <div class="<%= is_last ? 'relative' : '' %>">
                           <% if is_last %>
                             <button type="button" 
                                     data-action="click->copy-previous#copy"
                                     class="absolute inset-y-0 flex items-center text-slate-400 hover:text-cyan-600 text-xs" 
                                     style="left: 8px;"
+                                    tabindex="-1"
                                     title="Copy from previous month">→</button>
                           <% end %>
                           <input type="text"
                                  inputmode="decimal"
                                  name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
                                  value="<%= existing_value&.to_f %>"
+                                 tabindex="<%= tab_index %>"
                                  data-controller="currency-input"
                                  data-currency-form-target="input"
                                  data-currency-input-liability-value="<%= is_liability %>"
