@@ -7,7 +7,8 @@ export default class extends Controller {
     this.inputTargets.forEach(input => {
       const value = input.value
       if (value) {
-        input.value = value.replace(/[-']/g, "")
+        // Remove everything except digits and decimal point
+        input.value = value.replace(/[^\d.]/g, "")
       }
     })
   }

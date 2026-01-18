@@ -29,7 +29,11 @@ class AssetValuationsController < ApplicationController
           next if value.blank?
 
           date = Date.parse(date_str)
-          new_value = BigDecimal(value)
+          # Strip non-numeric characters (currency codes, spaces, thousand separators)
+          sanitized_value = value.to_s.gsub(/[^\d.]/, "")
+          next if sanitized_value.blank?
+
+          new_value = BigDecimal(sanitized_value)
 
           # Find existing valuation or build new one
           valuation = asset.asset_valuations.find_or_initialize_by(date: date)
