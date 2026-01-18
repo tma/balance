@@ -2,18 +2,7 @@
   <%
     # Calculate totals for chart
     total_abs = @asset_groups.sum { |g| g.assets.sum { |a| a.value_in_default_currency&.abs || 0 } }
-    group_colors = [
-      '#60a5fa', # blue-400
-      '#4ade80', # green-400
-      '#f87171', # red-400
-      '#a78bfa', # violet-400
-      '#fb923c', # orange-400
-      '#22d3ee', # cyan-400
-      '#e879f9', # fuchsia-400
-      '#facc15', # yellow-400
-      '#94a3b8', # slate-400
-      '#2dd4bf', # teal-400
-    ]
+    default_colors = %w[#60a5fa #4ade80 #f87171 #a78bfa #fb923c #22d3ee #e879f9 #facc15 #94a3b8 #2dd4bf]
     
     # Build group data
     group_data = []
@@ -25,7 +14,7 @@
         name: group.name,
         value: group_total,
         pct: total_abs > 0 ? (group_total.to_f / total_abs * 100).round(1) : 0,
-        color: group_colors[idx % group_colors.length],
+        color: group.color || default_colors[idx % default_colors.length],
       }
     end
   %>
@@ -71,7 +60,7 @@
         <div class="space-y-2" style="margin-left: 2rem;">
           <% group_data.each do |group| %>
             <div class="flex items-center">
-              <span class="w-2.5 h-2.5 rounded-full flex-shrink-0" style="background-color: <%= group[:color] %>"></span>
+              <svg class="flex-shrink-0" width="16" height="16"><rect width="16" height="16" fill="<%= group[:color] %>"/></svg>
               <span class="text-sm text-slate-600 whitespace-nowrap ml-3 w-32"><%= group[:name] %></span>
               <span class="text-sm text-slate-700 whitespace-nowrap w-28 text-right"><%= format_currency(group[:value], precision: 0) %></span>
               <span class="text-sm text-slate-400 whitespace-nowrap w-12 text-right"><%= group[:pct] %>%</span>
@@ -88,6 +77,106 @@
   <% if @net_worth[:net_worth] == 0 && @net_worth[:cash] == 0 && @net_worth[:assets] == 0 %>
     <div class="bg-white rounded-xl border border-slate-200 p-6">
       <p class="text-slate-500">No financial data yet. Add accounts or assets to get started.</p>
+    </div>
+  <% end %>
+
+  <!-- History Bar Charts -->
+  <% if @asset_groups.any? { |g| g.assets.any? } %>
+    <%
+      chart_height = 150
+      
+      max_value = @history_months.map { |m| 
+        @asset_groups.sum { |g| [@history_by_group[g.id][m] || 0, 0].max }
+      }.max || 1
+      
+      max_value_q = @history_quarters.map { |q| 
+        @asset_groups.sum { |g| [@history_by_group_quarterly[g.id][q] || 0, 0].max }
+      }.max || 1
+    %>
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Monthly Chart -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3">Monthly</h2>
+        <div class="w-full px-2">
+          <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
+            <% bar_pct = 7 %>
+            <% gap_pct = 1.33 %>
+            <% start_offset = (gap_pct / 2) %>
+            <% @history_months.each_with_index do |month, month_idx| %>
+              <% x_pct = start_offset + month_idx * (bar_pct + gap_pct) %>
+              <% y_offset = 0 %>
+              <% month_total = @asset_groups.sum { |g| @history_by_group[g.id][month] || 0 } %>
+              
+              <% @asset_groups.to_a.reverse.each do |group| %>
+                <% value = @history_by_group[group.id][month] || 0 %>
+                <% next if value <= 0 %>
+                <% bar_height = (value.to_f / max_value * chart_height).round %>
+                <% y = chart_height - y_offset - bar_height %>
+                <% pct = month_total > 0 ? (value.to_f / month_total * 100).round(1) : 0 %>
+                
+                <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
+                      fill="<%= group.color || '#94a3b8' %>">
+                  <title><%= group.name %>: <%= number_to_currency(value, precision: 0, unit: @default_currency + ' ', format: '%u%n', delimiter: "'") %> (<%= pct %>%)</title>
+                </rect>
+                
+                <% y_offset += bar_height %>
+              <% end %>
+            <% end %>
+          </svg>
+          <div class="flex" style="font-size: 9px;">
+            <% @history_months.each_with_index do |month, month_idx| %>
+              <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
+                <div class="text-slate-500"><%= month.strftime("%b")[0] %></div>
+                <% if month.month == 1 || month_idx == 0 %>
+                  <div class="text-slate-400"><%= month.strftime("%y") %></div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quarterly Chart -->
+      <div class="bg-white rounded-xl border border-slate-200 p-4">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3">Quarterly</h2>
+        <div class="w-full px-2">
+          <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
+            <% bar_pct = 7 %>
+            <% gap_pct = 1.33 %>
+            <% start_offset = (gap_pct / 2) %>
+            <% @history_quarters.each_with_index do |quarter, q_idx| %>
+              <% x_pct = start_offset + q_idx * (bar_pct + gap_pct) %>
+              <% y_offset = 0 %>
+              <% quarter_total = @asset_groups.sum { |g| @history_by_group_quarterly[g.id][quarter] || 0 } %>
+              
+              <% @asset_groups.to_a.reverse.each do |group| %>
+                <% value = @history_by_group_quarterly[group.id][quarter] || 0 %>
+                <% next if value <= 0 %>
+                <% bar_height = (value.to_f / max_value_q * chart_height).round %>
+                <% y = chart_height - y_offset - bar_height %>
+                <% pct = quarter_total > 0 ? (value.to_f / quarter_total * 100).round(1) : 0 %>
+                
+                <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
+                      fill="<%= group.color || '#94a3b8' %>">
+                  <title><%= group.name %>: <%= number_to_currency(value, precision: 0, unit: @default_currency + ' ', format: '%u%n', delimiter: "'") %> (<%= pct %>%)</title>
+                </rect>
+                
+                <% y_offset += bar_height %>
+              <% end %>
+            <% end %>
+          </svg>
+          <div class="flex" style="font-size: 9px;">
+            <% @history_quarters.each_with_index do |quarter, q_idx| %>
+              <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
+                <div class="text-slate-500">Q<%= ((quarter.month - 1) / 3) + 1 %></div>
+                <% if quarter.month <= 3 || q_idx == 0 %>
+                  <div class="text-slate-400"><%= quarter.strftime("%y") %></div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
     </div>
   <% end %>
 
@@ -111,7 +200,10 @@
 
             <tr class="bg-slate-200 <%= group_index > 0 ? 'border-t-4 border-slate-300' : '' %>">
               <td class="px-4 py-2">
-                <span class="font-semibold text-slate-700 whitespace-nowrap"><%= group.name %></span>
+                <span class="inline-flex items-center">
+                  <svg class="flex-shrink-0 mr-2" width="16" height="16"><rect width="16" height="16" fill="<%= group.color || '#94a3b8' %>"/></svg>
+                  <span class="font-semibold text-slate-700 whitespace-nowrap"><%= group.name %></span>
+                </span>
               </td>
               <td></td>
             </tr>

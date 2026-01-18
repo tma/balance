@@ -50,7 +50,10 @@
 
                 <tr class="bg-slate-200 <%= group_index > 0 ? 'border-t-4 border-slate-300' : 'border-t border-slate-200' %>">
                   <td class="sticky left-0 bg-slate-200 px-4 py-2 z-10">
-                    <span class="font-semibold text-slate-700 whitespace-nowrap"><%= group.name %></span>
+                    <span class="inline-flex items-center">
+                      <svg class="flex-shrink-0 mr-2" width="16" height="16"><rect width="16" height="16" fill="<%= group.color || '#94a3b8' %>"/></svg>
+                      <span class="font-semibold text-slate-700 whitespace-nowrap"><%= group.name %></span>
+                    </span>
                   </td>
                   <% @months.each do |month| %>
                     <td class="bg-slate-200"></td>

@@ -58,9 +58,38 @@ class DashboardController < ApplicationController
       end
       @group_totals[group.id] = net
     end
+
+    # Historical data for bar chart (12 months ending at valuation_date)
+    @history_months = (0..11).map { |i| (@valuation_date - i.months).end_of_month }.reverse
+    @history_by_group = build_history_by_group(@history_months)
+
+    # Quarterly history (12 quarters = 3 years, using end of quarter)
+    @history_quarters = (0..11).map { |i| (@valuation_date - (i * 3).months).end_of_quarter }.reverse
+    @history_by_group_quarterly = build_history_by_group(@history_quarters)
   end
 
   private
+
+  def build_history_by_group(dates)
+    # Returns: { group_id => { date => absolute_value } }
+    # Uses absolute values for stacked bar chart (like donut chart)
+    history = Hash.new { |h, k| h[k] = {} }
+    
+    @asset_groups.each do |group|
+      dates.each do |date|
+        total = 0
+        group.assets.each do |asset|
+          valuation = asset.asset_valuations.find { |v| v.date == date }
+          next unless valuation
+          value = valuation.value_in_default_currency || 0
+          total += value.abs
+        end
+        history[group.id][date] = total
+      end
+    end
+    
+    history
+  end
 
   def calculate_net_worth_in_default_currency
     cash = Account.sum(:balance_in_default_currency) || 0
