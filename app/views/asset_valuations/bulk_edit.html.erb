@@ -61,7 +61,7 @@
                 </tr>
 
                 <% assets.each do |asset| %>
-                  <tr class="hover:bg-slate-50 transition border-t border-slate-100">
+                  <tr class="hover:bg-slate-50 transition border-t border-slate-100" data-controller="copy-previous">
                     <td class="sticky left-0 bg-white px-4 py-3 hover:bg-slate-50">
                       <%= link_to asset, class: "block" do %>
                         <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap"><%= asset.name %></p>
@@ -70,20 +70,35 @@
                         </p>
                       <% end %>
                     </td>
-                    <% @months.each do |month| %>
+                    <% @months.each_with_index do |month, idx| %>
                       <td class="px-2 py-2">
                         <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
                         <% is_liability = asset.asset_type.is_liability %>
-                        <input type="text"
-                               inputmode="decimal"
-                               name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
-                               value="<%= existing_value&.to_f %>"
-                               data-controller="currency-input"
-                               data-currency-form-target="input"
-                               data-currency-input-liability-value="<%= is_liability %>"
-                               data-action="focus->currency-input#unformat blur->currency-input#format"
-                               class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm <%= existing_value ? '' : 'bg-slate-50' %>"
-                               placeholder="—">
+                        <% is_last = idx == @months.length - 1 %>
+                        <% is_second_last = idx == @months.length - 2 %>
+                        <div class="<%= is_last ? 'relative' : '' %>">
+                          <% if is_last %>
+                            <button type="button" 
+                                    data-action="click->copy-previous#copy"
+                                    class="absolute inset-y-0 flex items-center text-slate-400 hover:text-cyan-600 text-xs" 
+                                    style="left: 8px;"
+                                    title="Copy from previous month">→</button>
+                          <% end %>
+                          <input type="text"
+                                 inputmode="decimal"
+                                 name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
+                                 value="<%= existing_value&.to_f %>"
+                                 data-controller="currency-input"
+                                 data-currency-form-target="input"
+                                 data-currency-input-liability-value="<%= is_liability %>"
+                                 data-currency-input-original-value="<%= existing_value&.to_f %>"
+                                 data-action="focus->currency-input#unformat blur->currency-input#format"
+                                 <% if is_second_last %>data-copy-previous-target="source"<% end %>
+                                 <% if is_last %>data-copy-previous-target="destination"<% end %>
+                                 class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm <%= existing_value ? '' : 'bg-slate-50' %>"
+                                 style="<%= is_last ? 'padding-left: 1.75rem;' : '' %>"
+                                 placeholder="—">
+                        </div>
                       </td>
                     <% end %>
                   </tr>
