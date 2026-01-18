@@ -19,7 +19,7 @@
         <tbody class="bg-white">
           <% @categories.each do |category| %>
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700 capitalize"><%= category.name %></td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700"><%= category.name %></td>
               <td class="px-4 py-2 whitespace-nowrap text-sm">
                 <% if category.category_type == "income" %>
                   <span class="px-1.5 py-0.5 text-xs rounded bg-emerald-50 text-emerald-600">Income</span>

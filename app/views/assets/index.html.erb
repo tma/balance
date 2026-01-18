@@ -52,7 +52,7 @@
                   <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
-                  <%= asset.asset_type.name.capitalize %>
+                  <%= asset.asset_type.name %>
                   <% if asset.asset_type.is_liability? %>
                     <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span>
                   <% end %>

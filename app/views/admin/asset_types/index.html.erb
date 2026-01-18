@@ -19,7 +19,7 @@
         <tbody class="bg-white">
           <% @asset_types.each do |asset_type| %>
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700 capitalize"><%= asset_type.name %></td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700"><%= asset_type.name %></td>
               <td class="px-4 py-2 whitespace-nowrap text-sm">
                 <% if asset_type.is_liability? %>
                   <span class="px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span>

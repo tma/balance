@@ -1,10 +1,10 @@
 <% content_for :title, "Asset Type - Admin" %>
 
 <div class="max-w-md">
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">Asset Type: <%= @asset_type.name.capitalize %></h1>
+  <h1 class="text-2xl font-bold text-slate-800 mb-6">Asset Type: <%= @asset_type.name %></h1>
 
   <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-    <p class="text-slate-700 mb-2"><strong>Name:</strong> <%= @asset_type.name.capitalize %></p>
+    <p class="text-slate-700 mb-2"><strong>Name:</strong> <%= @asset_type.name %></p>
     <p class="text-slate-700">
       <strong>Type:</strong>
       <% if @asset_type.is_liability? %>

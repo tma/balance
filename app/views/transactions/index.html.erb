@@ -122,8 +122,8 @@
         <%= f.select :category_id,
               grouped_options_for_select(
                 [
-                  ["Income", @categories.select { |c| c.category_type == "income" }.map { |c| [c.name.titleize, c.id] }],
-                  ["Expense", @categories.select { |c| c.category_type == "expense" }.map { |c| [c.name.titleize, c.id] }]
+                  ["Income", @categories.select { |c| c.category_type == "income" }.map { |c| [c.name, c.id] }],
+                  ["Expense", @categories.select { |c| c.category_type == "expense" }.map { |c| [c.name, c.id] }]
                 ],
                 params[:category_id]
               ),
@@ -216,7 +216,7 @@
                   <%= transaction.description.presence || "-" %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-600">
-                  <%= transaction.category.name.titleize %>
+                  <%= transaction.category.name %>
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
                   <%= transaction.account.name %>

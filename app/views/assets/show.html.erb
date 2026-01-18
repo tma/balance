@@ -6,7 +6,7 @@
       <h1 class="text-2xl font-bold text-slate-800"><%= @asset.name %></h1>
       <p class="text-slate-500">
         <%= @asset.asset_group.name %> ·
-        <%= @asset.asset_type.name.capitalize %> · <%= @asset.currency %>
+        <%= @asset.asset_type.name %> · <%= @asset.currency %>
         <% if @asset.asset_type.is_liability? %>
           <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-600">Liability</span>
         <% end %>

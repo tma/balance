@@ -229,12 +229,12 @@
                       <option value="" disabled <%= txn[:category_id].present? ? '' : 'selected' %>></option>
                       <optgroup label="Expense">
                         <% @expense_categories.each do |cat| %>
-                          <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name.titleize %></option>
+                          <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name %></option>
                         <% end %>
                       </optgroup>
                       <optgroup label="Income">
                         <% @income_categories.each do |cat| %>
-                          <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name.titleize %></option>
+                          <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name %></option>
                         <% end %>
                       </optgroup>
                     </select>
@@ -357,7 +357,7 @@
                     <%= link_to txn.description, edit_transaction_path(txn), class: "hover:text-cyan-600" %>
                   </td>
                   <td class="px-4 py-3 text-sm text-slate-600">
-                    <%= txn.category&.name&.titleize || "—" %>
+                    <%= txn.category&.name || "—" %>
                   </td>
                   <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium <%= txn.transaction_type == 'income' ? 'text-emerald-600' : 'text-slate-700' %>">
                     <%= txn.transaction_type == 'income' ? '+' : '' %><%= format_amount(txn.amount) %>

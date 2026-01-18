@@ -18,7 +18,7 @@
         <tbody class="bg-white">
           <% @account_types.each do |account_type| %>
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700 capitalize"><%= account_type.name %></td>
+              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700"><%= account_type.name %></td>
               <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
                 <%= link_to "Edit", edit_admin_account_type_path(account_type), class: "text-cyan-600 hover:text-cyan-700" %>
                 <%= button_to "Delete", admin_account_type_path(account_type), method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>

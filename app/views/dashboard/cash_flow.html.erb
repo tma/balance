@@ -147,7 +147,7 @@
                 <% monthly_transactions_path = transactions_path(month: Date.current.strftime("%Y-%m"), category_id: budget.category_id) %>
                 <%= link_to monthly_transactions_path, class: "block px-4 py-2 hover:bg-slate-50 transition" do %>
                   <div class="flex justify-between text-sm mb-1">
-                    <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+                    <span class="font-medium text-slate-700"><%= budget.category.name %></span>
                     <span class="text-slate-500">
                       <%= format_currency(budget.spent(current_year, current_month)) %> / <%= format_currency(budget.amount) %>
                     </span>
@@ -175,7 +175,7 @@
                 <% yearly_transactions_path = transactions_path(start_date: "#{current_year}-01-01", end_date: "#{current_year}-12-31", category_id: budget.category_id) %>
                 <%= link_to yearly_transactions_path, class: "block px-4 py-2 hover:bg-slate-50 transition" do %>
                   <div class="flex justify-between text-sm mb-1">
-                    <span class="font-medium text-slate-700"><%= budget.category.name.titleize %></span>
+                    <span class="font-medium text-slate-700"><%= budget.category.name %></span>
                     <span class="text-slate-500">
                       <%= format_currency(budget.spent(current_year, nil)) %> / <%= format_currency(budget.amount) %>
                     </span>

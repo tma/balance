@@ -21,8 +21,8 @@ end
 # Account Types
 puts "Creating account types..."
 account_types = {}
-%w[checking savings credit cash investment].each do |name|
-  account_types[name] = AccountType.find_or_create_by!(name: name)
+%w[Checking Savings Credit Cash Investment].each do |name|
+  account_types[name.downcase] = AccountType.find_or_create_by!(name: name)
 end
 
 # Asset Types
@@ -50,17 +50,17 @@ end
 # Categories - Income
 puts "Creating income categories..."
 income_categories = {}
-[ "salary", "bonus", "freelance", "investment", "dividends", "rental", "refund", "other income" ].each do |name|
-  income_categories[name] = Category.find_or_create_by!(name: name, category_type: "income")
+[ "Salary", "Bonus", "Freelance", "Investment", "Dividends", "Rental", "Refund", "Other Income" ].each do |name|
+  income_categories[name.downcase] = Category.find_or_create_by!(name: name, category_type: "income")
 end
 
 # Categories - Expense
 puts "Creating expense categories..."
 expense_categories = {}
-[ "rent", "mortgage", "utilities", "groceries", "dining", "transportation", "gas", "insurance", "healthcare",
-  "entertainment", "subscriptions", "clothing", "education", "personal", "travel", "gifts", "charity", "taxes",
-  "fees", "maintenance", "savings", "other expense" ].each do |name|
-  expense_categories[name] = Category.find_or_create_by!(name: name, category_type: "expense")
+[ "Rent", "Mortgage", "Utilities", "Groceries", "Dining", "Transportation", "Gas", "Insurance", "Healthcare",
+  "Entertainment", "Subscriptions", "Clothing", "Education", "Personal", "Travel", "Gifts", "Charity", "Taxes",
+  "Fees", "Maintenance", "Savings", "Other Expense" ].each do |name|
+  expense_categories[name.downcase] = Category.find_or_create_by!(name: name, category_type: "expense")
 end
 
 # Asset Groups
