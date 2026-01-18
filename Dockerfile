@@ -42,13 +42,8 @@ RUN apt-get update -qq && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems (separate layer for better caching)
-COPY vendor/ ./vendor/
 COPY Gemfile Gemfile.lock ./
-
-# Use BuildKit cache mount to persist bundle cache between builds
-RUN --mount=type=cache,target=/root/.bundle \
-    --mount=type=cache,target=/usr/local/bundle/cache \
-    bundle install && \
+RUN bundle install && \
     rm -rf "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
     bundle exec bootsnap precompile -j 1 --gemfile
