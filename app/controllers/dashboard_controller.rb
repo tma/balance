@@ -1,4 +1,43 @@
 class DashboardController < ApplicationController
+  def home
+    @default_currency = Currency.default&.code || "USD"
+    
+    # Net worth data for latest month
+    @valuation_date = Date.current.end_of_month
+    @asset_groups = AssetGroup.includes(assets: [:asset_type, :asset_valuations]).order(:position, :name)
+    
+    # Build valuations lookup for current month
+    @valuations_by_asset = {}
+    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+      valuation = asset.asset_valuations.find { |v| v.date == @valuation_date }
+      @valuations_by_asset[asset.id] = valuation
+    end
+    
+    # Net worth calculation
+    @net_worth = calculate_net_worth_for_month(@valuation_date)
+    
+    # Previous month for comparison
+    previous_month = @valuation_date - 1.month
+    @previous_net_worth = calculate_net_worth_for_month(previous_month)[:net_worth]
+    @net_worth_change = @net_worth[:net_worth] - @previous_net_worth
+    
+    # Group totals for donut chart
+    @group_totals = {}
+    @asset_groups.each do |group|
+      net = 0
+      group.assets.each do |asset|
+        valuation = @valuations_by_asset[asset.id]
+        next unless valuation
+        value = valuation.value_in_default_currency || 0
+        net += value.abs
+      end
+      @group_totals[group.id] = net
+    end
+    
+    # Cash flow for current and 2 previous months
+    @monthly_cash_flow = calculate_monthly_data(3)
+  end
+
   def cash_flow
     @default_currency = Currency.default&.code || "USD"
 

@@ -10,7 +10,8 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Dashboard as root
-  root "dashboard#cash_flow"
+  root "dashboard#home"
+  get "home", to: "dashboard#home", as: :home
   get "cash-flow", to: "dashboard#cash_flow", as: :cash_flow
   get "net-worth", to: "dashboard#net_worth", as: :net_worth
 

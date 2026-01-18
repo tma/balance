@@ -1,0 +1,116 @@
+<div class="space-y-6">
+  <h1 class="text-2xl font-bold text-slate-800">Dashboard</h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Net Worth Section -->
+    <div class="bg-white rounded-xl border border-slate-200 p-6">
+      <div class="mb-4">
+        <%= link_to net_worth_path, class: "hover:text-cyan-600" do %>
+          <h2 class="text-lg font-semibold text-slate-700 hover:text-cyan-600">Net Worth →</h2>
+        <% end %>
+        <p class="text-xs text-slate-400"><%= @valuation_date.strftime("%B %Y") %></p>
+      </div>
+
+      <% total_value = @group_totals.values.sum %>
+      <% if total_value > 0 %>
+        <%
+          group_data = @asset_groups.map do |group|
+            value = @group_totals[group.id] || 0
+            next nil if value == 0
+            pct = (value.to_f / total_value * 100).round(1)
+            { name: group.name, value: value, pct: pct, color: group.color || '#94a3b8' }
+          end.compact
+        %>
+
+        <div class="flex items-center justify-between mb-6">
+          <div>
+            <p class="text-3xl font-bold text-slate-800"><%= format_currency(@net_worth[:net_worth], precision: 0) %></p>
+            <p class="text-sm <%= @net_worth_change >= 0 ? 'text-emerald-600' : 'text-rose-600' %>">
+              <%= @net_worth_change >= 0 ? '+' : '' %><%= format_currency(@net_worth_change, precision: 0) %> from last month
+            </p>
+          </div>
+
+          <!-- Donut Chart -->
+          <% if group_data.any? %>
+            <svg width="100" height="100" viewBox="0 0 42 42" class="flex-shrink-0">
+              <circle cx="21" cy="21" r="15.91549430918954" fill="transparent" stroke="#f1f5f9" stroke-width="6"></circle>
+              <%
+                cumulative = 0
+                group_data.each do |group|
+                  dash = group[:pct]
+                  gap = 100 - dash
+                  offset = 25 - cumulative
+              %>
+                <circle cx="21" cy="21" r="15.91549430918954" fill="transparent"
+                        stroke="<%= group[:color] %>" stroke-width="6"
+                        stroke-dasharray="<%= dash %> <%= gap %>"
+                        stroke-dashoffset="<%= offset %>"></circle>
+              <% cumulative += dash; end %>
+            </svg>
+          <% end %>
+        </div>
+
+        <!-- Legend -->
+        <div class="space-y-1">
+          <% group_data.each do |group| %>
+            <div class="flex items-center justify-between text-sm">
+              <div class="flex items-center">
+                <svg class="flex-shrink-0 mr-2" width="12" height="12"><rect width="12" height="12" fill="<%= group[:color] %>"/></svg>
+                <span class="text-slate-600"><%= group[:name] %></span>
+              </div>
+              <div class="flex items-center gap-3">
+                <span class="text-slate-700 font-medium"><%= format_currency(group[:value], precision: 0) %></span>
+                <span class="text-slate-400 w-12 text-right"><%= group[:pct] %>%</span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-slate-500">No asset valuations yet.</p>
+      <% end %>
+    </div>
+
+    <!-- Cash Flow Section -->
+    <div class="bg-white rounded-xl border border-slate-200 p-6">
+      <div class="mb-4">
+        <%= link_to cash_flow_path, class: "hover:text-cyan-600" do %>
+          <h2 class="text-lg font-semibold text-slate-700 hover:text-cyan-600">Cash Flow →</h2>
+        <% end %>
+        <p class="text-xs text-slate-400">Last 3 months</p>
+      </div>
+
+      <% if @monthly_cash_flow.any? %>
+        <div class="space-y-4">
+          <% @monthly_cash_flow.each do |month| %>
+            <div class="border-b border-slate-100 pb-3 last:border-0 last:pb-0">
+              <div class="font-medium text-slate-700 mb-2"><%= month[:month_name] %></div>
+              <% total = [month[:income], month[:expenses]].max %>
+              <% if total > 0 %>
+                <% expense_pct = (month[:expenses].to_f / [month[:income], 1].max * 100).round(1) %>
+                <% expense_pct = [expense_pct, 100].min %>
+                <% saved_pct = [100 - expense_pct, 0].max %>
+                <div style="height: 24px; display: flex;" class="overflow-hidden text-xs">
+                  <div style="width: <%= expense_pct %>%; background-color: #fecdd3; height: 100%; display: flex; align-items: center; justify-content: flex-start; padding-left: 8px;">
+                    <% if expense_pct > 20 %><span style="color: #be123c;">Expenses <%= expense_pct.round(0) %>%</span><% end %>
+                  </div>
+                  <div style="width: <%= saved_pct %>%; background-color: #a7f3d0; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px;">
+                    <% if saved_pct > 20 %><span style="color: #047857;">Saved <%= saved_pct.round(0) %>%</span><% end %>
+                  </div>
+                </div>
+              <% end %>
+              <div class="flex justify-between text-sm mt-2">
+                <span class="text-emerald-600">+<%= format_currency(month[:income], precision: 0) %></span>
+                <span class="text-rose-600">-<%= format_currency(month[:expenses], precision: 0) %></span>
+                <span class="font-medium <%= month[:net] >= 0 ? 'text-slate-700' : 'text-rose-600' %>">
+                  = <%= format_currency(month[:net], precision: 0) %>
+                </span>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-slate-500">No transactions yet.</p>
+      <% end %>
+    </div>
+  </div>
+</div>
