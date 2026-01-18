@@ -4,15 +4,20 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
 ## Features
 
-- **Dashboard Overview** - Quick snapshot of net worth and recent cash flow at a glance
-- **Cash Flow Dashboard** - 12-month income/expense overview with saving rate tracking
+### Net Worth & Assets
 - **Net Worth Tracking** - Monitor assets and liabilities with donut charts, monthly/quarterly bar charts, and historical trends
 - **Asset Valuations** - Bulk edit asset values across multiple months with copy-forward functionality
+- **Asset Groups** - Organize assets into customizable groups with color coding
+- **Multi-Currency Support** - Track accounts and assets in different currencies (USD, EUR, GBP, CHF, etc.)
+
+### Cash Flow & Transactions
+- **Cash Flow Dashboard** - 12-month income/expense overview with saving rate tracking
 - **Transactions** - Record and categorize income and expenses across multiple accounts
 - **AI-Powered Import** *(experimental)* - Import transactions from bank statements (CSV/PDF) using local LLM
 - **Budget Management** - Set monthly and yearly budgets with visual progress indicators
-- **Multi-Currency Support** - Track accounts and assets in different currencies (USD, EUR, GBP, CHF, etc.)
-- **Asset Groups** - Organize assets into customizable groups with color coding
+
+### General
+- **Dashboard Overview** - Quick snapshot of net worth and recent cash flow at a glance
 - **Mobile-First Design** - Responsive interface optimized for mobile and desktop
 
 ## Running with Docker Compose
