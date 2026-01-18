@@ -69,7 +69,7 @@ class AssetValuationsController < ApplicationController
     # Build a hash: { asset_id => { date => value } }
     lookup = Hash.new { |h, k| h[k] = {} }
 
-    AssetValuation.find_each do |v|
+    AssetValuation.all.each do |v|
       lookup[v.asset_id][v.date] = v.value
     end
 

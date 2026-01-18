@@ -8,7 +8,7 @@ class DashboardController < ApplicationController
 
     # Build valuations lookup for current month
     @valuations_by_asset = {}
-    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+    Asset.includes(:asset_type, :asset_valuations).each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == @valuation_date }
       @valuations_by_asset[asset.id] = valuation
     end
@@ -69,7 +69,7 @@ class DashboardController < ApplicationController
 
     # Build valuations lookup for selected month
     @valuations_by_asset = {}
-    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+    Asset.includes(:asset_type, :asset_valuations).each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == @valuation_date }
       @valuations_by_asset[asset.id] = valuation
     end
@@ -160,7 +160,7 @@ class DashboardController < ApplicationController
     assets_value = 0
     liabilities_value = 0
 
-    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+    Asset.includes(:asset_type, :asset_valuations).each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == month_end }
       next unless valuation
 
@@ -186,7 +186,7 @@ class DashboardController < ApplicationController
     total_assets = 0
     total_liabilities = 0
 
-    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+    Asset.includes(:asset_type, :asset_valuations).each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == month_end }
       next unless valuation
 
@@ -210,7 +210,7 @@ class DashboardController < ApplicationController
 
     # Sum valuations from previous month
     total = 0
-    Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
+    Asset.includes(:asset_type, :asset_valuations).each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == previous_month }
       next unless valuation
 
