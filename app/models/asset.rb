@@ -13,6 +13,8 @@ class Asset < ApplicationRecord
   validate :currency_must_exist
   validate :currency_cannot_change, on: :update
 
+  default_scope { order(:position, :name) }
+
   scope :by_currency, ->(code) { where(currency: code) }
   scope :assets_only, -> { joins(:asset_type).where(asset_types: { is_liability: false }) }
   scope :liabilities_only, -> { joins(:asset_type).where(asset_types: { is_liability: true }) }

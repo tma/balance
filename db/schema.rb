@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_16_014529) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_18_165243) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -33,6 +33,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_16_014529) do
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false
+    t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
   end
 
@@ -62,6 +63,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_16_014529) do
     t.decimal "exchange_rate"
     t.string "name"
     t.text "notes"
+    t.integer "position", default: 0, null: false
     t.datetime "updated_at", null: false
     t.decimal "value"
     t.decimal "value_in_default_currency"
@@ -99,11 +101,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_16_014529) do
     t.datetime "completed_at"
     t.datetime "created_at", null: false
     t.text "error_message"
+    t.integer "extracted_count"
     t.text "extracted_data"
     t.string "file_content_type"
     t.binary "file_data"
     t.string "original_filename"
     t.string "progress"
+    t.string "progress_message"
     t.datetime "started_at"
     t.string "status", default: "pending", null: false
     t.integer "transactions_count", default: 0

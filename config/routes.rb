@@ -18,8 +18,15 @@ Rails.application.routes.draw do
   resources :accounts, except: :show
   resources :assets, path: "financial-assets" do
     resources :valuations, only: [ :edit, :update, :destroy ], controller: "asset_valuations"
+    collection do
+      patch :sort
+    end
   end
-  resources :asset_groups, path: "asset-groups", except: [ :index, :show ]
+  resources :asset_groups, path: "asset-groups", except: [ :index, :show ] do
+    collection do
+      patch :sort
+    end
+  end
   resources :transactions
   resources :budgets
 

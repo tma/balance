@@ -3,6 +3,8 @@ class AssetGroup < ApplicationRecord
 
   validates :name, presence: true
 
+  default_scope { order(:position, :name) }
+
   def total_value_by_currency
     assets.group(:currency).sum(:value)
   end

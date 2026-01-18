@@ -2,7 +2,7 @@ class AssetsController < ApplicationController
   before_action :set_asset, only: %i[ show edit update destroy ]
 
   def index
-    @asset_groups = AssetGroup.includes(assets: :asset_type).order(:name)
+    @asset_groups = AssetGroup.includes(assets: :asset_type)
   end
 
   def show
@@ -18,6 +18,7 @@ class AssetsController < ApplicationController
 
   def create
     @asset = Asset.new(asset_params)
+    @asset.position = @asset.asset_group.assets.maximum(:position).to_i + 1 if @asset.asset_group
 
     if @asset.save
       redirect_to @asset, notice: "Asset was successfully created."
@@ -37,6 +38,13 @@ class AssetsController < ApplicationController
   def destroy
     @asset.destroy!
     redirect_to assets_path, notice: "Asset was successfully destroyed.", status: :see_other
+  end
+
+  def sort
+    params[:positions].each do |id, position|
+      Asset.where(id: id).update_all(position: position)
+    end
+    head :ok
   end
 
   private

@@ -11,9 +11,10 @@
 
   <% if @asset_groups.any? %>
     <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <table class="min-w-full">
+      <table class="min-w-full" data-controller="sortable" data-sortable-url-value="<%= sort_asset_groups_path %>" data-sortable-type-value="group">
         <thead class="bg-slate-50 border-b border-slate-200">
           <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-8"></th>
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Currency</th>
@@ -21,13 +22,13 @@
             <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
           </tr>
         </thead>
-        <tbody class="bg-white">
-          <% @asset_groups.each do |group| %>
-            <% group_assets = group.assets.includes(:asset_type).order("asset_types.name", :name) %>
-            <tr class="bg-slate-50 border-t border-b border-slate-200">
+        <% @asset_groups.each do |group| %>
+          <tbody data-sortable-target="item" data-id="<%= group.id %>" class="group-container">
+            <tr class="bg-slate-50 border-t border-b border-slate-200 cursor-move group-header">
+              <td class="px-4 py-1.5 text-slate-400 text-xs leading-none">⋮⋮</td>
               <td colspan="3" class="px-4 py-1.5 text-xs font-medium text-slate-500">
                 <%= group.name %>
-                <span class="text-slate-400 ml-2"><%= group_assets.size %> item<%= group_assets.size == 1 ? '' : 's' %></span>
+                <span class="text-slate-400 ml-2"><%= group.assets.size %> item<%= group.assets.size == 1 ? '' : 's' %></span>
               </td>
               <td class="px-4 py-1.5 text-right">
                 <% net_value = group.net_value_in_default_currency %>
@@ -39,8 +40,11 @@
                 <%= link_to "Edit", edit_asset_group_path(group), class: "text-xs text-cyan-600 hover:text-cyan-700" %>
               </td>
             </tr>
-            <% group_assets.each do |asset| %>
-              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+          </tbody>
+          <tbody data-controller="sortable" data-sortable-url-value="<%= sort_assets_path %>">
+            <% group.assets.includes(:asset_type).each do |asset| %>
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 cursor-move" data-sortable-target="item" data-id="<%= asset.id %>">
+                <td class="px-4 py-2 text-slate-300 pl-8 text-xs leading-none">⋮⋮</td>
                 <td class="px-4 py-2 text-sm text-slate-700 font-medium">
                   <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
                 </td>
@@ -62,8 +66,8 @@
                 </td>
               </tr>
             <% end %>
-          <% end %>
-        </tbody>
+          </tbody>
+        <% end %>
       </table>
     </div>
   <% else %>
