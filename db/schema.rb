@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_18_165243) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_18_172431) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -30,6 +30,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_165243) do
   end
 
   create_table "asset_groups", force: :cascade do |t|
+    t.string "color"
     t.datetime "created_at", null: false
     t.text "description"
     t.string "name", null: false

@@ -46,6 +46,6 @@ class AssetGroupsController < ApplicationController
   end
 
   def asset_group_params
-    params.expect(asset_group: [ :name, :description ])
+    params.expect(asset_group: [ :name, :description, :color ])
   end
 end
