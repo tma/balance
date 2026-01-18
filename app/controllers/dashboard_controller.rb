@@ -1,26 +1,26 @@
 class DashboardController < ApplicationController
   def home
     @default_currency = Currency.default&.code || "USD"
-    
+
     # Net worth data for latest month
     @valuation_date = Date.current.end_of_month
-    @asset_groups = AssetGroup.includes(assets: [:asset_type, :asset_valuations]).order(:position, :name)
-    
+    @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations ]).order(:position, :name)
+
     # Build valuations lookup for current month
     @valuations_by_asset = {}
     Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == @valuation_date }
       @valuations_by_asset[asset.id] = valuation
     end
-    
+
     # Net worth calculation
     @net_worth = calculate_net_worth_for_month(@valuation_date)
-    
+
     # Previous month for comparison
     previous_month = @valuation_date - 1.month
     @previous_net_worth = calculate_net_worth_for_month(previous_month)[:net_worth]
     @net_worth_change = @net_worth[:net_worth] - @previous_net_worth
-    
+
     # Group totals for donut chart
     @group_totals = {}
     @asset_groups.each do |group|
@@ -33,7 +33,7 @@ class DashboardController < ApplicationController
       end
       @group_totals[group.id] = net
     end
-    
+
     # Cash flow for current and 2 previous months
     @monthly_cash_flow = calculate_monthly_data(3)
   end
@@ -55,7 +55,7 @@ class DashboardController < ApplicationController
 
   def net_worth
     @default_currency = Currency.default&.code || "USD"
-    
+
     # Current viewing month (default to current month)
     if params[:month].present?
       @valuation_date = Date.parse("#{params[:month]}-01").end_of_month
@@ -65,8 +65,8 @@ class DashboardController < ApplicationController
     @current_month = @valuation_date.strftime("%Y-%m")
 
     # Asset groups with their assets
-    @asset_groups = AssetGroup.includes(assets: [:asset_type, :asset_valuations]).order(:position, :name)
-    
+    @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations ]).order(:position, :name)
+
     # Build valuations lookup for selected month
     @valuations_by_asset = {}
     Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
@@ -76,7 +76,7 @@ class DashboardController < ApplicationController
 
     # Net worth for selected month
     @net_worth = calculate_net_worth_for_month(@valuation_date)
-    
+
     # Previous month net worth for comparison
     previous_month = @valuation_date - 1.month
     @previous_month_net_worth = calculate_net_worth_for_month(previous_month)[:net_worth]
@@ -84,7 +84,7 @@ class DashboardController < ApplicationController
 
     # Overall totals for selected month
     @totals = calculate_totals_for_month(@valuation_date)
-    
+
     # Group totals for selected month
     @group_totals = {}
     @asset_groups.each do |group|
@@ -113,7 +113,7 @@ class DashboardController < ApplicationController
     # Returns: { group_id => { date => absolute_value } }
     # Uses absolute values for stacked bar chart (like donut chart)
     history = Hash.new { |h, k| h[k] = {} }
-    
+
     @asset_groups.each do |group|
       dates.each do |date|
         total = 0
@@ -126,7 +126,7 @@ class DashboardController < ApplicationController
         history[group.id][date] = total
       end
     end
-    
+
     history
   end
 
@@ -156,14 +156,14 @@ class DashboardController < ApplicationController
 
   def calculate_net_worth_for_month(date)
     month_end = date.end_of_month
-    
+
     assets_value = 0
     liabilities_value = 0
-    
+
     Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == month_end }
       next unless valuation
-      
+
       value = valuation.value_in_default_currency || 0
       if asset.asset_type.is_liability
         liabilities_value += value
@@ -171,7 +171,7 @@ class DashboardController < ApplicationController
         assets_value += value
       end
     end
-    
+
     {
       cash: 0,
       assets: assets_value,
@@ -182,14 +182,14 @@ class DashboardController < ApplicationController
 
   def calculate_totals_for_month(date)
     month_end = date.end_of_month
-    
+
     total_assets = 0
     total_liabilities = 0
-    
+
     Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == month_end }
       next unless valuation
-      
+
       value = valuation.value_in_default_currency || 0
       if asset.asset_type.is_liability
         total_liabilities += value
@@ -197,7 +197,7 @@ class DashboardController < ApplicationController
         total_assets += value
       end
     end
-    
+
     {
       assets: total_assets,
       liabilities: total_liabilities,
@@ -207,13 +207,13 @@ class DashboardController < ApplicationController
 
   def calculate_previous_month_net_worth
     previous_month = Date.current.end_of_month - 1.month
-    
+
     # Sum valuations from previous month
     total = 0
     Asset.includes(:asset_type, :asset_valuations).find_each do |asset|
       valuation = asset.asset_valuations.find { |v| v.date == previous_month }
       next unless valuation
-      
+
       value = valuation.value_in_default_currency || 0
       if asset.asset_type.is_liability
         total -= value
@@ -221,7 +221,7 @@ class DashboardController < ApplicationController
         total += value
       end
     end
-    
+
     total
   end
 

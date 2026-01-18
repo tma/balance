@@ -4,7 +4,7 @@ class BackfillAndEnforcePositions < ActiveRecord::Migration[8.1]
     execute <<-SQL
       UPDATE asset_groups
       SET position = (
-        SELECT COUNT(*) FROM asset_groups ag2 
+        SELECT COUNT(*) FROM asset_groups ag2#{' '}
         WHERE ag2.id < asset_groups.id
       )
       WHERE position IS NULL OR position = 0
@@ -14,8 +14,8 @@ class BackfillAndEnforcePositions < ActiveRecord::Migration[8.1]
     execute <<-SQL
       UPDATE assets
       SET position = (
-        SELECT COUNT(*) FROM assets a2 
-        WHERE a2.asset_group_id = assets.asset_group_id 
+        SELECT COUNT(*) FROM assets a2#{' '}
+        WHERE a2.asset_group_id = assets.asset_group_id#{' '}
         AND a2.id < assets.id
       )
       WHERE position IS NULL OR position = 0

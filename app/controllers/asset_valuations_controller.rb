@@ -2,7 +2,7 @@ class AssetValuationsController < ApplicationController
   # Bulk update form for all assets - multi-month view
   def bulk_edit
     @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations ]).order(:name)
-    
+
     # Parse month parameter or default to current month
     if params[:month].present?
       @end_month = Date.parse("#{params[:month]}-01").end_of_month
@@ -10,7 +10,7 @@ class AssetValuationsController < ApplicationController
       @end_month = Date.current.end_of_month
     end
     @current_month = @end_month.strftime("%Y-%m")
-    
+
     @months = build_months_range(@end_month)
     @valuations_by_asset_and_month = build_valuations_lookup
     @group_totals_by_month = build_group_totals_by_month
