@@ -41,16 +41,19 @@ RUN apt-get update -qq && \
     apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
-# Install application gems
-COPY vendor/* ./vendor/
+# Install application gems (separate layer for better caching)
+COPY vendor/ ./vendor/
 COPY Gemfile Gemfile.lock ./
 
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
+# Use BuildKit cache mount to persist bundle cache between builds
+RUN --mount=type=cache,target=/root/.bundle \
+    --mount=type=cache,target=/usr/local/bundle/cache \
+    bundle install && \
+    rm -rf "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
     # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
     bundle exec bootsnap precompile -j 1 --gemfile
 
-# Copy application code
+# Copy application code (after gems so code changes don't invalidate gem cache)
 COPY . .
 
 # Precompile bootsnap code for faster boot times.
