@@ -29,7 +29,7 @@ class DashboardController < ApplicationController
         valuation = @valuations_by_asset[asset.id]
         next unless valuation
         value = valuation.value_in_default_currency || 0
-        net += value.abs
+        net += asset.asset_type.is_liability ? -value : value
       end
       @group_totals[group.id] = net
     end
@@ -110,8 +110,8 @@ class DashboardController < ApplicationController
   private
 
   def build_history_by_group(dates)
-    # Returns: { group_id => { date => absolute_value } }
-    # Uses absolute values for stacked bar chart (like donut chart)
+    # Returns: { group_id => { date => net_value } }
+    # Uses net values (assets - liabilities) per group
     history = Hash.new { |h, k| h[k] = {} }
 
     @asset_groups.each do |group|
@@ -121,7 +121,7 @@ class DashboardController < ApplicationController
           valuation = asset.asset_valuations.find { |v| v.date == date }
           next unless valuation
           value = valuation.value_in_default_currency || 0
-          total += value.abs
+          total += asset.asset_type.is_liability ? -value : value
         end
         history[group.id][date] = total
       end
