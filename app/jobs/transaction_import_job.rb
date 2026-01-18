@@ -19,7 +19,9 @@ class TransactionImportJob < ApplicationJob
       Rails.logger.info "Import #{import_id}: Processing #{chunks.size} chunk(s)"
 
       # Progress callback to update import status
-      progress_callback = ->(current, total) { import.update_progress!(current, total) }
+      progress_callback = lambda do |current, total, extracted_count: nil, message: nil|
+        import.update_progress!(current, total, extracted_count: extracted_count, message: message)
+      end
 
       # Extract transactions using Ollama (processes all chunks)
       extractor = TransactionExtractorService.new(chunks, import.account, on_progress: progress_callback)

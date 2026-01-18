@@ -224,7 +224,9 @@
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][category_id]" 
+                            required
                             class="transaction-category w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
+                      <option value="" disabled <%= txn[:category_id].present? ? '' : 'selected' %>></option>
                       <optgroup label="Expense">
                         <% @expense_categories.each do |cat| %>
                           <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name.titleize %></option>

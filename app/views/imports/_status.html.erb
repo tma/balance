@@ -5,7 +5,12 @@
   
   <p class="text-slate-500 mb-6">
     <% if import.processing? %>
-      <% if (progress = import.progress_info) %>
+      <% if import.progress_message.present? %>
+        <%= import.progress_message %>
+        <% if import.extracted_count.present? %>
+          - <%= import.extracted_count %> found
+        <% end %>
+      <% elsif (progress = import.progress_info) %>
         Processing step <%= progress[:current] %> of <%= progress[:total] %>...
       <% else %>
         AI is extracting and categorizing transactions.

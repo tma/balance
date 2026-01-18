@@ -62,11 +62,20 @@ class Import < ApplicationRecord
   end
 
   def mark_processing!
-    update!(status: "processing", started_at: Time.current, progress: nil)
+    update!(
+      status: "processing",
+      started_at: Time.current,
+      progress: nil,
+      extracted_count: 0,
+      progress_message: "Starting extraction"
+    )
   end
 
-  def update_progress!(current, total)
-    update_column(:progress, "#{current}/#{total}")
+  def update_progress!(current, total, extracted_count: nil, message: nil)
+    updates = { progress: "#{current}/#{total}" }
+    updates[:extracted_count] = extracted_count if extracted_count
+    updates[:progress_message] = message if message
+    update_columns(updates)
   end
 
   def progress_info

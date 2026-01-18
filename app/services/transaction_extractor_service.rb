@@ -3,8 +3,9 @@ class TransactionExtractorService
   class ExtractionError < Error; end
 
   CATEGORY_BATCH_SIZE = 10
+  NON_TRANSACTION_DESCRIPTION = /\b(total|totalbetrag|subtotal|zwischensumme|saldo|balance|limit|credit limit|payment due|mindestzahlungsbetrag|zahlung|f[aä]llig|f[aä]lligkeit|statement period)\b/i
 
-  attr_reader :chunks, :account, :on_progress
+  attr_reader :chunks, :account, :on_progress, :statement_period
 
   # Initialize with text chunks and account
   # @param chunks [Array<String>, String] Text chunks to process (or single string for backward compatibility)
@@ -14,6 +15,8 @@ class TransactionExtractorService
     @chunks = chunks.is_a?(Array) ? chunks : [ chunks ]
     @account = account
     @on_progress = on_progress
+    @statement_period = extract_statement_period(@chunks.join("\n"))
+    @extracted_count = 0
   end
 
   # For backward compatibility - returns first chunk's text
@@ -49,7 +52,7 @@ class TransactionExtractorService
     @chunks.each_with_index do |chunk, index|
       current = index + 1
       Rails.logger.info "Extracting from chunk #{current}/#{@chunks.size}"
-      @on_progress&.call(current, total_steps)
+      @on_progress&.call(current, total_steps, extracted_count: @extracted_count, message: "Extracting transactions")
 
       prompt = build_extraction_prompt(chunk)
       response = OllamaService.generate_json(prompt)
@@ -57,6 +60,7 @@ class TransactionExtractorService
       transactions = parse_response(response)
       normalized = validate_and_normalize(transactions)
       all_transactions.concat(normalized)
+      @extracted_count += normalized.size
     end
 
     all_transactions
@@ -67,7 +71,7 @@ class TransactionExtractorService
     return if transactions.empty?
 
     total_steps = @chunks.size + 1
-    @on_progress&.call(total_steps, total_steps)
+    @on_progress&.call(total_steps, total_steps, extracted_count: transactions.size, message: "Categorizing transactions")
     Rails.logger.info "Categorizing #{transactions.size} transactions"
 
     expense_categories = Category.expense.pluck(:name)
@@ -180,12 +184,14 @@ class TransactionExtractorService
       response
     when Hash
       response["categories"] || response.values.first || []
+    when String
+      [ response ]
     else
       []
     end
 
     # Ensure all categories are strings
-    categories.map { |c| c.to_s.presence }
+    Array(categories).map { |c| c.to_s.presence }
   end
 
   def validate_and_normalize(transactions)
@@ -197,7 +203,15 @@ class TransactionExtractorService
         next
       end
 
-      normalize_transaction(txn)
+      unless valid_transaction_content?(txn)
+        Rails.logger.info "Skipping non-transaction line: #{txn.inspect}"
+        next
+      end
+
+      normalized = normalize_transaction(txn)
+      next if normalized.nil?
+
+      normalized
     end
   end
 
@@ -224,8 +238,18 @@ class TransactionExtractorService
       txn["amount"].present?
   end
 
+  def valid_transaction_content?(txn)
+    description = txn["description"].to_s.strip
+    return false if description.blank?
+    return false if description.match?(NON_TRANSACTION_DESCRIPTION)
+
+    true
+  end
+
   def normalize_transaction(txn)
     date = parse_date(txn["date"])
+    return nil unless date
+
     type = txn["type"].to_s.downcase == "income" ? "income" : "expense"
 
     {
@@ -240,9 +264,13 @@ class TransactionExtractorService
   end
 
   def parse_date(date_str)
-    Date.parse(date_str.to_s)
+    parsed = Date.parse(date_str.to_s)
+    return parsed unless statement_period
+    return parsed if statement_period.cover?(parsed)
+
+    nil
   rescue ArgumentError
-    Date.today
+    nil
   end
 
   def find_category(name, type)
@@ -265,5 +293,50 @@ class TransactionExtractorService
     Category.where(category_type: type)
             .where("LOWER(name) LIKE ?", "%#{name_str.downcase}%")
             .first
+  end
+
+  def extract_statement_period(text)
+    return nil if text.blank?
+
+    if (match = text.match(/(\d{1,2}\.\d{1,2}\.\d{2,4})\s*(?:-|to|bis|–)\s*(\d{1,2}\.\d{1,2}\.\d{2,4})/i))
+      start_date = parse_statement_date(match[1])
+      end_date = parse_statement_date(match[2])
+      return build_statement_range(start_date, end_date)
+    end
+
+    if (match = text.match(/statement\s+period\D+(\d{4}-\d{2}-\d{2})\D+(\d{4}-\d{2}-\d{2})/i))
+      start_date = parse_statement_date(match[1])
+      end_date = parse_statement_date(match[2])
+      return build_statement_range(start_date, end_date)
+    end
+
+    if (match = text.match(/abrechnung\s+vom\s+(\d{1,2}\.\d{1,2}\.\d{2,4})/i))
+      end_date = parse_statement_date(match[1])
+      return (end_date.beginning_of_month..end_date) if end_date
+    end
+
+    nil
+  end
+
+  def parse_statement_date(date_str)
+    return nil if date_str.blank?
+
+    cleaned = date_str.to_s.strip
+    if cleaned.match?(/\A\d{1,2}\.\d{1,2}\.\d{2,4}\z/)
+      day, month, year = cleaned.split(".")
+      year = year.length == 2 ? "20#{year}" : year
+      Date.new(year.to_i, month.to_i, day.to_i)
+    else
+      Date.parse(cleaned)
+    end
+  rescue ArgumentError
+    nil
+  end
+
+  def build_statement_range(start_date, end_date)
+    return nil unless start_date && end_date
+
+    start_date, end_date = [ start_date, end_date ].minmax
+    start_date..end_date
   end
 end
