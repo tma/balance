@@ -41,7 +41,7 @@
             <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Income</th>
             <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Expenses</th>
             <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Net</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Saving Rate</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider" style="min-width: 200px;">Breakdown</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-slate-100">
@@ -74,9 +74,19 @@
                   <span class="text-slate-300">-</span>
                 <% end %>
               </td>
-              <td class="px-4 py-3 whitespace-nowrap text-right text-slate-600">
+              <td class="px-4 py-3 whitespace-nowrap">
                 <% if month[:income] > 0 %>
-                  <%= month[:saving_rate] %>%
+                  <% expense_pct = (month[:expenses].to_f / month[:income] * 100).round(1) %>
+                  <% expense_pct = [expense_pct, 100].min %>
+                  <% saved_pct = [100 - expense_pct, 0].max %>
+                  <div style="height: 20px; display: flex;" class="text-xs">
+                    <div style="width: <%= expense_pct %>%; background-color: #fecdd3; height: 100%; display: flex; align-items: center; justify-content: flex-start; padding-left: 4px;">
+                      <% if expense_pct > 25 %><span style="color: #be123c;"><%= expense_pct.round(0) %>%</span><% end %>
+                    </div>
+                    <div style="width: <%= saved_pct %>%; background-color: #a7f3d0; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px;">
+                      <% if saved_pct > 25 %><span style="color: #047857;"><%= saved_pct.round(0) %>%</span><% end %>
+                    </div>
+                  </div>
                 <% else %>
                   <span class="text-slate-300">-</span>
                 <% end %>
@@ -92,8 +102,20 @@
             <td class="px-4 py-3 text-right <%= @twelve_month_totals[:net] >= 0 ? 'text-emerald-600' : 'text-rose-500' %>">
               <%= @twelve_month_totals[:net] >= 0 ? '+' : '' %><%= format_currency(@twelve_month_totals[:net]) %>
             </td>
-            <td class="px-4 py-3 text-right text-slate-700">
-              <%= @twelve_month_totals[:saving_rate] %>%
+            <td class="px-4 py-3">
+              <% if @twelve_month_totals[:income] > 0 %>
+                <% expense_pct = (@twelve_month_totals[:expenses].to_f / @twelve_month_totals[:income] * 100).round(1) %>
+                <% expense_pct = [expense_pct, 100].min %>
+                <% saved_pct = [100 - expense_pct, 0].max %>
+                <div style="height: 20px; display: flex;" class="text-xs">
+                  <div style="width: <%= expense_pct %>%; background-color: #fecdd3; height: 100%; display: flex; align-items: center; justify-content: flex-start; padding-left: 4px;">
+                    <% if expense_pct > 25 %><span style="color: #be123c;"><%= expense_pct.round(0) %>%</span><% end %>
+                  </div>
+                  <div style="width: <%= saved_pct %>%; background-color: #a7f3d0; height: 100%; display: flex; align-items: center; justify-content: flex-end; padding-right: 4px;">
+                    <% if saved_pct > 25 %><span style="color: #047857;"><%= saved_pct.round(0) %>%</span><% end %>
+                  </div>
+                </div>
+              <% end %>
             </td>
           </tr>
         </tfoot>
@@ -131,10 +153,10 @@
                       <%= format_currency(budget.spent(current_year, current_month)) %> / <%= format_currency(budget.amount) %>
                     </span>
                   </div>
-                  <div class="w-full bg-slate-100 rounded-full h-2">
+                  <div class="w-full bg-slate-100 h-2">
                     <% percentage = [budget.percentage_used(current_year, current_month), 100].min %>
                     <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
-                    <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
+                    <div class="<%= bar_color %> h-2 transition-all" style="width: <%= percentage %>%"></div>
                   </div>
                 <% end %>
               <% end %>
@@ -159,10 +181,10 @@
                       <%= format_currency(budget.spent(current_year, nil)) %> / <%= format_currency(budget.amount) %>
                     </span>
                   </div>
-                  <div class="w-full bg-slate-100 rounded-full h-2">
+                  <div class="w-full bg-slate-100 h-2">
                     <% percentage = [budget.percentage_used(current_year, nil), 100].min %>
                     <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
-                    <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= percentage %>%"></div>
+                    <div class="<%= bar_color %> h-2 transition-all" style="width: <%= percentage %>%"></div>
                   </div>
                 <% end %>
               <% end %>
