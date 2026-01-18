@@ -190,7 +190,7 @@
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <div class="p-4 border-b border-slate-200 flex justify-between items-center">
       <h2 class="text-lg font-semibold text-slate-800">Assets</h2>
-      <%= link_to "Update Values", update_valuations_path, class: "text-sm text-cyan-600 hover:text-cyan-700 hover:underline" %>
+      <%= link_to "Update Values", update_valuations_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition text-sm" %>
     </div>
 
     <% if @asset_groups.none? { |g| g.assets.any? } %>

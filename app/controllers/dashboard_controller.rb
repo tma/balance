@@ -244,7 +244,7 @@ class DashboardController < ApplicationController
         date: month_start,
         year: year,
         month: month,
-        month_name: month_start.strftime("%b %Y"),
+        month_name: month_start.strftime("%B %Y"),
         income: income,
         expenses: expenses,
         net: net,
