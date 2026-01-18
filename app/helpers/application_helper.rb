@@ -1,14 +1,14 @@
 module ApplicationHelper
   # Format currency with Swiss-style formatting: CHF 1'234.56
   # Uses apostrophe as thousand separator and the default currency code
-  def format_currency(amount, currency: nil)
+  def format_currency(amount, currency: nil, precision: 2)
     currency ||= Currency.default&.code || "USD"
     number_to_currency(
       amount,
       unit: "#{currency} ",
       delimiter: "'",
       separator: ".",
-      precision: 2,
+      precision: precision,
       format: "%u%n"
     )
   end

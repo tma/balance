@@ -894,7 +894,7 @@ if Rails.env.development?
   primary_residence = Asset.find_by(name: "Primary Residence")
   if primary_residence
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: primary_residence, date: valuation_date) do |v|
         # House appreciated ~5% over year
         v.value = 450000 - ((i + 1) * 1800)
@@ -905,7 +905,7 @@ if Rails.env.development?
   stock_portfolio = Asset.find_by(name: "Stock Portfolio")
   if stock_portfolio
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: stock_portfolio, date: valuation_date) do |v|
         # Stocks grew ~15% over year with fluctuation
         base = 45000 - ((i + 1) * 450)
@@ -917,7 +917,7 @@ if Rails.env.development?
   bitcoin = Asset.find_by(name: "Bitcoin Holdings")
   if bitcoin
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: bitcoin, date: valuation_date) do |v|
         # Crypto very volatile - can swing 30%+ either way
         base = 12500 - ((i + 1) * 200)
@@ -929,7 +929,7 @@ if Rails.env.development?
   retirement = Asset.find_by(name: "401(k)")
   if retirement
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: retirement, date: valuation_date) do |v|
         # Steady growth ~10% per year plus contributions
         v.value = 125000 - ((i + 1) * 1500)
@@ -940,7 +940,7 @@ if Rails.env.development?
   swiss_fund = Asset.find_by(name: "Swiss Investment Fund")
   if swiss_fund
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: swiss_fund, date: valuation_date) do |v|
         # Steady growth ~6% per year
         v.value = 25000 - ((i + 1) * 120)
@@ -951,7 +951,7 @@ if Rails.env.development?
   home_mortgage = Asset.find_by(name: "Home Mortgage")
   if home_mortgage
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: home_mortgage, date: valuation_date) do |v|
         # Mortgage decreases slowly (principal payments)
         v.value = 320000 + ((i + 1) * 400)
@@ -962,7 +962,7 @@ if Rails.env.development?
   car_value = Asset.find_by(name: "Toyota Camry")
   if car_value
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: car_value, date: valuation_date) do |v|
         # Car depreciates ~10% per year
         v.value = 22000 + ((i + 1) * 180)
@@ -973,7 +973,7 @@ if Rails.env.development?
   car_loan = Asset.find_by(name: "Car Loan")
   if car_loan
     12.times do |i|
-      valuation_date = today - (i + 1).months
+      valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: car_loan, date: valuation_date) do |v|
         # Loan balance decreases with payments
         v.value = 15000 + ((i + 1) * 250)

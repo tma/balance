@@ -1,79 +1,129 @@
 <div class="space-y-6">
   <div class="flex justify-between items-center">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">Update Valuations</h1>
+      <h1 class="text-2xl font-bold text-slate-800">Valuations</h1>
+      <p class="text-sm text-slate-500 mt-1">Enter values for each month (end of month)</p>
     </div>
-    <%= link_to "Net Worth", net_worth_path, class: "text-cyan-600 hover:text-cyan-700 hover:underline" %>
+    <div class="flex items-center space-x-4">
+      <div class="flex items-center space-x-2">
+        <% older_month = (@end_month - 12.months).strftime("%Y-%m") %>
+        <% older_start = (@end_month - 12.months - 11.months).end_of_month %>
+        <%= link_to update_valuations_path(month: older_month), class: "px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition" do %>
+          ← <%= older_start.strftime("%b %Y") %>
+        <% end %>
+        <% if @end_month < Date.current.end_of_month %>
+          <% newer_month = [@end_month + 12.months, Date.current].min.strftime("%Y-%m") %>
+          <% newer_end = [@end_month + 12.months, Date.current].min.end_of_month %>
+          <%= link_to update_valuations_path(month: newer_month), class: "px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium transition" do %>
+            <%= newer_end.strftime("%b %Y") %> →
+          <% end %>
+        <% else %>
+          <span class="px-3 py-1.5 rounded-lg bg-slate-50 text-slate-300 text-sm font-medium">Now →</span>
+        <% end %>
+      </div>
+    </div>
   </div>
 
-  <%= form_with url: update_valuations_path, method: :patch, class: "space-y-6" do |form| %>
-    <div class="bg-white rounded-xl border border-slate-200 p-4">
-      <div class="flex items-center space-x-4">
-        <label for="date" class="text-sm font-medium text-slate-700">Valuation Date</label>
-        <input type="date"
-               name="date"
-               id="date"
-               value="<%= @date %>"
-               class="rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-1.5 text-sm">
-      </div>
-    </div>
+  <%= form_with url: update_valuations_path, method: :patch, class: "space-y-6", data: { controller: "currency-form", action: "submit->currency-form#unformatAll" } do |form| %>
+    <% has_assets = @asset_groups.joins(:assets).distinct.any? %>
 
-    <% @asset_groups.each do |group| %>
-      <% assets = group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name) %>
-      <% next if assets.empty? %>
-
+    <% if has_assets %>
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div class="p-4 border-b border-slate-200 flex justify-between items-start">
-          <div>
-            <h3 class="font-semibold text-slate-700"><%= group.name %></h3>
-            <% if group.description.present? %>
-              <p class="text-sm text-slate-400"><%= group.description %></p>
-            <% end %>
-          </div>
-          <div class="text-right">
-            <% net_value = group.net_value_in_default_currency %>
-            <p class="font-bold <%= net_value >= 0 ? 'text-emerald-600' : 'text-rose-500' %>"><%= format_currency(net_value) %></p>
-          </div>
-        </div>
-
-        <div class="divide-y divide-slate-100">
-          <% assets.each do |asset| %>
-            <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition">
-              <div class="flex items-center space-x-2">
-                <div>
-                  <%= link_to asset, class: "block" do %>
-                    <p class="text-sm font-medium text-slate-700 hover:text-cyan-600"><%= asset.name %></p>
-                    <p class="text-xs text-slate-400"><%= asset.asset_type.name %></p>
-                  <% end %>
-                </div>
-                <% if asset.asset_type.is_liability %>
-                  <span class="px-1.5 py-0.5 rounded text-xs bg-rose-100 text-rose-600">Liability</span>
+        <div class="overflow-x-auto" data-controller="scroll-right">
+          <table class="w-full">
+            <thead>
+              <tr class="bg-slate-50 border-b border-slate-200">
+                <th class="sticky left-0 bg-slate-50 px-4 py-2 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[200px]">
+                  Asset
+                </th>
+                <% @months.each do |month| %>
+                  <th class="px-2 py-2 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider min-w-[100px]">
+                    <%= month.strftime("%b %Y") %>
+                  </th>
                 <% end %>
-              </div>
-              <div class="flex items-center space-x-2">
-                <span class="text-sm text-slate-400"><%= asset.currency %></span>
-                <input type="number"
-                       name="assets[<%= asset.id %>]"
-                       value="<%= asset.value.to_f %>"
-                       step="0.01"
-                       class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-1.5 text-sm"
-                       placeholder="0.00">
-              </div>
-            </div>
-          <% end %>
+              </tr>
+            </thead>
+            <tbody>
+              <% @asset_groups.each_with_index do |group, group_index| %>
+                <% assets = group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name) %>
+                <% next if assets.empty? %>
+
+                <tr class="bg-slate-200 <%= group_index > 0 ? 'border-t-4 border-slate-300' : 'border-t border-slate-200' %>">
+                  <td class="sticky left-0 bg-slate-200 px-4 py-2 z-10">
+                    <span class="font-semibold text-slate-700 whitespace-nowrap"><%= group.name %></span>
+                  </td>
+                  <% @months.each do |month| %>
+                    <td class="bg-slate-200"></td>
+                  <% end %>
+                </tr>
+
+                <% assets.each do |asset| %>
+                  <tr class="hover:bg-slate-50 transition border-t border-slate-100">
+                    <td class="sticky left-0 bg-white px-4 py-3 hover:bg-slate-50">
+                      <%= link_to asset, class: "block" do %>
+                        <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap"><%= asset.name %></p>
+                        <p class="text-xs text-slate-400 whitespace-nowrap">
+                          <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> · <span class="text-rose-400">Liability</span><% end %>
+                        </p>
+                      <% end %>
+                    </td>
+                    <% @months.each do |month| %>
+                      <td class="px-2 py-2">
+                        <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
+                        <% is_liability = asset.asset_type.is_liability %>
+                        <input type="text"
+                               inputmode="decimal"
+                               name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
+                               value="<%= existing_value&.to_f %>"
+                               data-controller="currency-input"
+                               data-currency-form-target="input"
+                               data-currency-input-liability-value="<%= is_liability %>"
+                               data-action="focus->currency-input#unformat blur->currency-input#format"
+                               class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm <%= existing_value ? '' : 'bg-slate-50' %>"
+                               placeholder="—">
+                      </td>
+                    <% end %>
+                  </tr>
+                <% end %>
+
+                <tr class="bg-slate-50 border-t border-slate-200">
+                  <td class="sticky left-0 bg-slate-50 px-4 py-2 z-10">
+                  </td>
+                  <% @months.each do |month| %>
+                    <td class="bg-slate-50 px-2 py-2 text-right">
+                      <% net_value = @group_totals_by_month[group.id][month] %>
+                      <% if net_value && net_value != 0 %>
+                        <span class="font-semibold text-sm whitespace-nowrap text-slate-600"><%= format_currency(net_value, precision: 0) %></span>
+                      <% end %>
+                    </td>
+                  <% end %>
+                </tr>
+              <% end %>
+
+              <tr class="bg-slate-200 border-t-4 border-slate-300">
+                <td class="sticky left-0 bg-slate-200 px-4 py-3 z-10">
+                  <span class="font-bold text-slate-800 whitespace-nowrap">Total Net Worth</span>
+                </td>
+                <% @months.each do |month| %>
+                  <td class="bg-slate-200 px-2 py-3 text-right">
+                    <% total = @totals_by_month[month] %>
+                    <span class="font-bold text-sm whitespace-nowrap text-slate-700"><%= format_currency(total, precision: 0) %></span>
+                  </td>
+                <% end %>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
-    <% end %>
 
-    <% if @asset_groups.joins(:assets).distinct.none? %>
-      <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
-        <p class="text-slate-500 mb-4">No assets found.</p>
-        <%= link_to "Create an asset", new_asset_path, class: "text-cyan-600 hover:text-cyan-700" %>
-      </div>
-    <% else %>
       <div class="flex justify-end space-x-4">
         <%= link_to "Cancel", net_worth_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
         <%= form.submit "Save All", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+      </div>
+    <% else %>
+      <div class="bg-white rounded-xl border border-slate-200 p-8 text-center">
+        <p class="text-slate-500 mb-4">No assets found.</p>
+        <%= link_to "Create an asset", new_asset_path, class: "text-cyan-600 hover:text-cyan-700" %>
       </div>
     <% end %>
   <% end %>
