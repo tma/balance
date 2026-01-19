@@ -1,0 +1,65 @@
+<% content_for :title, "Broker Connections - Admin" %>
+
+<div class="w-full">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold text-slate-800">Broker Connections</h1>
+    <%= link_to "New Connection", new_admin_broker_connection_path, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <% if @connections.any? %>
+      <table class="min-w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Broker</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Account ID</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Positions</th>
+            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Last Synced</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-32"></th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+          <% @connections.each do |connection| %>
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <%= link_to connection.name, admin_broker_connection_path(connection), class: "text-sm font-medium text-cyan-600 hover:text-cyan-700" %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                <%= connection.broker_type_name %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                <%= connection.account_id %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm text-slate-600">
+                <span class="text-emerald-600"><%= connection.mapped_positions.count %> mapped</span>
+                <% if connection.unmapped_positions.any? %>
+                  <span class="text-amber-600 ml-2"><%= connection.unmapped_positions.count %> unmapped</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-sm">
+                <% if connection.last_synced_at %>
+                  <span class="text-slate-600"><%= time_ago_in_words(connection.last_synced_at) %> ago</span>
+                  <% if connection.last_sync_error.present? %>
+                    <span class="ml-2 px-1.5 py-0.5 rounded text-xs bg-rose-50 text-rose-600">Error</span>
+                  <% end %>
+                <% else %>
+                  <span class="text-slate-400">Never</span>
+                <% end %>
+              </td>
+              <td class="px-4 py-3 whitespace-nowrap text-right text-sm space-x-2">
+                <%= link_to "Edit", edit_admin_broker_connection_path(connection), class: "text-cyan-600 hover:text-cyan-700" %>
+                <%= button_to "Delete", admin_broker_connection_path(connection), method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="text-center py-8">
+        <p class="text-slate-500 mb-4">No broker connections configured.</p>
+        <p class="text-sm text-slate-400">Connect your brokerage account to sync portfolio positions.</p>
+      </div>
+    <% end %>
+  </div>
+</div>

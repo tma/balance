@@ -1,0 +1,104 @@
+<% content_for :title, "#{@connection.name} - #{@connection.broker_type_name}" %>
+
+<div class="w-full">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800"><%= @connection.name %></h1>
+      <p class="text-sm text-slate-500"><%= @connection.broker_type_name %> · Account: <%= @connection.account_id %></p>
+    </div>
+    <%= link_to "Edit", edit_admin_broker_connection_path(@connection), class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+  </div>
+
+  <% if @connection.last_sync_error.present? %>
+    <div class="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg mb-6">
+      <p class="font-medium">Last sync failed</p>
+      <p class="text-sm mt-1"><%= @connection.last_sync_error %></p>
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Total Positions</p>
+      <p class="text-2xl font-bold text-slate-800 mt-1"><%= @positions.count %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Mapped</p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1"><%= @connection.mapped_positions.count %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Unmapped</p>
+      <p class="text-2xl font-bold <%= @connection.unmapped_positions.any? ? 'text-amber-600' : 'text-slate-400' %> mt-1"><%= @connection.unmapped_positions.count %></p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+      <h2 class="font-semibold text-slate-700">Position Mappings</h2>
+      <% if @connection.last_synced_at %>
+        <span class="text-xs text-slate-500">Last synced: <%= @connection.last_synced_at.strftime("%Y-%m-%d %H:%M") %></span>
+      <% end %>
+    </div>
+
+    <% if @positions.any? %>
+      <%= form_with url: bulk_update_admin_broker_connection_positions_path(@connection), method: :patch, class: "contents" do |form| %>
+        <table class="min-w-full">
+          <thead class="bg-slate-50 border-b border-slate-200">
+            <tr>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Symbol</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
+              <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider min-w-[200px]">Map to Asset</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white">
+            <% @positions.each do |position| %>
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <%= link_to admin_broker_connection_position_path(@connection, position), class: "text-sm font-medium text-cyan-600 hover:text-cyan-700" do %>
+                    <%= position.symbol %>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3">
+                  <span class="text-sm text-slate-600"><%= position.description || "—" %></span>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <span class="text-sm text-slate-600"><%= number_with_delimiter(position.last_quantity) if position.last_quantity %></span>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <span class="text-sm font-medium text-slate-700">
+                    <% if position.last_value %>
+                      <%= format_currency(position.last_value, currency: position.currency) %>
+                    <% end %>
+                  </span>
+                </td>
+                <td class="px-4 py-3">
+                  <select name="positions[<%= position.id %>]" class="w-full rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                    <option value="">— Not mapped —</option>
+                    <% Asset.includes(:asset_group).order("asset_groups.name", :name).each do |asset| %>
+                      <option value="<%= asset.id %>" <%= 'selected' if position.asset_id == asset.id %>>
+                        <%= asset.asset_group&.name %>: <%= asset.name %>
+                      </option>
+                    <% end %>
+                  </select>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+        <div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
+          <%= form.submit "Save Mappings", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+        </div>
+      <% end %>
+    <% else %>
+      <div class="text-center py-8">
+        <p class="text-slate-500 mb-2">No positions found.</p>
+        <p class="text-sm text-slate-400">Positions sync automatically at 4am daily.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-6">
+    <%= link_to "← Back to Connections", admin_broker_connections_path, class: "text-cyan-600 hover:text-cyan-700 text-sm" %>
+  </div>
+</div>

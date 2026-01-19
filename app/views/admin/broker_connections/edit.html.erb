@@ -1,0 +1,17 @@
+<% content_for :title, "Edit Connection - #{@connection.broker_type_name}" %>
+
+<div>
+  <h1 class="text-2xl font-bold text-slate-800 mb-6">Edit Connection</h1>
+
+  <div class="flex gap-6 items-start">
+    <div class="flex-1">
+      <%= render "form", connection: @connection %>
+    </div>
+
+    <% if @connection.ibkr? %>
+      <div class="w-80 flex-shrink-0">
+        <%= render "instructions" %>
+      </div>
+    <% end %>
+  </div>
+</div>

@@ -43,6 +43,7 @@ Rails.application.routes.draw do
   # Bulk update valuations for all assets
   get "valuations", to: "asset_valuations#bulk_edit", as: :update_valuations
   patch "valuations", to: "asset_valuations#bulk_update"
+  post "valuations/apply-broker-values", to: "asset_valuations#apply_broker_values", as: :apply_broker_values
 
   # Admin namespace for master data
   namespace :admin do
@@ -50,5 +51,12 @@ Rails.application.routes.draw do
     resources :account_types
     resources :asset_types
     resources :categories
+    resources :broker_connections, path: "brokers" do
+      resources :broker_positions, path: "positions", as: :positions, only: [ :index, :show, :edit, :update ] do
+        collection do
+          patch :bulk_update
+        end
+      end
+    end
   end
 end
