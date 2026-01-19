@@ -16,18 +16,22 @@
     </div>
   <% end %>
 
-  <div class="grid grid-cols-3 gap-4 mb-6">
+  <div class="grid grid-cols-4 gap-4 mb-6">
     <div class="bg-white rounded-xl border border-slate-200 p-4">
-      <p class="text-xs font-medium text-slate-500 uppercase">Total Positions</p>
-      <p class="text-2xl font-bold text-slate-800 mt-1"><%= @positions.count %></p>
+      <p class="text-xs font-medium text-slate-500 uppercase">Open Positions</p>
+      <p class="text-2xl font-bold text-slate-800 mt-1"><%= @positions.open.count %></p>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-4">
       <p class="text-xs font-medium text-slate-500 uppercase">Mapped</p>
-      <p class="text-2xl font-bold text-emerald-600 mt-1"><%= @connection.mapped_positions.count %></p>
+      <p class="text-2xl font-bold text-emerald-600 mt-1"><%= @connection.mapped_positions.open.count %></p>
     </div>
     <div class="bg-white rounded-xl border border-slate-200 p-4">
       <p class="text-xs font-medium text-slate-500 uppercase">Unmapped</p>
-      <p class="text-2xl font-bold <%= @connection.unmapped_positions.any? ? 'text-amber-600' : 'text-slate-400' %> mt-1"><%= @connection.unmapped_positions.count %></p>
+      <p class="text-2xl font-bold <%= @connection.unmapped_positions.open.any? ? 'text-amber-600' : 'text-slate-400' %> mt-1"><%= @connection.unmapped_positions.open.count %></p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Closed</p>
+      <p class="text-2xl font-bold text-slate-400 mt-1"><%= @positions.closed.count %></p>
     </div>
   </div>
 
@@ -52,7 +56,7 @@
             </tr>
           </thead>
           <tbody class="bg-white">
-            <% @positions.each do |position| %>
+            <% @positions.open.each do |position| %>
               <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
                 <td class="px-4 py-3 whitespace-nowrap">
                   <%= link_to admin_broker_connection_position_path(@connection, position), class: "text-sm font-medium text-cyan-600 hover:text-cyan-700" do %>
@@ -83,6 +87,35 @@
                   </select>
                 </td>
               </tr>
+            <% end %>
+            <% if @positions.closed.any? %>
+              <tr class="bg-slate-50">
+                <td colspan="5" class="px-4 py-2 text-xs font-medium text-slate-500 uppercase">Closed Positions</td>
+              </tr>
+              <% @positions.closed.each do |position| %>
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 opacity-60">
+                  <td class="px-4 py-3 whitespace-nowrap">
+                    <%= link_to admin_broker_connection_position_path(@connection, position), class: "text-sm font-medium text-slate-500 hover:text-slate-700" do %>
+                      <%= position.symbol %>
+                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-600 ml-1">Closed</span>
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-sm text-slate-500"><%= position.description || "—" %></span>
+                  </td>
+                  <td class="px-4 py-3 text-right whitespace-nowrap">
+                    <span class="text-sm text-slate-400">0</span>
+                  </td>
+                  <td class="px-4 py-3 text-right whitespace-nowrap">
+                    <span class="text-sm text-slate-400">
+                      <%= format_currency(0, currency: position.currency) %>
+                    </span>
+                  </td>
+                  <td class="px-4 py-3">
+                    <span class="text-xs text-slate-400">Closed <%= position.closed_at&.strftime("%Y-%m-%d") %></span>
+                  </td>
+                </tr>
+              <% end %>
             <% end %>
           </tbody>
         </table>

@@ -1,0 +1,5 @@
+class AddClosedAtToBrokerPositions < ActiveRecord::Migration[8.1]
+  def change
+    add_column :broker_positions, :closed_at, :datetime
+  end
+end

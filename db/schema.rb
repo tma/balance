@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_19_195423) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_19_204845) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -89,6 +89,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_195423) do
   create_table "broker_positions", force: :cascade do |t|
     t.integer "asset_id"
     t.integer "broker_connection_id", null: false
+    t.datetime "closed_at"
     t.datetime "created_at", null: false
     t.string "currency"
     t.string "description"
@@ -153,9 +154,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_195423) do
     t.datetime "created_at", null: false
     t.string "currency", null: false
     t.date "date", null: false
+    t.decimal "exchange_rate"
     t.decimal "quantity", precision: 15, scale: 4
     t.datetime "updated_at", null: false
     t.decimal "value", precision: 15, scale: 2
+    t.decimal "value_in_default_currency"
     t.index ["broker_position_id", "date"], name: "index_position_valuations_on_broker_position_id_and_date", unique: true
     t.index ["broker_position_id"], name: "index_position_valuations_on_broker_position_id"
   end

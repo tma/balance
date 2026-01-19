@@ -31,13 +31,13 @@ class Asset < ApplicationRecord
   end
 
   def has_broker?
-    broker_positions.any?
+    broker_positions.open.any?
   end
 
-  # Calculate total value from all broker positions, converted to asset currency
+  # Calculate total value from all open broker positions, converted to asset currency
   def total_broker_value
-    # Reload to get fresh data from database
-    positions = broker_positions.reload
+    # Only consider open positions (not closed/sold)
+    positions = broker_positions.open.reload
     return nil if positions.empty?
 
     positions.sum do |position|
@@ -55,7 +55,12 @@ class Asset < ApplicationRecord
   # Creates/updates a valuation for end of current month
   def sync_from_broker_positions!
     total = total_broker_value
-    return unless total.present? && total > 0
+
+    # If no open positions or total is 0, set to 0
+    if total.nil? || total <= 0
+      return if value == 0 # No change needed
+      total = 0
+    end
 
     date = Date.current.end_of_month
 

@@ -7,20 +7,25 @@ class IbkrSyncService < BrokerSyncService
   FLEX_VERSION = 3
 
   # Sync positions from IBKR Flex API and update mappings
-  # Returns { positions: [...], updated_count: N, errors: [...] }
+  # Returns { positions: [...], updated_count: N, closed_count: N, errors: [...] }
   def perform_sync!
-    result = { positions: [], updated_count: 0, errors: [] }
+    result = { positions: [], updated_count: 0, closed_count: 0, errors: [] }
 
     begin
       # Fetch positions from IBKR
       positions = fetch_positions
+      synced_symbols = []
 
       # Update or create position mappings
       positions.each do |position_data|
         position = find_or_create_position(position_data)
         update_position(position, position_data)
         result[:positions] << position
+        synced_symbols << position_data[:symbol]
       end
+
+      # Close positions that weren't in the sync (no longer held)
+      result[:closed_count] = close_missing_positions(synced_symbols)
 
       # Update all assets that have mappings from this connection
       updated_assets = sync_mapped_assets
@@ -47,7 +52,7 @@ class IbkrSyncService < BrokerSyncService
     reference_code = request_report
 
     # Step 2: Wait briefly for report to generate
-    sleep(2)
+    wait(2)
 
     # Step 3: Fetch the generated report
     report_xml = fetch_report(reference_code)
@@ -57,6 +62,11 @@ class IbkrSyncService < BrokerSyncService
   end
 
   private
+
+  # Wrapper for sleep to allow stubbing in tests
+  def wait(seconds)
+    sleep(seconds)
+  end
 
   def request_report
     uri = URI("#{BASE_URL}/SendRequest")
@@ -85,7 +95,7 @@ class IbkrSyncService < BrokerSyncService
       if response.body.include?("<Status>") && response.body.include?("Fail")
         error_code = extract_error_code(response.body)
         if error_code == "1019" # Statement generation in progress
-          sleep(5 * (attempt + 1))
+          wait(5 * (attempt + 1))
           next
         end
         handle_error_response(response.body)
@@ -169,10 +179,15 @@ class IbkrSyncService < BrokerSyncService
   end
 
   def find_or_create_position(position_data)
-    @connection.broker_positions.find_or_create_by!(symbol: position_data[:symbol]) do |p|
+    position = @connection.broker_positions.find_or_create_by!(symbol: position_data[:symbol]) do |p|
       p.description = position_data[:description]
       p.currency = position_data[:currency]
     end
+
+    # Reopen if previously closed (position reappeared)
+    position.reopen! if position.closed?
+
+    position
   end
 
   def update_position(position, position_data)
@@ -183,5 +198,16 @@ class IbkrSyncService < BrokerSyncService
       currency: position_data[:currency],
       last_synced_at: Time.current
     )
+  end
+
+  # Close positions that weren't in the latest sync
+  # Returns the count of positions closed
+  def close_missing_positions(synced_symbols)
+    missing_positions = @connection.broker_positions.open.where.not(symbol: synced_symbols)
+    count = missing_positions.count
+
+    missing_positions.find_each(&:close!)
+
+    count
   end
 end

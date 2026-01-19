@@ -8,9 +8,19 @@ class BrokerPosition < ApplicationRecord
 
   scope :mapped, -> { where.not(asset_id: nil) }
   scope :unmapped, -> { where(asset_id: nil) }
+  scope :open, -> { where(closed_at: nil) }
+  scope :closed, -> { where.not(closed_at: nil) }
 
   def mapped?
     asset_id.present?
+  end
+
+  def closed?
+    closed_at.present?
+  end
+
+  def open?
+    !closed?
   end
 
   # Syncs the position value to the mapped asset
@@ -31,5 +41,30 @@ class BrokerPosition < ApplicationRecord
       currency: currency
     )
     valuation
+  end
+
+  # Mark position as closed (sold/transferred out)
+  # Sets value to 0 and records a final valuation
+  def close!(date: Date.current)
+    return if closed?
+
+    update!(
+      closed_at: Time.current,
+      last_value: 0,
+      last_quantity: 0
+    )
+
+    # Record final zero valuation
+    record_valuation!(date: date)
+
+    # Update mapped asset to reflect the closure
+    sync_to_asset! if mapped?
+  end
+
+  # Reopen a closed position (if it reappears in broker)
+  def reopen!
+    return unless closed?
+
+    update!(closed_at: nil)
   end
 end
