@@ -76,7 +76,27 @@ Split into two views:
   - Each asset shows current value and liability badge if applicable
 - **Totals Footer** - Assets - Liabilities = Net
 
-### 7. Admin
+### 7. Broker Integration
+- Connect brokerage accounts to auto-sync portfolio positions
+- Currently supports Interactive Brokers via Flex Web Service API
+- **Setup:**
+  - Add broker connection with account ID, name, and API credentials
+  - For IBKR: Flex token (encrypted) and Flex Query ID required
+  - Create a Flex Query in IBKR Account Management that returns Open Positions
+- **Position Mapping:**
+  - Each broker position (symbol) can be mapped to an existing Asset
+  - Unmapped positions are tracked but don't update any asset
+  - Multiple positions can map to the same asset (values summed)
+- **Syncing:**
+  - Automatic daily sync at 4am via Solid Queue scheduled job
+  - "Apply Broker Values" button copies cached position values to assets
+  - Position valuations recorded daily for historical tracking
+- **UI:**
+  - Settings → Brokers for connection management
+  - "Broker" badge shown on assets with mapped positions
+  - Position history viewable on individual position pages
+
+### 8. Admin
 - Manage master data: 
   - **Currencies** - ISO 4217 codes (e.g., USD, EUR, GBP)
   - **Account Types** - name (e.g., checking, savings, credit, cash)
@@ -144,6 +164,34 @@ Budget
 - amount:decimal
 - period:string (monthly, yearly)
 - start_date:date (optional)
+
+BrokerConnection
+- broker_type:integer (enum: ibkr=0)
+- account_id:string (unique per broker_type)
+- name:string (display name)
+- flex_token:string (encrypted, IBKR only)
+- flex_query_id:string (IBKR only)
+- last_synced_at:datetime
+- last_sync_error:text
+
+BrokerPosition
+- broker_connection_id:references
+- symbol:string (e.g., "AAPL", "VTI")
+- description:string (security description)
+- asset_id:references (optional, null if unmapped)
+- last_quantity:decimal
+- last_value:decimal
+- currency:string
+- last_synced_at:datetime
+- unique index on [broker_connection_id, symbol]
+
+PositionValuation
+- broker_position_id:references
+- date:date
+- quantity:decimal
+- value:decimal
+- currency:string
+- unique index on [broker_position_id, date]
 ```
 
 ## UI Requirements
@@ -166,6 +214,7 @@ Budget
    - Asset Types
    - Asset Groups
    - Categories
+   - Broker connections and position mappings
 
 ## Deployment
 
@@ -209,6 +258,11 @@ Budget
 - Transaction exchange rates captured at transaction date for accurate historical reporting
 - Transaction import uses Ollama LLM for extraction and categorization
 - Import services: OllamaService, PdfParserService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
+- Broker integration uses factory pattern (BrokerSyncService) for multi-broker support
+- IBKR uses Flex Web Service API (2-step: SendRequest → GetStatement)
+- IbkrSyncService handles API calls, XML parsing, and asset value sync
+- Daily broker sync at 4am via Solid Queue (BrokerSyncJob)
+- Position valuations track historical position values separately from asset valuations
 
 ## Agent Guidelines
 See `AGENTS.md` for development guidelines, code style, and task checklists for AI agents working on this project.
