@@ -115,25 +115,20 @@ class TransactionExtractorService
   end
 
   def build_csv_extraction_prompt(chunk_text)
-    ignore_list = account.ignore_patterns_list
+    row_count = chunk_text.lines.size - 1 # subtract header
 
     <<~PROMPT
-      Parse this CSV. Convert each data row into a JSON transaction.
+      Parse this CSV into JSON. There are exactly #{row_count} data rows. Return exactly #{row_count} transactions.
 
-      OUTPUT RULES:
+      RULES:
       - date: Convert to YYYY-MM-DD format
-      - description: Use the merchant/description column
-      - amount: Always output as POSITIVE number
-      - transaction_type: Either "expense" or "income"
+      - description: Use merchant/description column
+      - amount: Always POSITIVE number (remove minus sign)
+      - transaction_type: Look at the ORIGINAL amount sign:
+        * Negative amount (e.g., -50.00) → "expense"
+        * Positive amount (e.g., 50.00) → "income"
 
-      DETERMINE transaction_type:
-      Look at the ORIGINAL amount sign and column names:
-      - NEGATIVE amount (-50.00) → "expense"
-      - Amount in "Debit" column → "expense"#{'  '}
-      - POSITIVE amount (50.00) in single amount column → "expense" (most CSV exports show purchases as positive)
-      - Amount in "Credit" column → "income"
-      - Description contains "refund" → "income"
-      #{ignore_list.any? ? "\nSKIP rows where description contains: #{ignore_list.join(", ")}" : ""}
+      CRITICAL: Return ALL #{row_count} rows. Do not skip any rows.
 
       OUTPUT FORMAT:
       {"transactions": [{"date": "YYYY-MM-DD", "description": "...", "amount": 123.45, "transaction_type": "expense"}]}
