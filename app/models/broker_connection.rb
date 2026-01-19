@@ -1,0 +1,38 @@
+class BrokerConnection < ApplicationRecord
+  has_many :broker_positions, dependent: :destroy
+
+  # Broker types - extendable for future brokers
+  enum :broker_type, { ibkr: 0 }
+
+  # Encrypt sensitive credentials
+  encrypts :flex_token
+
+  validates :account_id, presence: true
+  validates :account_id, uniqueness: { scope: :broker_type }
+  validates :name, presence: true
+  validates :flex_token, presence: true, if: :ibkr?
+  validates :flex_query_id, presence: true, if: :ibkr?
+
+  def mapped_positions
+    broker_positions.where.not(asset_id: nil)
+  end
+
+  def unmapped_positions
+    broker_positions.where(asset_id: nil)
+  end
+
+  def sync_status
+    return :never if last_synced_at.nil?
+    return :error if last_sync_error.present?
+
+    :ok
+  end
+
+  # Display name for the broker type
+  def broker_type_name
+    case broker_type
+    when "ibkr" then "Interactive Brokers"
+    else broker_type.titleize
+    end
+  end
+end

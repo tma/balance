@@ -1,0 +1,31 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+aapl_position:
+  broker_connection: one
+  symbol: AAPL
+  description: Apple Inc
+  asset: house
+  last_quantity: 100.0
+  last_value: 17500.00
+  currency: USD
+  last_synced_at: 2026-01-19 19:46:05
+
+vti_position:
+  broker_connection: one
+  symbol: VTI
+  description: Vanguard Total Stock Market ETF
+  asset:
+  last_quantity: 50.0
+  last_value: 12500.00
+  currency: USD
+  last_synced_at: 2026-01-19 19:46:05
+
+msft_position:
+  broker_connection: two
+  symbol: MSFT
+  description: Microsoft Corp
+  asset: home_mortgage
+  last_quantity: 25.0
+  last_value: 10000.00
+  currency: USD
+  last_synced_at: 2026-01-18 10:00:00

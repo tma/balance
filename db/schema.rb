@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_18_212635) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_19_195423) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -73,6 +73,35 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_212635) do
     t.index ["asset_type_id"], name: "index_assets_on_asset_type_id"
   end
 
+  create_table "broker_connections", force: :cascade do |t|
+    t.string "account_id", null: false
+    t.integer "broker_type", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.string "flex_query_id", null: false
+    t.string "flex_token", null: false
+    t.text "last_sync_error"
+    t.datetime "last_synced_at"
+    t.string "name", null: false
+    t.datetime "updated_at", null: false
+    t.index ["broker_type", "account_id"], name: "index_broker_connections_on_broker_type_and_account_id", unique: true
+  end
+
+  create_table "broker_positions", force: :cascade do |t|
+    t.integer "asset_id"
+    t.integer "broker_connection_id", null: false
+    t.datetime "created_at", null: false
+    t.string "currency"
+    t.string "description"
+    t.decimal "last_quantity"
+    t.datetime "last_synced_at"
+    t.decimal "last_value"
+    t.string "symbol", null: false
+    t.datetime "updated_at", null: false
+    t.index ["asset_id"], name: "index_broker_positions_on_asset_id"
+    t.index ["broker_connection_id", "symbol"], name: "index_broker_positions_on_broker_connection_id_and_symbol", unique: true
+    t.index ["broker_connection_id"], name: "index_broker_positions_on_broker_connection_id"
+  end
+
   create_table "budgets", force: :cascade do |t|
     t.decimal "amount"
     t.integer "category_id", null: false
@@ -119,6 +148,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_212635) do
     t.index ["status"], name: "index_imports_on_status"
   end
 
+  create_table "position_valuations", force: :cascade do |t|
+    t.integer "broker_position_id", null: false
+    t.datetime "created_at", null: false
+    t.string "currency", null: false
+    t.date "date", null: false
+    t.decimal "quantity", precision: 15, scale: 4
+    t.datetime "updated_at", null: false
+    t.decimal "value", precision: 15, scale: 2
+    t.index ["broker_position_id", "date"], name: "index_position_valuations_on_broker_position_id_and_date", unique: true
+    t.index ["broker_position_id"], name: "index_position_valuations_on_broker_position_id"
+  end
+
   create_table "transactions", force: :cascade do |t|
     t.integer "account_id", null: false
     t.decimal "amount"
@@ -142,8 +183,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_212635) do
   add_foreign_key "asset_valuations", "assets"
   add_foreign_key "assets", "asset_groups"
   add_foreign_key "assets", "asset_types"
+  add_foreign_key "broker_positions", "assets"
+  add_foreign_key "broker_positions", "broker_connections"
   add_foreign_key "budgets", "categories"
   add_foreign_key "imports", "accounts"
+  add_foreign_key "position_valuations", "broker_positions"
   add_foreign_key "transactions", "accounts"
   add_foreign_key "transactions", "categories"
   add_foreign_key "transactions", "imports"
