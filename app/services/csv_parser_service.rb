@@ -2,7 +2,7 @@ class CsvParserService
   class Error < StandardError; end
 
   MAX_FILE_SIZE = 5.megabytes
-  CHUNK_SIZE = 50 # Number of data rows per chunk (header included with each)
+  CHUNK_SIZE = 20 # Number of data rows per chunk (smaller chunks = more reliable LLM parsing)
 
   class << self
     # Extract text from a CSV file, returning chunks of rows

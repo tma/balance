@@ -54,15 +54,15 @@ class CsvParserServiceTest < ActiveSupport::TestCase
   end
 
   test "extract_chunks splits large files into chunks with headers" do
-    # Create a CSV with more than CHUNK_SIZE (50) rows
+    # Create a CSV with more than CHUNK_SIZE (20) rows
     lines = [ "Date,Description,Amount\n" ]
-    120.times { |i| lines << "2026-01-#{(i % 28) + 1},Item #{i},#{i}.00\n" }
+    60.times { |i| lines << "2026-01-#{(i % 28) + 1},Item #{i},#{i}.00\n" }
     file = StringIO.new(lines.join)
 
     result = CsvParserService.extract_chunks(file)
 
     assert_kind_of Array, result
-    assert_equal 3, result.size # 120 rows / 50 per chunk = 3 chunks
+    assert_equal 3, result.size # 60 rows / 20 per chunk = 3 chunks
 
     # Each chunk should start with the header
     result.each do |chunk|
