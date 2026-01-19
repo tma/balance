@@ -3,11 +3,20 @@
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800"><%= @position.symbol %></h1>
+      <h1 class="text-2xl font-bold text-slate-800">
+        <%= @position.symbol %>
+        <% if @position.closed? %>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium bg-slate-200 text-slate-600 ml-2">Closed</span>
+        <% end %>
+      </h1>
       <p class="text-sm text-slate-500"><%= @position.description %></p>
     </div>
     <div class="flex items-center space-x-4">
-      <% if @position.mapped? %>
+      <% if @position.closed? %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+          Closed <%= @position.closed_at&.strftime("%Y-%m-%d") %>
+        </span>
+      <% elsif @position.mapped? %>
         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
           Mapped to <%= @position.asset.name %>
         </span>
@@ -46,6 +55,9 @@
   </div>
 
   <!-- Valuation History -->
+  <% default_currency = Currency.default&.code || "USD" %>
+  <% show_default_currency = @position.currency != default_currency %>
+  
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
       <h2 class="font-semibold text-slate-700">Valuation History</h2>
@@ -58,25 +70,16 @@
           <tr>
             <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
             <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
-            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value (<%= @position.currency %>)</th>
+            <% if show_default_currency %>
+              <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value (<%= default_currency %>)</th>
+            <% end %>
             <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Change</th>
           </tr>
         </thead>
         <tbody class="bg-white">
           <% previous_value = nil %>
-          <% @valuations.reverse_each.with_index do |valuation, i| %>
-            <% 
-              change = previous_value ? valuation.value - previous_value : nil
-              change_percent = (previous_value && previous_value != 0) ? ((valuation.value - previous_value) / previous_value * 100) : nil
-              previous_value = valuation.value
-            %>
-          <% end %>
-          <% previous_value = nil %>
           <% @valuations.each do |valuation| %>
-            <% 
-              # For display, we want to show change from previous row (earlier date) to this row
-              # Since @valuations is desc, the "previous" is actually the next one chronologically
-            %>
             <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
               <td class="px-4 py-3 whitespace-nowrap">
                 <span class="text-sm font-medium text-slate-700"><%= valuation.date.strftime("%Y-%m-%d") %></span>
@@ -90,6 +93,20 @@
                   <%= format_currency(valuation.value, currency: valuation.currency) %>
                 </span>
               </td>
+              <% if show_default_currency %>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <span class="text-sm text-slate-600">
+                    <% if valuation.value_in_default_currency %>
+                      <%= format_currency(valuation.value_in_default_currency, currency: default_currency) %>
+                      <% if valuation.exchange_rate && valuation.exchange_rate != 1.0 %>
+                        <span class="text-xs text-slate-400 block">@ <%= number_with_precision(valuation.exchange_rate, precision: 4) %></span>
+                      <% end %>
+                    <% else %>
+                      <span class="text-slate-400">—</span>
+                    <% end %>
+                  </span>
+                </td>
+              <% end %>
               <td class="px-4 py-3 text-right whitespace-nowrap">
                 <% if previous_value %>
                   <% change = valuation.value - previous_value %>
