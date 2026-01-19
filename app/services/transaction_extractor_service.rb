@@ -190,20 +190,26 @@ class TransactionExtractorService
     end.join("\n")
 
     category_hints = build_category_hints(expense_categories, income_categories)
+    expense_names = expense_categories.pluck(:name)
+    income_names = income_categories.pluck(:name)
 
     <<~PROMPT
-      Categorize these financial transactions. Pick the single best category for each.
+      Categorize these transactions. You MUST use ONLY the exact category names listed below.
 
-      EXPENSE CATEGORIES: #{expense_categories.pluck(:name).join(", ")}
-      INCOME CATEGORIES: #{income_categories.pluck(:name).join(", ")}
+      EXPENSE CATEGORIES: #{expense_names.join(", ")}
+      INCOME CATEGORIES: #{income_names.join(", ")}
       #{category_hints}
       TRANSACTIONS:
       #{txn_list}
 
-      OUTPUT FORMAT (JSON array of category names, same order as input):
-      ["category1", "category2", ...]
+      RULES:
+      - Use ONLY category names from the lists above (exact spelling)
+      - For expenses, pick from EXPENSE CATEGORIES
+      - For income, pick from INCOME CATEGORIES
+      - If unsure, use "other expense" or "other income"
 
-      Use "Other" if no category fits well.
+      OUTPUT: JSON array of category names, same order as transactions:
+      ["category1", "category2", ...]
     PROMPT
   end
 
@@ -243,7 +249,17 @@ class TransactionExtractorService
     when Array
       response
     when Hash
-      response["categories"] || response.values.first || []
+      # Handle {"categories": [...]} or {"transactions": [...]}
+      if response["categories"].is_a?(Array)
+        response["categories"]
+      elsif response["transactions"].is_a?(Array)
+        response["transactions"]
+      elsif response.values.first.is_a?(Array)
+        response.values.first
+      else
+        # Handle {"category1": "x", "category2": "y", ...} format
+        response.keys.sort.map { |k| response[k] }
+      end
     when String
       [ response ]
     else
