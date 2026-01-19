@@ -80,12 +80,28 @@ class CsvParserService
         File.read(file)
       end
 
-      # Ensure UTF-8 encoding, replacing invalid characters
+      normalize_encoding(content)
+    end
+
+    # Normalize content to valid UTF-8
+    # Handles files that may be UTF-8, ISO-8859-1, or binary
+    def normalize_encoding(content)
+      # First, try interpreting as UTF-8
       content.force_encoding("UTF-8")
-      unless content.valid_encoding?
-        content = content.encode("UTF-8", "ISO-8859-1", invalid: :replace, undef: :replace, replace: "")
+      return content if content.valid_encoding?
+
+      # If not valid UTF-8, try common encodings
+      %w[ISO-8859-1 Windows-1252 ASCII-8BIT].each do |encoding|
+        begin
+          converted = content.dup.force_encoding(encoding).encode("UTF-8", invalid: :replace, undef: :replace, replace: "")
+          return converted if converted.valid_encoding?
+        rescue Encoding::InvalidByteSequenceError, Encoding::UndefinedConversionError
+          next
+        end
       end
-      content
+
+      # Last resort: force to UTF-8 replacing invalid bytes
+      content.encode("UTF-8", "UTF-8", invalid: :replace, undef: :replace, replace: "")
     end
   end
 end

@@ -87,4 +87,32 @@ class CsvParserServiceTest < ActiveSupport::TestCase
       CsvParserService.extract_chunks(file)
     end
   end
+
+  test "handles ISO-8859-1 encoded content" do
+    # Create content with ISO-8859-1 characters (e.g., German umlauts)
+    # "Café" and "Zürich" in ISO-8859-1
+    iso_content = "Date,Description,Amount\n2026-01-15,Caf\xE9,5.50\n2026-01-16,Z\xFCrich,12.00"
+    iso_content.force_encoding("ASCII-8BIT") # Simulate binary read
+
+    file = StringIO.new(iso_content)
+    result = CsvParserService.extract_text(file)
+
+    assert result.valid_encoding?
+    assert_equal "UTF-8", result.encoding.name
+    assert_includes result, "Date,Description,Amount"
+  end
+
+  test "handles UTF-8 content read as binary" do
+    # UTF-8 content with special characters
+    utf8_content = "Date,Description,Amount\n2026-01-15,Café,5.50\n2026-01-16,Zürich,12.00"
+    binary_content = utf8_content.dup.force_encoding("ASCII-8BIT")
+
+    file = StringIO.new(binary_content)
+    result = CsvParserService.extract_text(file)
+
+    assert result.valid_encoding?
+    assert_equal "UTF-8", result.encoding.name
+    assert_includes result, "Café"
+    assert_includes result, "Zürich"
+  end
 end
