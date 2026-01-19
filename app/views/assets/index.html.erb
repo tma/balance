@@ -44,19 +44,22 @@
               </td>
             </tr>
           </tbody>
-          <tbody data-controller="sortable" data-sortable-url-value="<%= sort_assets_path %>">
-            <% group.assets.includes(:asset_type).each do |asset| %>
-              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 cursor-move" data-sortable-target="item" data-id="<%= asset.id %>">
-                <td class="px-4 py-2 text-slate-300 pl-8 text-xs leading-none">⋮⋮</td>
-                <td class="px-4 py-2 text-sm text-slate-700 font-medium">
-                  <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
-                </td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
-                  <%= asset.asset_type.name %>
-                  <% if asset.asset_type.is_liability? %>
-                    <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span>
-                  <% end %>
-                </td>
+            <tbody data-controller="sortable" data-sortable-url-value="<%= sort_assets_path %>">
+              <% group.assets.includes(:asset_type, :broker_positions).each do |asset| %>
+                <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 cursor-move" data-sortable-target="item" data-id="<%= asset.id %>">
+                  <td class="px-4 py-2 text-slate-300 pl-8 text-xs leading-none">⋮⋮</td>
+                  <td class="px-4 py-2 text-sm text-slate-700 font-medium">
+                    <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
+                  </td>
+                  <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
+                    <%= asset.asset_type.name %>
+                    <% if asset.asset_type.is_liability? %>
+                      <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span>
+                    <% end %>
+                    <% if asset.has_broker? %>
+                      <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-emerald-100 text-emerald-600">Broker</span>
+                    <% end %>
+                  </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
                   <%= asset.currency %>
                 </td>

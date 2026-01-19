@@ -219,7 +219,12 @@
               <tr class="hover:bg-slate-50 transition border-t border-slate-100">
                 <td class="px-4 py-3">
                   <%= link_to asset, class: "block" do %>
-                    <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap"><%= asset.name %></p>
+                    <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap">
+                      <%= asset.name %>
+                      <% if @broker_asset_ids.include?(asset.id) %>
+                        <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-emerald-100 text-emerald-600">Broker</span>
+                      <% end %>
+                    </p>
                     <p class="text-xs text-slate-400 whitespace-nowrap">
                       <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> · <span class="text-rose-400">Liability</span><% end %>
                     </p>

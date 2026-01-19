@@ -5,6 +5,9 @@
       <p class="text-sm text-slate-500 mt-1">Enter values for each month (end of month)</p>
     </div>
     <div class="flex items-center space-x-4">
+      <% if @has_broker_connections %>
+        <%= button_to "Apply Broker Values", apply_broker_values_path, method: :post, class: "rounded-lg px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition text-sm", title: "Copy latest broker position values to assets" %>
+      <% end %>
       <div class="flex items-center space-x-2">
         <% older_month = (@end_month - 12.months).strftime("%Y-%m") %>
         <% older_start = (@end_month - 12.months - 11.months).end_of_month %>
@@ -67,10 +70,16 @@
                 </tr>
 
                 <% assets.each do |asset| %>
+                  <% has_broker = @broker_asset_ids.include?(asset.id) %>
                   <tr class="hover:bg-slate-50 transition border-t border-slate-100" data-controller="copy-previous">
                     <td class="sticky left-0 bg-white px-4 py-3 hover:bg-slate-50">
                       <%= link_to asset, class: "block" do %>
-                        <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap"><%= asset.name %></p>
+                        <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap">
+                          <%= asset.name %>
+                          <% if has_broker %>
+                            <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-emerald-50 text-emerald-600" title="Linked to broker">Broker</span>
+                          <% end %>
+                        </p>
                         <p class="text-xs text-slate-400 whitespace-nowrap">
                           <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> · <span class="text-rose-400">Liability</span><% end %>
                         </p>

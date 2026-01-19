@@ -1,7 +1,7 @@
 class AssetValuationsController < ApplicationController
   # Bulk update form for all assets - multi-month view
   def bulk_edit
-    @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations ]).order(:name)
+    @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations, :broker_positions ]).order(:name)
 
     # Parse month parameter or default to current month
     if params[:month].present?
@@ -15,6 +15,26 @@ class AssetValuationsController < ApplicationController
     @valuations_by_asset_and_month = build_valuations_lookup
     @group_totals_by_month = build_group_totals_by_month
     @totals_by_month = build_totals_by_month
+
+    # Check if there are any broker connections
+    @has_broker_connections = BrokerConnection.exists?
+    @broker_asset_ids = BrokerPosition.where.not(asset_id: nil).pluck(:asset_id).uniq.to_set
+  end
+
+  # Apply cached broker position values to assets (no API call)
+  # Positions are synced automatically at 4am daily
+  def apply_broker_values
+    assets = Asset.with_broker.includes(:broker_positions)
+    updated_count = 0
+
+    assets.each do |asset|
+      asset.sync_from_broker_positions!
+      updated_count += 1
+    rescue StandardError => e
+      Rails.logger.error "[apply_broker_values] Failed to update #{asset.name}: #{e.message}"
+    end
+
+    redirect_to update_valuations_path, notice: "Applied broker values to #{updated_count} #{'asset'.pluralize(updated_count)}."
   end
 
   # Process bulk updates for multiple months
@@ -56,6 +76,31 @@ class AssetValuationsController < ApplicationController
     redirect_to update_valuations_path, notice: "Saved #{updated_count} #{'valuation'.pluralize(updated_count)}."
   rescue ActiveRecord::RecordInvalid => e
     redirect_to update_valuations_path, alert: "Update failed: #{e.message}"
+  end
+
+  # Edit individual valuation date
+  def edit
+    @asset = Asset.find(params[:asset_id])
+    @valuation = @asset.asset_valuations.find(params[:id])
+  end
+
+  # Update individual valuation date
+  def update
+    @asset = Asset.find(params[:asset_id])
+    @valuation = @asset.asset_valuations.find(params[:id])
+
+    if @valuation.update(valuation_params)
+      redirect_to @asset, notice: "Valuation updated."
+    else
+      render :edit, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @asset = Asset.find(params[:asset_id])
+    @valuation = @asset.asset_valuations.find(params[:id])
+    @valuation.destroy!
+    redirect_to @asset, notice: "Valuation deleted.", status: :see_other
   end
 
   private
@@ -114,33 +159,6 @@ class AssetValuationsController < ApplicationController
 
     totals
   end
-
-  # Edit individual valuation date
-  def edit
-    @asset = Asset.find(params[:asset_id])
-    @valuation = @asset.asset_valuations.find(params[:id])
-  end
-
-  # Update individual valuation date
-  def update
-    @asset = Asset.find(params[:asset_id])
-    @valuation = @asset.asset_valuations.find(params[:id])
-
-    if @valuation.update(valuation_params)
-      redirect_to @asset, notice: "Valuation updated."
-    else
-      render :edit, status: :unprocessable_entity
-    end
-  end
-
-  def destroy
-    @asset = Asset.find(params[:asset_id])
-    @valuation = @asset.asset_valuations.find(params[:id])
-    @valuation.destroy!
-    redirect_to @asset, notice: "Valuation deleted.", status: :see_other
-  end
-
-  private
 
   def valuation_params
     params.require(:asset_valuation).permit(:date, :value)

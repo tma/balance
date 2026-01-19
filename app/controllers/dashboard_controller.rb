@@ -105,6 +105,9 @@ class DashboardController < ApplicationController
     # Quarterly history (12 quarters = 3 years, using end of quarter)
     @history_quarters = (0..11).map { |i| (@valuation_date - (i * 3).months).end_of_quarter }.reverse
     @history_by_group_quarterly = build_history_by_group(@history_quarters)
+
+    # Assets with broker positions for badge display
+    @broker_asset_ids = BrokerPosition.where.not(asset_id: nil).pluck(:asset_id).uniq.to_set
   end
 
   private

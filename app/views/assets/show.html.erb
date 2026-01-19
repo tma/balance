@@ -10,6 +10,9 @@
         <% if @asset.asset_type.is_liability? %>
           <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-600">Liability</span>
         <% end %>
+        <% if @asset.has_broker? %>
+          <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">Broker</span>
+        <% end %>
       </p>
     </div>
     <div class="flex space-x-2">
@@ -27,6 +30,27 @@
       <p class="mt-2 text-sm text-slate-600"><%= @asset.notes %></p>
     <% end %>
   </div>
+
+  <% if @asset.has_broker? %>
+    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
+      <p class="text-sm font-medium text-emerald-800">Broker Positions</p>
+      <div class="mt-2 space-y-1">
+        <% @asset.broker_positions.includes(:broker_connection).each do |position| %>
+          <p class="text-sm text-emerald-700">
+            <strong><%= position.symbol %></strong>
+            <% if position.last_value.present? %>
+              · <%= format_currency(position.last_value, currency: position.currency) %>
+            <% end %>
+            · <%= link_to position.broker_connection.name, admin_broker_connection_path(position.broker_connection), class: "underline hover:no-underline" %>
+            (<%= position.broker_connection.broker_type_name %>)
+            <% if position.last_synced_at %>
+              · <%= position.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
+            <% end %>
+          </p>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <% if @valuations.any? %>
