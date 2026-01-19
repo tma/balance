@@ -39,6 +39,21 @@ class Admin::BrokerConnectionsController < ApplicationController
     redirect_to admin_broker_connections_path, notice: "Connection was successfully deleted.", status: :see_other
   end
 
+  def test_connection
+    # Build a temporary connection object (not saved) to test credentials
+    @connection = BrokerConnection.new(connection_params)
+
+    unless @connection.valid?
+      render json: { success: false, error: @connection.errors.full_messages.join(", ") }
+      return
+    end
+
+    service = BrokerSyncService.for(@connection)
+    result = service.test_connection
+
+    render json: result
+  end
+
   private
 
   def set_connection

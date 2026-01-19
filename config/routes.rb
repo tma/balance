@@ -52,6 +52,9 @@ Rails.application.routes.draw do
     resources :asset_types
     resources :categories
     resources :broker_connections, path: "brokers" do
+      collection do
+        post :test_connection
+      end
       resources :broker_positions, path: "positions", as: :positions, only: [ :index, :show, :edit, :update ] do
         collection do
           patch :bulk_update

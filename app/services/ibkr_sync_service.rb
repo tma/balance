@@ -46,6 +46,18 @@ class IbkrSyncService < BrokerSyncService
     result
   end
 
+  # Test connection by fetching positions without storing anything
+  # Returns { success: true, symbols: [...] } or { success: false, error: "..." }
+  def test_connection
+    positions = fetch_positions
+    symbols = positions.map { |p| p[:symbol] }.first(5)
+    { success: true, symbols: symbols, count: positions.count }
+  rescue SyncError => e
+    { success: false, error: e.message }
+  rescue StandardError => e
+    { success: false, error: "Unexpected error: #{e.message}" }
+  end
+
   # Fetch positions from IBKR Flex API
   def fetch_positions
     # Step 1: Request report generation

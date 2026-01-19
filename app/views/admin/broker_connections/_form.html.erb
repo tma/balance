@@ -1,4 +1,4 @@
-<%= form_with(model: [:admin, connection], url: connection.persisted? ? admin_broker_connection_path(connection) : admin_broker_connections_path, class: "contents") do |form| %>
+<%= form_with(model: [:admin, connection], url: connection.persisted? ? admin_broker_connection_path(connection) : admin_broker_connections_path, class: "contents", data: { controller: "test-connection", test_connection_url_value: test_connection_admin_broker_connections_path }) do |form| %>
   <% if connection.errors.any? %>
     <div class="bg-rose-50 text-rose-600 px-4 py-3 rounded-lg border border-rose-200 mb-4">
       <h2 class="font-medium"><%= pluralize(connection.errors.count, "error") %> prohibited this connection from being saved:</h2>
@@ -10,32 +10,37 @@
     </div>
   <% end %>
 
-  <%= form.hidden_field :broker_type %>
+  <div id="test-result" data-test-connection-target="result" class="hidden mb-4"></div>
+
+  <%= form.hidden_field :broker_type, data: { test_connection_target: "brokerType" } %>
 
   <div class="mb-4">
     <%= form.label :name, class: "block text-sm font-medium text-slate-700" %>
-    <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Main Brokerage" %>
+    <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Main Brokerage", data: { test_connection_target: "name" } %>
   </div>
 
   <div class="mb-4">
     <%= form.label :account_id, "Account ID", class: "block text-sm font-medium text-slate-700" %>
-    <%= form.text_field :account_id, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "U1234567" %>
+    <%= form.text_field :account_id, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "U1234567", data: { test_connection_target: "accountId" } %>
   </div>
 
   <% if connection.ibkr? %>
     <div class="mb-4">
       <%= form.label :flex_token, "Flex Token", class: "block text-sm font-medium text-slate-700" %>
-      <%= form.text_field :flex_token, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Your Flex Web Service token" %>
+      <%= form.text_field :flex_token, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Your Flex Web Service token", data: { test_connection_target: "flexToken" } %>
     </div>
 
     <div class="mb-4">
       <%= form.label :flex_query_id, "Flex Query ID", class: "block text-sm font-medium text-slate-700" %>
-      <%= form.text_field :flex_query_id, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "123456" %>
+      <%= form.text_field :flex_query_id, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "123456", data: { test_connection_target: "flexQueryId" } %>
     </div>
   <% end %>
 
   <div class="flex space-x-4">
     <%= form.submit connection.persisted? ? "Update Connection" : "Create Connection", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+    <button type="button" data-action="click->test-connection#test" data-test-connection-target="testButton" class="rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition">
+      Test Connection
+    </button>
     <%= link_to "Cancel", admin_broker_connections_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
   </div>
 <% end %>
