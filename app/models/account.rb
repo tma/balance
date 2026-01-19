@@ -1,4 +1,13 @@
 class Account < ApplicationRecord
+  DEFAULT_IGNORE_PATTERNS = <<~PATTERNS.freeze
+    Total
+    Subtotal
+    Balance
+    Credit Limit
+    Payment Due
+    Statement Period
+  PATTERNS
+
   belongs_to :account_type
   has_many :transactions, dependent: :destroy
 
@@ -14,6 +23,18 @@ class Account < ApplicationRecord
   attribute :balance, :decimal, default: 0
 
   before_save :calculate_default_currency_balance
+
+  # Returns array of ignore patterns for import filtering
+  # Uses custom patterns if set, otherwise falls back to defaults
+  def ignore_patterns_list
+    patterns = import_ignore_patterns.presence || DEFAULT_IGNORE_PATTERNS
+    patterns.lines.map(&:strip).reject(&:blank?)
+  end
+
+  # Check if a description matches any ignore pattern (case-sensitive)
+  def should_ignore_for_import?(description)
+    ignore_patterns_list.any? { |pattern| description.include?(pattern) }
+  end
 
   def default_currency
     Currency.default&.code || "USD"

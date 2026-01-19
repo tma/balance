@@ -42,6 +42,6 @@ class AccountsController < ApplicationController
   end
 
   def account_params
-    params.expect(account: [ :name, :account_type_id, :balance, :currency ])
+    params.expect(account: [ :name, :account_type_id, :balance, :currency, :import_ignore_patterns ])
   end
 end
