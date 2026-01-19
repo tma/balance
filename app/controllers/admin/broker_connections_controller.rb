@@ -43,8 +43,17 @@ class Admin::BrokerConnectionsController < ApplicationController
     # Build a temporary connection object (not saved) to test credentials
     @connection = BrokerConnection.new(connection_params)
 
-    unless @connection.valid?
-      render json: { success: false, error: @connection.errors.full_messages.join(", ") }
+    # Only validate presence of required fields, not uniqueness
+    errors = []
+    errors << "Name can't be blank" if @connection.name.blank?
+    errors << "Account ID can't be blank" if @connection.account_id.blank?
+    if @connection.ibkr?
+      errors << "Flex Token can't be blank" if @connection.flex_token.blank?
+      errors << "Flex Query ID can't be blank" if @connection.flex_query_id.blank?
+    end
+
+    if errors.any?
+      render json: { success: false, error: errors.join(", ") }
       return
     end
 
