@@ -1,0 +1,22 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+aapl_jan_17:
+  broker_position: aapl_position
+  date: 2026-01-17
+  quantity: 95.0
+  value: 16500.00
+  currency: USD
+
+aapl_jan_18:
+  broker_position: aapl_position
+  date: 2026-01-18
+  quantity: 100.0
+  value: 17000.00
+  currency: USD
+
+vti_jan_18:
+  broker_position: vti_position
+  date: 2026-01-18
+  quantity: 50.0
+  value: 12000.00
+  currency: USD

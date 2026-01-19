@@ -1,0 +1,121 @@
+<% content_for :title, "#{@position.symbol} - #{@connection.name}" %>
+
+<div class="w-full">
+  <div class="flex justify-between items-center mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-800"><%= @position.symbol %></h1>
+      <p class="text-sm text-slate-500"><%= @position.description %></p>
+    </div>
+    <div class="flex items-center space-x-4">
+      <% if @position.mapped? %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+          Mapped to <%= @position.asset.name %>
+        </span>
+      <% else %>
+        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+          Unmapped
+        </span>
+      <% end %>
+    </div>
+  </div>
+
+  <!-- Current Position -->
+  <div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Quantity</p>
+      <p class="text-2xl font-bold text-slate-800 mt-1">
+        <%= number_with_delimiter(@position.last_quantity) if @position.last_quantity %>
+      </p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Value</p>
+      <p class="text-2xl font-bold text-slate-800 mt-1">
+        <%= format_currency(@position.last_value, currency: @position.currency) if @position.last_value %>
+      </p>
+    </div>
+    <div class="bg-white rounded-xl border border-slate-200 p-4">
+      <p class="text-xs font-medium text-slate-500 uppercase">Last Synced</p>
+      <p class="text-lg font-medium text-slate-700 mt-1">
+        <% if @position.last_synced_at %>
+          <%= @position.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
+        <% else %>
+          Never
+        <% end %>
+      </p>
+    </div>
+  </div>
+
+  <!-- Valuation History -->
+  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
+      <h2 class="font-semibold text-slate-700">Valuation History</h2>
+      <p class="text-xs text-slate-500 mt-1">Daily snapshots of position value (last 90 days)</p>
+    </div>
+
+    <% if @valuations.any? %>
+      <table class="min-w-full">
+        <thead class="bg-slate-50 border-b border-slate-200">
+          <tr>
+            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Change</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white">
+          <% previous_value = nil %>
+          <% @valuations.reverse_each.with_index do |valuation, i| %>
+            <% 
+              change = previous_value ? valuation.value - previous_value : nil
+              change_percent = (previous_value && previous_value != 0) ? ((valuation.value - previous_value) / previous_value * 100) : nil
+              previous_value = valuation.value
+            %>
+          <% end %>
+          <% previous_value = nil %>
+          <% @valuations.each do |valuation| %>
+            <% 
+              # For display, we want to show change from previous row (earlier date) to this row
+              # Since @valuations is desc, the "previous" is actually the next one chronologically
+            %>
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
+              <td class="px-4 py-3 whitespace-nowrap">
+                <span class="text-sm font-medium text-slate-700"><%= valuation.date.strftime("%Y-%m-%d") %></span>
+                <span class="text-xs text-slate-400 ml-2"><%= valuation.date.strftime("%a") %></span>
+              </td>
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <span class="text-sm text-slate-600"><%= number_with_delimiter(valuation.quantity) %></span>
+              </td>
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <span class="text-sm font-medium text-slate-700">
+                  <%= format_currency(valuation.value, currency: valuation.currency) %>
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right whitespace-nowrap">
+                <% if previous_value %>
+                  <% change = valuation.value - previous_value %>
+                  <% change_percent = previous_value != 0 ? (change / previous_value * 100) : 0 %>
+                  <span class="text-sm <%= change >= 0 ? 'text-emerald-600' : 'text-rose-600' %>">
+                    <%= change >= 0 ? '+' : '' %><%= format_amount(change) %>
+                    <span class="text-xs">(<%= change >= 0 ? '+' : '' %><%= number_to_percentage(change_percent, precision: 1) %>)</span>
+                  </span>
+                <% else %>
+                  <span class="text-sm text-slate-400">—</span>
+                <% end %>
+                <% previous_value = valuation.value %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="text-center py-8">
+        <p class="text-slate-500 mb-2">No valuation history yet.</p>
+        <p class="text-sm text-slate-400">Valuations are recorded daily at 4am or when you sync.</p>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="mt-6">
+    <%= link_to "← Back to #{@connection.name}", admin_broker_connection_path(@connection), class: "text-cyan-600 hover:text-cyan-700 text-sm" %>
+  </div>
+</div>
