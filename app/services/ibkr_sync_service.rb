@@ -187,6 +187,22 @@ class IbkrSyncService < BrokerSyncService
       }
     end
 
+    # Parse cash balances from Cash Report (if included in Flex Query)
+    doc.elements.each("//CashReportCurrency") do |cash|
+      next if cash.attributes["currency"] == "BASE_SUMMARY" # Skip summary rows
+      currency = cash.attributes["currency"]
+      ending_cash = cash.attributes["endingCash"]&.to_d
+      next if ending_cash.nil? || ending_cash.zero?
+
+      positions << {
+        symbol: currency,
+        description: "Cash (#{currency})",
+        quantity: ending_cash,
+        value: ending_cash,
+        currency: currency
+      }
+    end
+
     positions
   end
 

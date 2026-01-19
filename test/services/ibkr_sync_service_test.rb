@@ -359,6 +359,71 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     assert_equal 99500.00, positions.first[:value].to_f
   end
 
+  test "parse_positions extracts cash balances from Cash Report" do
+    xml_with_cash = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <OpenPositions>
+              <OpenPosition symbol="VTI" description="Vanguard Total Stock Market ETF"
+                position="100.0" positionValue="25000.00" currency="USD" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <CashReport>
+              <CashReportCurrency currency="USD" endingCash="15000.50" endingSettledCash="15000.50"/>
+              <CashReportCurrency currency="EUR" endingCash="5000.25" endingSettledCash="5000.25"/>
+              <CashReportCurrency currency="BASE_SUMMARY" endingCash="20000.75" endingSettledCash="20000.75"/>
+            </CashReport>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_cash)
+
+    assert_equal 3, positions.count # VTI + 2 cash positions (BASE_SUMMARY skipped)
+
+    usd_cash = positions.find { |p| p[:symbol] == "USD" }
+    assert_not_nil usd_cash
+    assert_equal "Cash (USD)", usd_cash[:description]
+    assert_equal 15000.50, usd_cash[:quantity].to_f
+    assert_equal 15000.50, usd_cash[:value].to_f
+    assert_equal "USD", usd_cash[:currency]
+
+    eur_cash = positions.find { |p| p[:symbol] == "EUR" }
+    assert_not_nil eur_cash
+    assert_equal "Cash (EUR)", eur_cash[:description]
+    assert_equal 5000.25, eur_cash[:quantity].to_f
+    assert_equal "EUR", eur_cash[:currency]
+
+    # BASE_SUMMARY should be skipped
+    base_cash = positions.find { |p| p[:symbol] == "BASE_SUMMARY" }
+    assert_nil base_cash
+  end
+
+  test "parse_positions skips zero cash balances" do
+    xml_with_zero_cash = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <OpenPositions/>
+            <CashReport>
+              <CashReportCurrency currency="USD" endingCash="1000.00" endingSettledCash="1000.00"/>
+              <CashReportCurrency currency="EUR" endingCash="0" endingSettledCash="0"/>
+              <CashReportCurrency currency="GBP" endingCash="0.00" endingSettledCash="0.00"/>
+            </CashReport>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_zero_cash)
+
+    assert_equal 1, positions.count # Only USD cash (EUR and GBP are zero)
+    assert_equal "USD", positions.first[:symbol]
+  end
+
   # ============================================================
   # Request Building Tests
   # ============================================================
