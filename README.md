@@ -45,8 +45,31 @@ A personal finance budgeting application for tracking income, expenses, budgets,
        environment:
          - RAILS_ENV=production
          - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+         - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
+         - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
+         - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
          - RAILS_LOG_TO_STDOUT=1
          - TZ=Europe/Berlin  # Timezone (e.g., America/New_York, Asia/Tokyo)
+         - OLLAMA_HOST=http://host.docker.internal:11434
+       volumes:
+         - balance_storage:/rails/storage
+       extra_hosts:
+         - "host.docker.internal:host-gateway"
+       restart: unless-stopped
+       depends_on:
+         - worker
+
+     worker:
+       image: ghcr.io/tma/balance:main
+       command: bundle exec rails solid_queue:work
+       environment:
+         - RAILS_ENV=production
+         - SECRET_KEY_BASE=${SECRET_KEY_BASE}
+         - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
+         - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
+         - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
+         - RAILS_LOG_TO_STDOUT=1
+         - TZ=Europe/Berlin
          - OLLAMA_HOST=http://host.docker.internal:11434
        volumes:
          - balance_storage:/rails/storage
@@ -58,10 +81,18 @@ A personal finance budgeting application for tracking income, expenses, budgets,
      balance_storage:
    ```
 
-2. Generate a secret key and set it as an environment variable:
+2. Generate secrets and set them as environment variables:
    ```bash
-   export SECRET_KEY_BASE=$(ruby -rsecurerandom -e 'puts SecureRandom.hex(64)')
+   # Generate Rails secret key
+   export SECRET_KEY_BASE=$(openssl rand -hex 64)
+
+   # Generate Active Record encryption keys (required for broker integration)
+   export ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=$(openssl rand -hex 16)
+   export ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=$(openssl rand -hex 16)
+   export ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=$(openssl rand -hex 16)
    ```
+
+   > **Important:** Save these values securely. If you lose the encryption keys, any encrypted data (like broker API tokens) will become unreadable.
 
 3. Start the application:
    ```bash
@@ -71,6 +102,11 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 4. The application will be available at **http://localhost:3000**
 
 5. On first run, the database will be seeded with default currencies, categories, and account types.
+
+### Background Worker
+
+The `worker` service runs scheduled jobs including:
+- **Daily broker sync** (4am) - Fetches latest positions from connected brokers (e.g., Interactive Brokers)
 
 ### AI-Powered Transaction Import
 
