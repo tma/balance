@@ -1089,6 +1089,65 @@ if Rails.env.development?
     puts "  To enable: brew install ollama && ollama pull llama3.1:8b && brew services start ollama"
   end
 
+  # ---------------------------------------------------------------------------
+  # Broker Connections and Positions (demonstrates broker integration)
+  # ---------------------------------------------------------------------------
+  puts "Creating broker connections..."
+
+  # Create an IBKR connection (with fake token - won't actually sync)
+  ibkr_connection = BrokerConnection.find_or_create_by!(account_id: "U1234567") do |c|
+    c.broker_type = :ibkr
+    c.name = "Main Brokerage"
+    c.flex_token = "demo_token_not_real"
+    c.flex_query_id = "123456"
+    c.last_synced_at = 1.day.ago
+  end
+
+  # Create broker positions mapped to assets
+  stock_portfolio = Asset.find_by(name: "Stock Portfolio")
+
+  positions_data = [
+    { symbol: "VTI", description: "Vanguard Total Stock Market ETF", quantity: 150, value: 35000, currency: "USD", asset: stock_portfolio },
+    { symbol: "VXUS", description: "Vanguard Total International Stock ETF", quantity: 100, value: 5500, currency: "USD", asset: stock_portfolio },
+    { symbol: "BND", description: "Vanguard Total Bond Market ETF", quantity: 50, value: 4500, currency: "USD", asset: stock_portfolio },
+    { symbol: "AAPL", description: "Apple Inc", quantity: 25, value: 4500, currency: "USD", asset: nil },
+    { symbol: "MSFT", description: "Microsoft Corp", quantity: 15, value: 6000, currency: "USD", asset: nil }
+  ]
+
+  positions_data.each do |data|
+    position = BrokerPosition.find_or_create_by!(
+      broker_connection: ibkr_connection,
+      symbol: data[:symbol]
+    ) do |p|
+      p.description = data[:description]
+      p.currency = data[:currency]
+    end
+
+    position.update!(
+      last_quantity: data[:quantity],
+      last_value: data[:value],
+      asset: data[:asset],
+      last_synced_at: 1.day.ago
+    )
+
+    # Create 30 days of position valuations (historical data)
+    30.times do |i|
+      date = Date.current - i.days
+      # Add some random variation to historical values
+      variation = 1 + (rand - 0.5) * 0.04  # ±2% daily variation
+      PositionValuation.find_or_create_by!(
+        broker_position: position,
+        date: date
+      ) do |v|
+        v.quantity = data[:quantity]
+        v.value = (data[:value] * variation * (1 - i * 0.002)).round(2)
+        v.currency = data[:currency]
+      end
+    end
+  end
+
+  puts "  Created #{BrokerPosition.count} broker positions with #{PositionValuation.count} historical valuations"
+
   puts "\nDevelopment sample data loaded!"
   puts "Summary:"
   puts "  - #{Account.count} accounts"
@@ -1096,6 +1155,9 @@ if Rails.env.development?
   puts "  - #{Transaction.count} transactions"
   puts "  - #{Budget.count} budgets"
   puts "  - #{AssetValuation.count} asset valuations"
+  puts "  - #{BrokerConnection.count} broker connections"
+  puts "  - #{BrokerPosition.count} broker positions"
+  puts "  - #{PositionValuation.count} position valuations"
 end
 
 puts "\nSeed completed successfully!"
