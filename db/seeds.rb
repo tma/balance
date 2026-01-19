@@ -1053,6 +1053,34 @@ if Rails.env.development?
     else
       puts "  Sample CSV not found, skipping import"
     end
+
+    # Create a second import that stays in "completed" (ready for review) status
+    pending_csv_path = Rails.root.join("test/fixtures/files/pending_review_statement.csv")
+    if File.exist?(pending_csv_path)
+      account = accounts[:visa]
+
+      import = Import.create!(
+        account: account,
+        original_filename: "pending_review_statement.csv",
+        file_content_type: "text/csv",
+        file_data: File.read(pending_csv_path),
+        status: "pending"
+      )
+      puts "  Created Import ##{import.id} (for review)"
+
+      begin
+        TransactionImportJob.perform_now(import.id)
+        import.reload
+
+        if import.completed?
+          puts "  AI extraction completed - #{import.transactions_count} transactions ready for review"
+        elsif import.failed?
+          puts "  Import failed: #{import.error_message}"
+        end
+      rescue StandardError => e
+        puts "  Import job error: #{e.message}"
+      end
+    end
   else
     puts "\nSkipping AI import (Ollama not available)"
     puts "  To enable: brew install ollama && ollama pull llama3.1:8b && brew services start ollama"
