@@ -118,38 +118,28 @@ class TransactionExtractorService
     ignore_list = account.ignore_patterns_list
 
     <<~PROMPT
-      You are a CSV transaction parser. Convert EVERY row in this CSV into a transaction.
+      Parse this CSV. Convert each data row into a JSON transaction.
 
-      ACCOUNT CURRENCY: #{account.currency}
+      OUTPUT RULES:
+      - date: Convert to YYYY-MM-DD format
+      - description: Use the merchant/description column
+      - amount: Always output as POSITIVE number
+      - transaction_type: Either "expense" or "income"
 
-      CRITICAL RULES:
-      1. EVERY data row is a transaction - do NOT skip rows unless they match ignore patterns
-      2. The first row is the header - use it to understand column meanings
-      3. Output dates in YYYY-MM-DD format
-      4. Output amounts as positive numbers with two decimal places (no currency symbols)
-      5. Type: "expense" for money going out (debits, purchases, negative amounts), "income" for money coming in (credits, deposits, positive amounts)
-      6. For description, use the most descriptive field (merchant name, description, memo, etc.)
-      7. If amount has a negative sign or is in a "debit" column, it's an expense
-      8. If amount is positive or is in a "credit" column, it's income
-      #{ignore_list.any? ? "9. ONLY skip rows where description contains: #{ignore_list.join(", ")}" : ""}
+      DETERMINE transaction_type:
+      Look at the ORIGINAL amount sign and column names:
+      - NEGATIVE amount (-50.00) → "expense"
+      - Amount in "Debit" column → "expense"#{'  '}
+      - POSITIVE amount (50.00) in single amount column → "expense" (most CSV exports show purchases as positive)
+      - Amount in "Credit" column → "income"
+      - Description contains "refund" → "income"
+      #{ignore_list.any? ? "\nSKIP rows where description contains: #{ignore_list.join(", ")}" : ""}
 
-      DATE PARSING:
-      - European format DD.MM.YYYY or DD.MM.YY: day first, then month
-      - ISO format YYYY-MM-DD: use as-is
-      - US format MM/DD/YYYY: month first, then day
-      - Two-digit year "25" means 2025
+      OUTPUT FORMAT:
+      {"transactions": [{"date": "YYYY-MM-DD", "description": "...", "amount": 123.45, "transaction_type": "expense"}]}
 
-      OUTPUT FORMAT (JSON only):
-      {
-        "transactions": [
-          {"date": "YYYY-MM-DD", "description": "merchant name", "amount": 123.45, "type": "expense"}
-        ]
-      }
-
-      CSV DATA:
-      ---
+      CSV:
       #{chunk_text.truncate(8000)}
-      ---
     PROMPT
   end
 
