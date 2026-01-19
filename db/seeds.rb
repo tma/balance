@@ -67,13 +67,14 @@ end
 puts "Creating asset groups..."
 asset_groups = {}
 [
-  { name: "Real Estate", description: "Properties and related mortgages" },
-  { name: "Investments", description: "Stocks, bonds, and retirement accounts" },
-  { name: "Vehicles", description: "Cars, motorcycles, and related loans" },
-  { name: "Other Assets", description: "Miscellaneous assets and liabilities" }
+  { name: "Real Estate", description: "Properties and related mortgages", color: "#3b82f6" },
+  { name: "Investments", description: "Stocks, bonds, and retirement accounts", color: "#10b981" },
+  { name: "Vehicles", description: "Cars, motorcycles, and related loans", color: "#f59e0b" },
+  { name: "Other Assets", description: "Miscellaneous assets and liabilities", color: "#8b5cf6" }
 ].each do |attrs|
   asset_groups[attrs[:name]] = AssetGroup.find_or_create_by!(name: attrs[:name]) do |group|
     group.description = attrs[:description]
+    group.color = attrs[:color]
   end
 end
 
