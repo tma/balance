@@ -20,6 +20,15 @@
     <%= form.select :category_type, [["Income", "income"], ["Expense", "expense"]], {}, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2" %>
   </div>
 
+  <div class="mb-4">
+    <%= form.label :match_patterns, "Match Patterns", class: "block text-sm font-medium text-slate-700" %>
+    <%= form.text_area :match_patterns,
+        rows: 5,
+        class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2 font-mono text-sm",
+        placeholder: "Amazon\nWhole Foods\nTrader Joe's" %>
+    <p class="mt-1 text-xs text-slate-500">One pattern per line. Transactions containing these texts will be assigned to this category during import.</p>
+  </div>
+
   <div class="flex space-x-4">
     <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
     <%= link_to "Cancel", admin_categories_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>

@@ -3,7 +3,6 @@ class TransactionExtractorService
   class ExtractionError < Error; end
 
   CATEGORY_BATCH_SIZE = 10
-  NON_TRANSACTION_DESCRIPTION = /\b(total|totalbetrag|subtotal|zwischensumme|saldo|balance|limit|credit limit|payment due|mindestzahlungsbetrag|zahlung|f[aä]llig|f[aä]lligkeit|statement period)\b/i
 
   attr_reader :chunks, :account, :on_progress, :statement_period
 
@@ -74,8 +73,8 @@ class TransactionExtractorService
     @on_progress&.call(total_steps, total_steps, extracted_count: transactions.size, message: "Categorizing transactions")
     Rails.logger.info "Categorizing #{transactions.size} transactions"
 
-    expense_categories = Category.expense.pluck(:name)
-    income_categories = Category.income.pluck(:name)
+    expense_categories = Category.expense
+    income_categories = Category.income
 
     transactions.each_slice(CATEGORY_BATCH_SIZE) do |batch|
       categorize_batch(batch, expense_categories, income_categories)
@@ -102,6 +101,8 @@ class TransactionExtractorService
   end
 
   def build_extraction_prompt(chunk_text)
+    ignore_list = account.ignore_patterns_list.join(", ")
+
     <<~PROMPT
       You are a financial transaction parser. Extract all transactions from the following financial statement.
 
@@ -113,7 +114,7 @@ class TransactionExtractorService
       3. Amounts must be positive numbers with two decimal places (e.g., 123.45), no currency symbols
       4. Type: "expense" for money out, "income" for money in
       5. When both foreign currency and #{account.currency} amounts shown, use the #{account.currency} amount
-      6. IGNORE summary lines (Total, Subtotal, Balance, Zwischensumme, Saldo)
+      6. IGNORE lines containing: #{ignore_list}
       7. If multiple dates per line, use "Date"/"Datum", NOT "Valuta"/"Value Date"
 
       DATE FORMAT (CRITICAL):
@@ -145,12 +146,14 @@ class TransactionExtractorService
       "#{i + 1}. [#{txn[:transaction_type].upcase}] #{txn[:description]} (#{txn[:amount]})"
     end.join("\n")
 
+    category_hints = build_category_hints(expense_categories, income_categories)
+
     <<~PROMPT
       Categorize these financial transactions. Pick the single best category for each.
 
-      EXPENSE CATEGORIES: #{expense_categories.join(", ")}
-      INCOME CATEGORIES: #{income_categories.join(", ")}
-
+      EXPENSE CATEGORIES: #{expense_categories.pluck(:name).join(", ")}
+      INCOME CATEGORIES: #{income_categories.pluck(:name).join(", ")}
+      #{category_hints}
       TRANSACTIONS:
       #{txn_list}
 
@@ -159,6 +162,20 @@ class TransactionExtractorService
 
       Use "Other" if no category fits well.
     PROMPT
+  end
+
+  def build_category_hints(expense_categories, income_categories)
+    hints = []
+
+    (expense_categories + income_categories).each do |category|
+      next unless category.has_match_patterns?
+
+      hints << "- #{category.name}: #{category.match_patterns_list.join(", ")}"
+    end
+
+    return "" if hints.empty?
+
+    "\nCATEGORY HINTS (assign category if description contains these):\n#{hints.join("\n")}\n"
   end
 
   def parse_response(response)
@@ -241,7 +258,7 @@ class TransactionExtractorService
   def valid_transaction_content?(txn)
     description = txn["description"].to_s.strip
     return false if description.blank?
-    return false if description.match?(NON_TRANSACTION_DESCRIPTION)
+    return false if account.should_ignore_for_import?(description)
 
     true
   end

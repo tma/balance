@@ -45,6 +45,6 @@ class Admin::CategoriesController < ApplicationController
   end
 
   def category_params
-    params.expect(category: [ :name, :category_type ])
+    params.expect(category: [ :name, :category_type, :match_patterns ])
   end
 end

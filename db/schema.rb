@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_18_172431) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_18_212635) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -24,6 +24,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_172431) do
     t.datetime "created_at", null: false
     t.string "currency"
     t.decimal "exchange_rate"
+    t.text "import_ignore_patterns"
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["account_type_id"], name: "index_accounts_on_account_type_id"
@@ -85,6 +86,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_18_172431) do
   create_table "categories", force: :cascade do |t|
     t.string "category_type"
     t.datetime "created_at", null: false
+    t.text "match_patterns"
     t.string "name"
     t.datetime "updated_at", null: false
   end
