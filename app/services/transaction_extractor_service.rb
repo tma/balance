@@ -4,18 +4,28 @@ class TransactionExtractorService
 
   CATEGORY_BATCH_SIZE = 10
 
-  attr_reader :chunks, :account, :on_progress, :statement_period
+  attr_reader :chunks, :account, :file_type, :on_progress, :statement_period
 
   # Initialize with text chunks and account
   # @param chunks [Array<String>, String] Text chunks to process (or single string for backward compatibility)
   # @param account [Account] The account for transactions
+  # @param file_type [Symbol] The file type (:csv or :pdf)
   # @param on_progress [Proc, nil] Optional callback called with (current_chunk, total_chunks)
-  def initialize(chunks, account, on_progress: nil)
+  def initialize(chunks, account, file_type: :pdf, on_progress: nil)
     @chunks = chunks.is_a?(Array) ? chunks : [ chunks ]
     @account = account
+    @file_type = file_type
     @on_progress = on_progress
-    @statement_period = extract_statement_period(@chunks.join("\n"))
+    @statement_period = extract_statement_period(@chunks.join("\n")) if pdf?
     @extracted_count = 0
+  end
+
+  def pdf?
+    file_type == :pdf
+  end
+
+  def csv?
+    file_type == :csv
   end
 
   # For backward compatibility - returns first chunk's text
@@ -101,6 +111,49 @@ class TransactionExtractorService
   end
 
   def build_extraction_prompt(chunk_text)
+    csv? ? build_csv_extraction_prompt(chunk_text) : build_pdf_extraction_prompt(chunk_text)
+  end
+
+  def build_csv_extraction_prompt(chunk_text)
+    ignore_list = account.ignore_patterns_list
+
+    <<~PROMPT
+      You are a CSV transaction parser. Convert EVERY row in this CSV into a transaction.
+
+      ACCOUNT CURRENCY: #{account.currency}
+
+      CRITICAL RULES:
+      1. EVERY data row is a transaction - do NOT skip rows unless they match ignore patterns
+      2. The first row is the header - use it to understand column meanings
+      3. Output dates in YYYY-MM-DD format
+      4. Output amounts as positive numbers with two decimal places (no currency symbols)
+      5. Type: "expense" for money going out (debits, purchases, negative amounts), "income" for money coming in (credits, deposits, positive amounts)
+      6. For description, use the most descriptive field (merchant name, description, memo, etc.)
+      7. If amount has a negative sign or is in a "debit" column, it's an expense
+      8. If amount is positive or is in a "credit" column, it's income
+      #{ignore_list.any? ? "9. ONLY skip rows where description contains: #{ignore_list.join(", ")}" : ""}
+
+      DATE PARSING:
+      - European format DD.MM.YYYY or DD.MM.YY: day first, then month
+      - ISO format YYYY-MM-DD: use as-is
+      - US format MM/DD/YYYY: month first, then day
+      - Two-digit year "25" means 2025
+
+      OUTPUT FORMAT (JSON only):
+      {
+        "transactions": [
+          {"date": "YYYY-MM-DD", "description": "merchant name", "amount": 123.45, "type": "expense"}
+        ]
+      }
+
+      CSV DATA:
+      ---
+      #{chunk_text.truncate(8000)}
+      ---
+    PROMPT
+  end
+
+  def build_pdf_extraction_prompt(chunk_text)
     ignore_list = account.ignore_patterns_list.join(", ")
 
     <<~PROMPT
@@ -258,6 +311,7 @@ class TransactionExtractorService
   def valid_transaction_content?(txn)
     description = txn["description"].to_s.strip
     return false if description.blank?
+    # Apply ignore patterns as a post-processing filter
     return false if account.should_ignore_for_import?(description)
 
     true
@@ -282,6 +336,8 @@ class TransactionExtractorService
 
   def parse_date(date_str)
     parsed = Date.parse(date_str.to_s)
+    # Only apply statement period filtering for PDFs
+    return parsed if csv?
     return parsed unless statement_period
     return parsed if statement_period.cover?(parsed)
 

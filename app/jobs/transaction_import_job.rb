@@ -24,7 +24,8 @@ class TransactionImportJob < ApplicationJob
       end
 
       # Extract transactions using Ollama (processes all chunks)
-      extractor = TransactionExtractorService.new(chunks, import.account, on_progress: progress_callback)
+      file_type = import.pdf? ? :pdf : :csv
+      extractor = TransactionExtractorService.new(chunks, import.account, file_type: file_type, on_progress: progress_callback)
       transactions = extractor.extract
 
       # Mark duplicates
