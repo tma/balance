@@ -70,15 +70,22 @@ class CsvParserService
     end
 
     def read_file_content(file)
-      if file.respond_to?(:read)
-        content = file.read
+      content = if file.respond_to?(:read)
+        data = file.read
         file.rewind if file.respond_to?(:rewind)
-        content
+        data
       elsif file.respond_to?(:tempfile)
         File.read(file.tempfile.path)
       else
         File.read(file)
       end
+
+      # Ensure UTF-8 encoding, replacing invalid characters
+      content.force_encoding("UTF-8")
+      unless content.valid_encoding?
+        content = content.encode("UTF-8", "ISO-8859-1", invalid: :replace, undef: :replace, replace: "")
+      end
+      content
     end
   end
 end
