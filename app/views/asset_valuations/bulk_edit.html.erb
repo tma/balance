@@ -6,7 +6,7 @@
     </div>
     <div class="flex items-center space-x-4">
       <% if @has_broker_connections %>
-        <%= button_to "Apply Broker Values", apply_broker_values_path, method: :post, class: "rounded-lg px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-medium transition text-sm", title: "Copy latest broker position values to assets" %>
+        <%= button_to "Apply Broker Values", apply_broker_values_path, method: :post, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition text-sm", title: "Copy latest broker position values to assets" %>
       <% end %>
       <div class="flex items-center space-x-2">
         <% older_month = (@end_month - 12.months).strftime("%Y-%m") %>
@@ -77,7 +77,7 @@
                         <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap">
                           <%= asset.name %>
                           <% if has_broker %>
-                            <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-emerald-50 text-emerald-600" title="Linked to broker">Broker</span>
+                            <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-cyan-50 text-cyan-600" title="Linked to broker">Broker</span>
                           <% end %>
                         </p>
                         <p class="text-xs text-slate-400 whitespace-nowrap">

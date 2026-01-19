@@ -11,7 +11,7 @@
           <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-600">Liability</span>
         <% end %>
         <% if @asset.has_broker? %>
-          <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-600">Broker</span>
+          <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-cyan-50 text-cyan-600">Broker</span>
         <% end %>
       </p>
     </div>
@@ -32,21 +32,35 @@
   </div>
 
   <% if @asset.has_broker? %>
-    <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4">
-      <p class="text-sm font-medium text-emerald-800">Broker Positions</p>
-      <div class="mt-2 space-y-1">
-        <% @asset.broker_positions.includes(:broker_connection).each do |position| %>
-          <p class="text-sm text-emerald-700">
-            <strong><%= position.symbol %></strong>
-            <% if position.last_value.present? %>
-              · <%= format_currency(position.last_value, currency: position.currency) %>
-            <% end %>
-            · <%= link_to position.broker_connection.name, admin_broker_connection_path(position.broker_connection), class: "underline hover:no-underline" %>
-            (<%= position.broker_connection.broker_type_name %>)
-            <% if position.last_synced_at %>
-              · <%= position.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
-            <% end %>
-          </p>
+    <div class="bg-cyan-50 border border-cyan-200 rounded-xl p-4 mb-4">
+      <p class="text-sm font-medium text-cyan-800 mb-2">Broker Positions</p>
+      <div class="space-y-2">
+        <% @asset.broker_positions.open.includes(:broker_connection, :position_valuations).each do |position| %>
+          <div class="flex items-center justify-between text-sm">
+            <div class="text-cyan-700">
+              <%= link_to admin_broker_connection_position_path(position.broker_connection, position), class: "font-semibold hover:underline" do %>
+                <%= position.symbol %>
+              <% end %>
+              <span class="text-cyan-600">
+                · <%= link_to position.broker_connection.name, admin_broker_connection_path(position.broker_connection), class: "hover:underline" %>
+              </span>
+            </div>
+            <div class="text-right">
+              <% if position.last_value.present? %>
+                <span class="font-medium text-cyan-800"><%= format_currency(position.last_value, currency: position.currency) %></span>
+              <% end %>
+              <% last_valuation = position.position_valuations.order(date: :desc).first %>
+              <% if last_valuation %>
+                <span class="text-cyan-600 text-xs ml-2">
+                  as of <%= last_valuation.date.strftime("%b %d, %Y") %>
+                </span>
+              <% elsif position.last_synced_at %>
+                <span class="text-cyan-600 text-xs ml-2">
+                  synced <%= position.last_synced_at.strftime("%b %d") %>
+                </span>
+              <% end %>
+            </div>
+          </div>
         <% end %>
       </div>
     </div>
