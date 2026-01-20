@@ -81,7 +81,7 @@
                     <option value="">— Not mapped —</option>
                     <% @asset_groups.each do |group| %>
                       <optgroup label="<%= group.name %>">
-                        <% group.assets.order(:name).each do |asset| %>
+                        <% group.assets.sort_by(&:name).each do |asset| %>
                           <option value="<%= asset.id %>" <%= 'selected' if position.asset_id == asset.id %>>
                             <%= asset.name %>
                           </option>
