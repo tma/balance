@@ -39,10 +39,12 @@ export default class extends Controller {
     const originalRaw = (this.originalValue || "").replace(/[-']/g, "")
     
     // Compare numeric values (handle empty as 0)
+    // Use epsilon comparison to handle floating point precision issues
     const current = parseFloat(currentRaw) || 0
     const original = parseFloat(originalRaw) || 0
+    const epsilon = 0.001
     
-    if (current !== original) {
+    if (Math.abs(current - original) > epsilon) {
       this.element.classList.add("border-amber-400", "bg-amber-50")
       this.element.classList.remove("border-slate-300")
     } else {
