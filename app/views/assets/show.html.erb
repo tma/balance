@@ -3,7 +3,12 @@
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800"><%= @asset.name %></h1>
+      <h1 class="text-2xl font-bold text-slate-800">
+        <%= @asset.name %>
+        <% if @asset.archived? %>
+          <span class="ml-2 px-2 py-0.5 text-sm rounded-full bg-slate-200 text-slate-500">Archived</span>
+        <% end %>
+      </h1>
       <p class="text-slate-500">
         <%= @asset.asset_group.name %> ·
         <%= @asset.asset_type.name %> · <%= @asset.currency %>
@@ -16,7 +21,10 @@
       </p>
     </div>
     <div class="flex space-x-2">
-      <%= link_to "Edit", edit_asset_path(@asset), class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
+      <% if @asset.archived? %>
+        <%= button_to "Unarchive", unarchive_asset_path(@asset), method: :patch, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition cursor-pointer" %>
+      <% end %>
+      <%= link_to "Edit", edit_asset_path(@asset), class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
       <%= link_to "Back", assets_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
     </div>
   </div>

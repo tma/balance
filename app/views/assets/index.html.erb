@@ -19,10 +19,12 @@
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
             <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Currency</th>
             <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
+            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-32"></th>
           </tr>
         </thead>
         <% @asset_groups.each do |group| %>
+          <% active_assets = group.assets.active.includes(:asset_type, :broker_positions) %>
+          <% archived_assets = group.assets.archived.includes(:asset_type, :broker_positions) %>
           <tbody data-sortable-target="item" data-id="<%= group.id %>" class="group-container">
             <tr class="bg-slate-50 border-t border-b border-slate-200 cursor-move group-header">
               <td class="px-4 py-1.5 text-slate-400 text-xs leading-none">⋮⋮</td>
@@ -31,10 +33,10 @@
                   <svg class="flex-shrink-0 mr-2" width="12" height="12"><rect width="12" height="12" fill="<%= group.color || '#94a3b8' %>"/></svg>
                   <span class="whitespace-nowrap"><%= group.name %></span>
                 </span>
-                <span class="text-slate-400 ml-2"><%= group.assets.size %> item<%= group.assets.size == 1 ? '' : 's' %></span>
+                <span class="text-slate-400 ml-2"><%= active_assets.size %> item<%= active_assets.size == 1 ? '' : 's' %></span>
               </td>
               <td class="px-4 py-1.5 text-right">
-                <% net_value = group.net_value_in_default_currency %>
+                <% net_value = group.assets.active.sum { |a| (a.asset_type.is_liability? ? -1 : 1) * (a.value_in_default_currency || 0) } %>
                 <span class="text-xs font-bold text-slate-700">
                   <%= format_currency(net_value) %>
                 </span>
@@ -44,22 +46,23 @@
               </td>
             </tr>
           </tbody>
-            <tbody data-controller="sortable" data-sortable-url-value="<%= sort_assets_path %>">
-              <% group.assets.includes(:asset_type, :broker_positions).each do |asset| %>
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 cursor-move" data-sortable-target="item" data-id="<%= asset.id %>">
-                  <td class="px-4 py-2 text-slate-300 pl-8 text-xs leading-none">⋮⋮</td>
-                  <td class="px-4 py-2 text-sm text-slate-700 font-medium">
-                    <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
-                  </td>
-                  <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
-                    <%= asset.asset_type.name %>
-                    <% if asset.asset_type.is_liability? %>
-                      <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span>
-                    <% end %>
-                    <% if asset.has_broker? %>
-                      <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-50 text-cyan-600">Broker</span>
-                    <% end %>
-                  </td>
+          <tbody data-controller="sortable" data-sortable-url-value="<%= sort_assets_path %>">
+            <%# Active assets - normal display %>
+            <% active_assets.each do |asset| %>
+              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 cursor-move" data-sortable-target="item" data-id="<%= asset.id %>">
+                <td class="px-4 py-2 text-slate-300 pl-8 text-xs leading-none">⋮⋮</td>
+                <td class="px-4 py-2 text-sm text-slate-700 font-medium">
+                  <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
+                </td>
+                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
+                  <%= asset.asset_type.name %>
+                  <% if asset.asset_type.is_liability? %>
+                    <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span>
+                  <% end %>
+                  <% if asset.has_broker? %>
+                    <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-cyan-50 text-cyan-600">Broker</span>
+                  <% end %>
+                </td>
                 <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
                   <%= asset.currency %>
                 </td>
@@ -68,11 +71,55 @@
                 </td>
                 <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
                   <%= link_to "Edit", edit_asset_path(asset), class: "text-cyan-600 hover:text-cyan-700" %>
+                  <% if asset.has_broker? %>
+                    <span class="text-slate-300 cursor-not-allowed" title="Cannot archive: linked to broker positions">Archive</span>
+                  <% else %>
+                    <%= button_to "Archive", archive_asset_path(asset), method: :patch, class: "text-amber-600 hover:text-amber-700", form: { class: "inline" } %>
+                  <% end %>
                   <%= button_to "Delete", asset, method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure? This will delete all valuation history." }, class: "inline" } %>
                 </td>
               </tr>
             <% end %>
           </tbody>
+
+          <%# Archived assets - collapsible section %>
+          <% if archived_assets.any? %>
+            <tbody data-controller="collapsible">
+              <tr class="bg-white border-b border-slate-200 cursor-pointer hover:bg-slate-50" data-action="click->collapsible#toggle">
+                <td class="px-4 py-1 pl-8"></td>
+                <td colspan="5" class="px-4 py-1 text-xs text-slate-300">
+                  <span data-collapsible-target="icon">▶</span>
+                  <span class="ml-1">Archived</span>
+                </td>
+              </tr>
+              <% archived_assets.each do |asset| %>
+                <tr data-collapsible-target="content" class="hidden hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 bg-slate-50">
+                  <td class="px-4 py-2 text-slate-300 pl-8 text-xs leading-none"></td>
+                  <td class="px-4 py-2 text-sm text-slate-400 font-medium">
+                    <%= link_to asset.name, asset, class: "hover:text-cyan-600" %>
+                    <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-slate-200 text-slate-400">Archived</span>
+                  </td>
+                  <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-400">
+                    <%= asset.asset_type.name %>
+                    <% if asset.asset_type.is_liability? %>
+                      <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-400">Liability</span>
+                    <% end %>
+                  </td>
+                  <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-400">
+                    <%= asset.currency %>
+                  </td>
+                  <td class="px-4 py-2 whitespace-nowrap text-sm text-right text-slate-400">
+                    <%= asset.asset_type.is_liability? ? "-" : "" %><%= format_currency(asset.value) %>
+                  </td>
+                  <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
+                    <%= button_to "Unarchive", unarchive_asset_path(asset), method: :patch, class: "text-cyan-600 hover:text-cyan-700", form: { class: "inline" } %>
+                    <%= link_to "Edit", edit_asset_path(asset), class: "text-slate-400 hover:text-slate-600" %>
+                    <%= button_to "Delete", asset, method: :delete, class: "text-rose-400 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure? This will permanently delete this asset and all its valuation history." }, class: "inline" } %>
+                  </td>
+                </tr>
+              <% end %>
+            </tbody>
+          <% end %>
         <% end %>
       </table>
     </div>
