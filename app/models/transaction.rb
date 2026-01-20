@@ -80,17 +80,17 @@ class Transaction < ApplicationRecord
 
   def adjust_account_balance(acc, amt, type)
     if type == "income"
-      acc.update!(balance: acc.balance + amt)
+      acc.increment!(:balance, amt)
     else
-      acc.update!(balance: acc.balance - amt)
+      acc.decrement!(:balance, amt)
     end
   end
 
   def reverse_account_balance(acc, amt, type)
     if type == "income"
-      acc.update!(balance: acc.balance - amt)
+      acc.decrement!(:balance, amt)
     else
-      acc.update!(balance: acc.balance + amt)
+      acc.increment!(:balance, amt)
     end
   end
 end
