@@ -263,13 +263,14 @@ PositionValuation
 - AssetValuation created automatically when Asset value changes
 - Asset.value always reflects current value; history in AssetValuation
 - ExchangeRateService fetches rates from Frankfurter API (supports historical dates)
+- ExchangeRateService returns nil on API failure; records retry via ExchangeRateRetryJob (every 6 hours)
 - Transaction exchange rates captured at transaction date for accurate historical reporting
 - Transaction import uses Ollama LLM for extraction and categorization
 - Import services: OllamaService, PdfParserService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
 - Broker integration uses factory pattern (BrokerSyncService) for multi-broker support
 - IBKR uses Flex Web Service API (2-step: SendRequest → GetStatement)
 - IbkrSyncService handles API calls, XML parsing, and asset value sync
-- Daily broker sync at 4am via Solid Queue (BrokerSyncJob)
+- Daily broker sync at 11:30pm via Solid Queue (BrokerSyncJob)
 - Position valuations track historical position values separately from asset valuations
 
 ## Agent Guidelines
