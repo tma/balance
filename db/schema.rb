@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_19_204845) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_19_221309) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -58,6 +58,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_204845) do
   end
 
   create_table "assets", force: :cascade do |t|
+    t.boolean "archived", default: false, null: false
     t.integer "asset_group_id", null: false
     t.integer "asset_type_id", null: false
     t.datetime "created_at", null: false
@@ -69,6 +70,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_204845) do
     t.datetime "updated_at", null: false
     t.decimal "value"
     t.decimal "value_in_default_currency"
+    t.index ["archived"], name: "index_assets_on_archived"
     t.index ["asset_group_id"], name: "index_assets_on_asset_group_id"
     t.index ["asset_type_id"], name: "index_assets_on_asset_type_id"
   end

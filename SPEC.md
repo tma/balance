@@ -27,6 +27,13 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Fields:  name, asset_type, value, currency, notes
 - Manual value updates with history tracking
 - Appreciation/depreciation tracking over time
+- **Archive feature:**
+  - Archive assets that no longer exist or were replaced
+  - Archived assets are hidden from main lists but appear in collapsible sections
+  - Historical valuations preserved for net worth history
+  - Can still backfill historical valuations for archived assets
+  - Broker-linked assets cannot be archived (must close positions first)
+  - Archived assets excluded from current totals but included in historical charts
 
 ### 3. Transactions
 - Add income/expense transactions
@@ -142,6 +149,7 @@ Asset
 - value:decimal
 - currency:string (ISO 4217 code, e.g., "USD")
 - notes:text
+- archived:boolean (default: false)
 
 AssetValuation
 - asset_id: references

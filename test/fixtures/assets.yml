@@ -15,3 +15,11 @@ home_mortgage:
   value: 200000.00
   currency: USD
   notes: 30-year fixed
+
+investment_property:
+  name: Investment Property
+  asset_type: property
+  asset_group: investments
+  value: 150000.00
+  currency: USD
+  notes: Rental property

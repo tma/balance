@@ -22,6 +22,10 @@ Rails.application.routes.draw do
     collection do
       patch :sort
     end
+    member do
+      patch :archive
+      patch :unarchive
+    end
   end
   resources :asset_groups, path: "asset-groups", except: [ :index, :show ] do
     collection do

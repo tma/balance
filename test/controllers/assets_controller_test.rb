@@ -2,7 +2,8 @@ require "test_helper"
 
 class AssetsControllerTest < ActionDispatch::IntegrationTest
   setup do
-    @asset = assets(:house)
+    @asset = assets(:investment_property) # Asset without broker positions
+    @asset_with_broker = assets(:house) # Asset with broker positions
     @asset_group = asset_groups(:real_estate)
   end
 
@@ -45,5 +46,28 @@ class AssetsControllerTest < ActionDispatch::IntegrationTest
     end
 
     assert_redirected_to assets_url
+  end
+
+  test "should archive asset" do
+    assert_not @asset.archived?
+    patch archive_asset_url(@asset)
+    assert_redirected_to assets_url
+    assert @asset.reload.archived?
+  end
+
+  test "should unarchive asset" do
+    @asset.update!(archived: true)
+    patch unarchive_asset_url(@asset)
+    assert_redirected_to assets_url
+    assert_not @asset.reload.archived?
+  end
+
+  test "should not archive asset with open broker positions" do
+    assert @asset_with_broker.has_broker?
+
+    patch archive_asset_url(@asset_with_broker)
+    assert_redirected_to assets_url
+    assert_not @asset_with_broker.reload.archived?
+    assert_match /Cannot archive/, flash[:alert]
   end
 end

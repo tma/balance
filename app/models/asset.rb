@@ -20,6 +20,8 @@ class Asset < ApplicationRecord
   scope :assets_only, -> { joins(:asset_type).where(asset_types: { is_liability: false }) }
   scope :liabilities_only, -> { joins(:asset_type).where(asset_types: { is_liability: true }) }
   scope :with_broker, -> { joins(:broker_positions).distinct }
+  scope :active, -> { where(archived: false) }
+  scope :archived, -> { where(archived: true) }
 
   attribute :value, :decimal, default: 0
 
@@ -32,6 +34,18 @@ class Asset < ApplicationRecord
 
   def has_broker?
     broker_positions.open.any?
+  end
+
+  def archive!
+    if has_broker?
+      errors.add(:base, "Cannot archive asset with open broker positions")
+      raise ActiveRecord::RecordInvalid, self
+    end
+    update!(archived: true)
+  end
+
+  def unarchive!
+    update!(archived: false)
   end
 
   # Calculate total value from all open broker positions, converted to asset currency

@@ -1,5 +1,5 @@
 class AssetsController < ApplicationController
-  before_action :set_asset, only: %i[ show edit update destroy ]
+  before_action :set_asset, only: %i[ show edit update destroy archive unarchive ]
 
   def index
     @asset_groups = AssetGroup.includes(assets: :asset_type)
@@ -45,6 +45,18 @@ class AssetsController < ApplicationController
       Asset.where(id: id).update_all(position: position)
     end
     head :ok
+  end
+
+  def archive
+    @asset.archive!
+    redirect_to assets_path, notice: "#{@asset.name} has been archived.", status: :see_other
+  rescue ActiveRecord::RecordInvalid
+    redirect_to assets_path, alert: "Cannot archive #{@asset.name}: #{@asset.errors.full_messages.join(', ')}", status: :see_other
+  end
+
+  def unarchive
+    @asset.unarchive!
+    redirect_to assets_path, notice: "#{@asset.name} has been restored.", status: :see_other
   end
 
   private
