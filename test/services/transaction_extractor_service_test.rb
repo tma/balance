@@ -49,7 +49,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
   test "initializes with on_progress callback" do
     progress_calls = []
-    callback = ->(current, total, **kwargs) { progress_calls << [current, total, kwargs] }
+    callback = ->(current, total, **kwargs) { progress_calls << [ current, total, kwargs ] }
 
     extractor = TransactionExtractorService.new(@text, @account, on_progress: callback)
 
@@ -62,7 +62,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
   test "parse_response handles hash with transactions key" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = { "transactions" => [{ "date" => "2026-01-15", "description" => "Test", "amount" => 10 }] }
+    response = { "transactions" => [ { "date" => "2026-01-15", "description" => "Test", "amount" => 10 } ] }
 
     result = extractor.send(:parse_response, response)
 
@@ -72,7 +72,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
   test "parse_response handles hash with data key" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = { "data" => [{ "date" => "2026-01-15", "description" => "Test", "amount" => 10 }] }
+    response = { "data" => [ { "date" => "2026-01-15", "description" => "Test", "amount" => 10 } ] }
 
     result = extractor.send(:parse_response, response)
 
@@ -81,7 +81,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
   test "parse_response handles hash with results key" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = { "results" => [{ "date" => "2026-01-15", "description" => "Test", "amount" => 10 }] }
+    response = { "results" => [ { "date" => "2026-01-15", "description" => "Test", "amount" => 10 } ] }
 
     result = extractor.send(:parse_response, response)
 
@@ -90,7 +90,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
   test "parse_response handles array directly" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = [{ "date" => "2026-01-15", "description" => "Test", "amount" => 10 }]
+    response = [ { "date" => "2026-01-15", "description" => "Test", "amount" => 10 } ]
 
     result = extractor.send(:parse_response, response)
 
@@ -122,29 +122,29 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
   test "parse_categories_response handles array of strings" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = ["groceries", "entertainment", "salary"]
+    response = [ "groceries", "entertainment", "salary" ]
 
     result = extractor.send(:parse_categories_response, response)
 
-    assert_equal ["groceries", "entertainment", "salary"], result
+    assert_equal [ "groceries", "entertainment", "salary" ], result
   end
 
   test "parse_categories_response handles hash with categories key" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = { "categories" => ["groceries", "entertainment"] }
+    response = { "categories" => [ "groceries", "entertainment" ] }
 
     result = extractor.send(:parse_categories_response, response)
 
-    assert_equal ["groceries", "entertainment"], result
+    assert_equal [ "groceries", "entertainment" ], result
   end
 
   test "parse_categories_response handles hash with transactions key" do
     extractor = TransactionExtractorService.new(@text, @account)
-    response = { "transactions" => ["groceries", "entertainment"] }
+    response = { "transactions" => [ "groceries", "entertainment" ] }
 
     result = extractor.send(:parse_categories_response, response)
 
-    assert_equal ["groceries", "entertainment"], result
+    assert_equal [ "groceries", "entertainment" ], result
   end
 
   test "parse_categories_response handles single string response" do
@@ -152,7 +152,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
     result = extractor.send(:parse_categories_response, "groceries")
 
-    assert_equal ["groceries"], result
+    assert_equal [ "groceries" ], result
   end
 
   test "parse_categories_response handles empty response" do

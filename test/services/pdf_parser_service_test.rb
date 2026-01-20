@@ -215,7 +215,7 @@ class PdfParserServiceTest < ActiveSupport::TestCase
     skip "OCR dependencies not available" unless OcrService.available?
 
     # Create a corrupted file
-    Tempfile.create(["corrupted", ".pdf"]) do |file|
+    Tempfile.create([ "corrupted", ".pdf" ]) do |file|
       file.write("Not a valid PDF")
       file.close
 
@@ -269,7 +269,7 @@ class PdfParserServiceTest < ActiveSupport::TestCase
   def create_test_pdf(content)
     require "prawn"
 
-    pdf_path = Tempfile.new(["test", ".pdf"]).path
+    pdf_path = Tempfile.new([ "test", ".pdf" ]).path
 
     Prawn::Document.generate(pdf_path) do
       text content

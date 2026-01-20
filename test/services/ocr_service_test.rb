@@ -92,7 +92,7 @@ class OcrServiceTest < ActiveSupport::TestCase
   # ========================================
 
   test "file_to_path handles string path that exists" do
-    Tempfile.create(["test", ".pdf"]) do |file|
+    Tempfile.create([ "test", ".pdf" ]) do |file|
       file.write("test content")
       file.close
       result = OcrService.send(:file_to_path, file.path)
@@ -188,7 +188,7 @@ class OcrServiceTest < ActiveSupport::TestCase
     skip "OCR dependencies not available" unless OcrService.available?
 
     # Create a file that's not a valid PDF
-    Tempfile.create(["corrupted", ".pdf"]) do |file|
+    Tempfile.create([ "corrupted", ".pdf" ]) do |file|
       file.write("This is not a valid PDF file content")
       file.close
 
@@ -222,7 +222,7 @@ class OcrServiceTest < ActiveSupport::TestCase
   def create_test_pdf_with_text(text)
     require "prawn"
 
-    pdf_path = Tempfile.new(["test", ".pdf"]).path
+    pdf_path = Tempfile.new([ "test", ".pdf" ]).path
 
     Prawn::Document.generate(pdf_path) do
       text text
@@ -236,7 +236,7 @@ class OcrServiceTest < ActiveSupport::TestCase
   def create_multi_page_test_pdf
     require "prawn"
 
-    pdf_path = Tempfile.new(["multipage", ".pdf"]).path
+    pdf_path = Tempfile.new([ "multipage", ".pdf" ]).path
 
     Prawn::Document.generate(pdf_path) do
       text "Page 1 content"
