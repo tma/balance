@@ -22,6 +22,7 @@ class Asset < ApplicationRecord
   scope :with_broker, -> { joins(:broker_positions).distinct }
   scope :active, -> { where(archived: false) }
   scope :archived, -> { where(archived: true) }
+  scope :needs_exchange_rate, -> { where(exchange_rate: nil).where.not(currency: Currency.default&.code) }
 
   attribute :value, :decimal, default: 0
 
@@ -49,20 +50,25 @@ class Asset < ApplicationRecord
   end
 
   # Calculate total value from all open broker positions, converted to asset currency
+  # Returns nil if positions exist but conversion fails
   def total_broker_value
     # Only consider open positions (not closed/sold)
     positions = broker_positions.open.reload
     return nil if positions.empty?
 
-    positions.sum do |position|
-      next 0 unless position.last_value.present?
+    total = 0
+    positions.each do |position|
+      next unless position.last_value.present?
 
       if position.currency == currency
-        position.last_value
+        total += position.last_value
       else
-        ExchangeRateService.convert(position.last_value, position.currency, currency)
+        converted = ExchangeRateService.convert(position.last_value, position.currency, currency)
+        return nil if converted.nil? # Can't calculate total without all rates
+        total += converted
       end
     end
+    total
   end
 
   # Sync value from broker positions
@@ -111,7 +117,12 @@ class Asset < ApplicationRecord
       self.exchange_rate = 1.0
       self.value_in_default_currency = value
     else
-      self.exchange_rate = ExchangeRateService.rate(currency, default_curr)
+      rate = ExchangeRateService.rate(currency, default_curr)
+      if rate.nil?
+        Rails.logger.warn "Exchange rate unavailable for #{currency}->#{default_curr}, skipping conversion for asset"
+        return
+      end
+      self.exchange_rate = rate
       self.value_in_default_currency = (value * exchange_rate).round(2)
     end
   end

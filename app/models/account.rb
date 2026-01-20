@@ -19,6 +19,7 @@ class Account < ApplicationRecord
   validate :currency_cannot_change, on: :update
 
   scope :by_currency, ->(code) { where(currency: code) }
+  scope :needs_exchange_rate, -> { where(exchange_rate: nil).where.not(currency: Currency.default&.code) }
 
   attribute :balance, :decimal, default: 0
 
@@ -59,7 +60,12 @@ class Account < ApplicationRecord
       self.exchange_rate = 1.0
       self.balance_in_default_currency = balance
     else
-      self.exchange_rate = ExchangeRateService.rate(currency, default_curr)
+      rate = ExchangeRateService.rate(currency, default_curr)
+      if rate.nil?
+        Rails.logger.warn "Exchange rate unavailable for #{currency}->#{default_curr}, skipping conversion for account"
+        return
+      end
+      self.exchange_rate = rate
       self.balance_in_default_currency = (balance * exchange_rate).round(2)
     end
   end

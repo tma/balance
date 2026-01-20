@@ -14,6 +14,8 @@ class Transaction < ApplicationRecord
   scope :recent, ->(limit = 10) { order(date: :desc, created_at: :desc).limit(limit) }
   scope :search, ->(query) { where("description LIKE ?", "%#{query}%") }
 
+  scope :needs_exchange_rate, -> { where(exchange_rate: nil).where.not(account: Account.where(currency: Currency.default&.code)) }
+
   before_save :calculate_default_currency_amount
   before_save :calculate_duplicate_hash
   after_create :update_account_balance_on_create
@@ -39,7 +41,13 @@ class Transaction < ApplicationRecord
       self.amount_in_default_currency = amount
     else
       # Use historical exchange rate for the transaction date
-      self.exchange_rate = ExchangeRateService.rate(account_currency, default_curr, date: date)
+      rate = ExchangeRateService.rate(account_currency, default_curr, date: date)
+      if rate.nil?
+        # Skip conversion if rate unavailable - will be retried later
+        Rails.logger.warn "Exchange rate unavailable for #{account_currency}->#{default_curr}, skipping conversion for transaction"
+        return
+      end
+      self.exchange_rate = rate
       self.amount_in_default_currency = (amount * exchange_rate).round(2)
     end
   end

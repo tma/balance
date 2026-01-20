@@ -6,6 +6,8 @@ class AssetValuation < ApplicationRecord
 
   default_scope { order(date: :desc) }
 
+  scope :needs_exchange_rate, -> { joins(:asset).where(exchange_rate: nil).where.not(assets: { currency: Currency.default&.code }) }
+
   before_save :calculate_default_currency_value, if: :should_recalculate_default_currency_value?
 
   def default_currency
@@ -26,7 +28,12 @@ class AssetValuation < ApplicationRecord
       self.exchange_rate = 1.0
       self.value_in_default_currency = value
     else
-      self.exchange_rate = ExchangeRateService.rate(asset_currency, default_curr)
+      rate = ExchangeRateService.rate(asset_currency, default_curr)
+      if rate.nil?
+        Rails.logger.warn "Exchange rate unavailable for #{asset_currency}->#{default_curr}, skipping conversion for asset valuation"
+        return
+      end
+      self.exchange_rate = rate
       self.value_in_default_currency = (value * exchange_rate).round(2)
     end
   end
