@@ -14,9 +14,9 @@ production:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
 
-  # Sync broker connections and record position valuations daily at 4am
-  # Runs after US markets close to capture end-of-day values
+  # Sync broker connections and record position valuations daily just before midnight
+  # Runs at 11:30pm in the configured timezone (TZ env var) to capture end-of-day values
   daily_broker_sync:
     class: BrokerSyncJob
     queue: default
-    schedule: at 4am every day
+    schedule: at 11:30pm every day

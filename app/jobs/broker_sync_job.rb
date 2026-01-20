@@ -1,7 +1,10 @@
 # Scheduled job to sync all broker connections and record position valuations
-# Runs daily at 4am via Solid Queue recurring schedule
+# Runs daily at 11:30pm via Solid Queue recurring schedule
 class BrokerSyncJob < ApplicationJob
   queue_as :default
+
+  # Retry on transient errors (network issues, API timeouts, etc.)
+  retry_on StandardError, wait: :polynomially_longer, attempts: 5
 
   def perform
     Rails.logger.info "[BrokerSyncJob] Starting daily broker sync"

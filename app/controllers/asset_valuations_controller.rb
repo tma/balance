@@ -22,7 +22,7 @@ class AssetValuationsController < ApplicationController
   end
 
   # Apply cached broker position values to assets (no API call)
-  # Positions are synced automatically at 4am daily
+  # Positions are synced automatically at 11:30pm daily
   def apply_broker_values
     assets = Asset.with_broker.includes(:broker_positions)
     updated_count = 0
