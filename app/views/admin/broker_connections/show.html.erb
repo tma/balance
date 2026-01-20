@@ -37,7 +37,7 @@
 
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-      <h2 class="font-semibold text-slate-700">Position Mappings</h2>
+      <h2 class="font-semibold text-slate-700">Positions</h2>
       <% if @connection.last_synced_at %>
         <span class="text-xs text-slate-500">Last synced: <%= @connection.last_synced_at.strftime("%Y-%m-%d %H:%M") %></span>
       <% end %>
@@ -52,7 +52,7 @@
               <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
               <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
               <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider min-w-[200px]">Map to Asset</th>
+              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider min-w-[200px]">Mapped Asset</th>
             </tr>
           </thead>
           <tbody class="bg-white">
@@ -79,10 +79,14 @@
                 <td class="px-4 py-3">
                   <select name="positions[<%= position.id %>]" class="w-full rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
                     <option value="">— Not mapped —</option>
-                    <% Asset.includes(:asset_group).order("asset_groups.name", :name).each do |asset| %>
-                      <option value="<%= asset.id %>" <%= 'selected' if position.asset_id == asset.id %>>
-                        <%= asset.asset_group&.name %>: <%= asset.name %>
-                      </option>
+                    <% @asset_groups.each do |group| %>
+                      <optgroup label="<%= group.name %>">
+                        <% group.assets.order(:name).each do |asset| %>
+                          <option value="<%= asset.id %>" <%= 'selected' if position.asset_id == asset.id %>>
+                            <%= asset.name %>
+                          </option>
+                        <% end %>
+                      </optgroup>
                     <% end %>
                   </select>
                 </td>
@@ -126,7 +130,7 @@
     <% else %>
       <div class="text-center py-8">
         <p class="text-slate-500 mb-2">No positions found.</p>
-        <p class="text-sm text-slate-400">Positions sync automatically at 4am daily.</p>
+        <p class="text-sm text-slate-400">Positions sync automatically daily.</p>
       </div>
     <% end %>
   </div>
