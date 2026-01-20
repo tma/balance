@@ -84,7 +84,7 @@
                           <% end %>
                         </p>
                         <p class="text-xs text-slate-400 whitespace-nowrap">
-                          <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span><% end %>
+                          <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-50 text-rose-400">Liability</span><% end %>
                         </p>
                       <% end %>
                     </td>
@@ -147,7 +147,7 @@
                             <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-slate-200 text-slate-500">Archived</span>
                           </p>
                           <p class="text-xs text-slate-300 whitespace-nowrap">
-                            <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-400">Liability</span><% end %>
+                            <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-50 text-rose-300">Liability</span><% end %>
                           </p>
                         <% end %>
                       </td>

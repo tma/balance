@@ -13,7 +13,7 @@
         <%= @asset.asset_group.name %> ·
         <%= @asset.asset_type.name %> · <%= @asset.currency %>
         <% if @asset.asset_type.is_liability? %>
-          <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-rose-100 text-rose-600">Liability</span>
+          <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-rose-50 text-rose-400">Liability</span>
         <% end %>
         <% if @asset.has_broker? %>
           <span class="ml-2 px-2 py-0.5 text-xs rounded-full bg-cyan-50 text-cyan-600">Broker</span>
