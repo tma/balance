@@ -132,50 +132,6 @@ class AccountsController < ApplicationController
 end
 ```
 
-## File Structure
-```
-app/
-├── controllers/
-│   ├── admin/           # Admin namespace for master data
-│   ├── accounts_controller.rb
-│   ├── asset_groups_controller.rb
-│   ├── asset_valuations_controller.rb
-│   ├── assets_controller.rb
-│   ├── budgets_controller.rb
-│   ├── dashboard_controller.rb
-│   ├── imports_controller.rb       # Transaction import from bank statements
-│   └── transactions_controller.rb
-├── helpers/
-│   └── application_helper.rb  # format_currency, format_amount
-├── models/
-│   ├── account.rb
-│   ├── account_type.rb
-│   ├── asset.rb
-│   ├── asset_group.rb
-│   ├── asset_type.rb
-│   ├── asset_valuation.rb
-│   ├── budget.rb
-│   ├── category.rb
-│   ├── currency.rb
-│   └── transaction.rb
-├── services/
-│   ├── csv_parser_service.rb            # CSV text extraction
-│   ├── duplicate_detection_service.rb   # Transaction duplicate detection
-│   ├── exchange_rate_service.rb         # Frankfurter API integration
-│   ├── ollama_service.rb                # Ollama LLM client
-│   ├── pdf_parser_service.rb            # PDF text extraction
-│   └── transaction_extractor_service.rb # LLM-powered transaction extraction
-└── views/
-    ├── admin/
-    ├── accounts/
-    ├── asset_groups/
-    ├── assets/
-    ├── budgets/
-    ├── dashboard/       # cash_flow.html.erb, net_worth.html.erb
-    ├── imports/         # new.html.erb, preview.html.erb
-    └── transactions/
-```
-
 ## Common Tasks
 
 ### Adding a New Model
@@ -202,7 +158,7 @@ docker compose up          # Docker container
 ```bash
 rails db:migrate           # Run migrations
 rails db:seed              # Load seed data
-rails db: reset             # Drop, create, migrate, seed
+rails db:reset             # Drop, create, migrate, seed
 ```
 
 ## Validation Checklist
