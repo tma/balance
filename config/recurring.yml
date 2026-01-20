@@ -20,3 +20,10 @@ production:
     class: BrokerSyncJob
     queue: default
     schedule: at 11:30pm every day
+
+  # Retry exchange rate fetches for records that failed due to API issues
+  # Runs every 6 hours to minimize API calls while ensuring timely updates
+  exchange_rate_retry:
+    class: ExchangeRateRetryJob
+    queue: default
+    schedule: every 6 hours
