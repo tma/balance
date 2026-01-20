@@ -21,11 +21,11 @@ class DashboardController < ApplicationController
     @previous_net_worth = calculate_net_worth_for_month(previous_month)[:net_worth]
     @net_worth_change = @net_worth[:net_worth] - @previous_net_worth
 
-    # Group totals for donut chart
+    # Group totals for donut chart (active assets only)
     @group_totals = {}
     @asset_groups.each do |group|
       net = 0
-      group.assets.each do |asset|
+      group.assets.active.each do |asset|
         valuation = @valuations_by_asset[asset.id]
         next unless valuation
         value = valuation.value_in_default_currency || 0
@@ -86,6 +86,7 @@ class DashboardController < ApplicationController
     @totals = calculate_totals_for_month(@valuation_date)
 
     # Group totals for selected month
+    # Includes active assets + archived assets that have a valuation for this month
     @group_totals = {}
     @asset_groups.each do |group|
       net = 0

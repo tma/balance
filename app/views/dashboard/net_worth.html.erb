@@ -2,12 +2,12 @@
   <%
     # Calculate totals for chart using selected month's valuations
     # Uses net values (assets - liabilities) per group
+    # Includes both active assets and archived assets with valuations for the selected month
     default_colors = %w[#60a5fa #4ade80 #f87171 #a78bfa #fb923c #22d3ee #e879f9 #facc15 #94a3b8 #2dd4bf]
 
     # Build group data using net values from controller
     group_data = []
     @asset_groups.each_with_index do |group, idx|
-      next if group.assets.empty?
       net_value = @group_totals[group.id] || 0
       next if net_value == 0
       group_data << {
@@ -193,7 +193,13 @@
       <%= link_to "Update Values", update_valuations_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium transition text-sm" %>
     </div>
 
-    <% if @asset_groups.none? { |g| g.assets.any? } %>
+    <% 
+      # Check if any group has assets to show (active or archived with valuations)
+      has_assets_to_show = @asset_groups.any? do |group|
+        group.assets.active.any? || group.assets.archived.any? { |a| @valuations_by_asset[a.id].present? }
+      end
+    %>
+    <% if !has_assets_to_show %>
       <div class="p-6 text-center">
         <p class="text-slate-500 mb-4">No assets yet.</p>
         <%= link_to "Add an asset", new_asset_path, class: "text-cyan-600 hover:underline" %>
@@ -202,7 +208,9 @@
       <table class="w-full">
         <tbody>
           <% @asset_groups.each_with_index do |group, group_index| %>
-            <% next if group.assets.empty? %>
+            <% active_assets = group.assets.active.includes(:asset_type).order(:position, :name) %>
+            <% archived_with_valuations = group.assets.archived.includes(:asset_type).order(:position, :name).select { |a| @valuations_by_asset[a.id].present? } %>
+            <% next if active_assets.empty? && archived_with_valuations.empty? %>
 
             <tr class="bg-slate-200 <%= group_index > 0 ? 'border-t-4 border-slate-300' : '' %>">
               <td class="px-4 py-2">
@@ -214,7 +222,8 @@
               <td></td>
             </tr>
 
-            <% group.assets.includes(:asset_type).order(:position, :name).each do |asset| %>
+            <%# Active assets %>
+            <% active_assets.each do |asset| %>
               <% valuation = @valuations_by_asset[asset.id] %>
               <tr class="hover:bg-slate-50 transition border-t border-slate-100">
                 <td class="px-4 py-3">
@@ -226,7 +235,7 @@
                       <% end %>
                     </p>
                     <p class="text-xs text-slate-400 whitespace-nowrap">
-                      <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> · <span class="text-rose-400">Liability</span><% end %>
+                      <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span><% end %>
                     </p>
                   <% end %>
                 </td>
@@ -240,6 +249,32 @@
                     <% end %>
                   <% else %>
                     <span class="text-sm text-slate-300">—</span>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+
+            <%# Archived assets with valuations - shown inline with label %>
+            <% archived_with_valuations.each do |asset| %>
+              <% valuation = @valuations_by_asset[asset.id] %>
+              <tr class="hover:bg-slate-50 transition border-t border-slate-100">
+                <td class="px-4 py-3">
+                  <%= link_to asset, class: "block" do %>
+                    <p class="text-sm font-medium text-slate-400 hover:text-cyan-600 whitespace-nowrap">
+                      <%= asset.name %>
+                      <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-slate-100 text-slate-400">Archived</span>
+                    </p>
+                    <p class="text-xs text-slate-300 whitespace-nowrap">
+                      <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-400">Liability</span><% end %>
+                    </p>
+                  <% end %>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <span class="text-sm text-slate-400">
+                    <%= asset.asset_type.is_liability ? '-' : '' %><%= format_currency(valuation.value_in_default_currency || 0, precision: 0) %>
+                  </span>
+                  <% if asset.currency != @default_currency %>
+                    <p class="text-xs text-slate-300"><%= asset.currency %> <%= format_amount(valuation.value) %></p>
                   <% end %>
                 </td>
               </tr>
