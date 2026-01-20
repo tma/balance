@@ -31,11 +31,11 @@
     <% has_assets = @asset_groups.joins(:assets).distinct.any? %>
 
     <% if has_assets %>
-      <%# Build flat list of all assets for tabindex calculation (column-first order) %>
-      <% all_assets = @asset_groups.flat_map { |g| g.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name) } %>
-      <% total_assets = all_assets.size %>
+      <%# Build flat list of active assets only for tabindex calculation (column-first order) %>
+      <% all_active_assets = @asset_groups.flat_map { |g| g.assets.active.includes(:asset_type).order("asset_types.is_liability ASC", :name) } %>
+      <% total_assets = all_active_assets.size %>
       <% asset_row_index = {} %>
-      <% all_assets.each_with_index { |a, i| asset_row_index[a.id] = i } %>
+      <% all_active_assets.each_with_index { |a, i| asset_row_index[a.id] = i } %>
 
       <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div class="overflow-x-auto" data-controller="scroll-right">
@@ -54,9 +54,11 @@
             </thead>
             <tbody>
               <% @asset_groups.each_with_index do |group, group_index| %>
-                <% assets = group.assets.includes(:asset_type).order("asset_types.is_liability ASC", :name) %>
-                <% next if assets.empty? %>
+                <% active_assets = group.assets.active.includes(:asset_type).order("asset_types.is_liability ASC", :name) %>
+                <% archived_assets = group.assets.archived.includes(:asset_type).order("asset_types.is_liability ASC", :name) %>
+                <% next if active_assets.empty? && archived_assets.empty? %>
 
+                <%# Group header row %>
                 <tr class="bg-slate-200 <%= group_index > 0 ? 'border-t-4 border-slate-300' : 'border-t border-slate-200' %>">
                   <td class="sticky left-0 bg-slate-200 px-4 py-2 z-10">
                     <span class="inline-flex items-center">
@@ -69,10 +71,11 @@
                   <% end %>
                 </tr>
 
-                <% assets.each do |asset| %>
+                <%# Active assets %>
+                <% active_assets.each do |asset| %>
                   <% has_broker = @broker_asset_ids.include?(asset.id) %>
-                  <tr class="hover:bg-slate-50 transition border-t border-slate-100" data-controller="copy-previous">
-                    <td class="sticky left-0 bg-white px-4 py-3 hover:bg-slate-50">
+                  <tr class="group hover:bg-slate-50 transition border-t border-slate-100" data-controller="copy-previous">
+                    <td class="sticky left-0 bg-white group-hover:bg-slate-50 px-4 py-2">
                       <%= link_to asset, class: "block" do %>
                         <p class="text-sm font-medium text-slate-700 hover:text-cyan-600 whitespace-nowrap">
                           <%= asset.name %>
@@ -81,7 +84,7 @@
                           <% end %>
                         </p>
                         <p class="text-xs text-slate-400 whitespace-nowrap">
-                          <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> · <span class="text-rose-400">Liability</span><% end %>
+                          <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-600">Liability</span><% end %>
                         </p>
                       <% end %>
                     </td>
@@ -122,11 +125,62 @@
                   </tr>
                 <% end %>
 
+                <%# Archived assets - collapsible section %>
+                <% if archived_assets.any? %>
+              </tbody>
+              <tbody data-controller="collapsible">
+                  <tr class="group border-t border-slate-100 cursor-pointer" data-action="click->collapsible#toggle">
+                    <td class="sticky left-0 bg-white group-hover:bg-slate-50 px-4 py-1 z-10 text-xs text-slate-300">
+                      <span data-collapsible-target="icon">▶</span>
+                      <span class="ml-1">Archived</span>
+                    </td>
+                    <% @months.each do |month| %>
+                      <td class="bg-white group-hover:bg-slate-50 py-1"></td>
+                    <% end %>
+                  </tr>
+                  <% archived_assets.each do |asset| %>
+                    <tr class="group transition border-t border-slate-100 hidden" data-collapsible-target="content">
+                      <td class="sticky left-0 bg-slate-100 group-hover:bg-slate-50 px-4 py-2 z-10">
+                        <%= link_to asset, class: "block" do %>
+                          <p class="text-sm font-medium text-slate-400 hover:text-cyan-600 whitespace-nowrap">
+                            <%= asset.name %>
+                            <span class="ml-1 px-1.5 py-0.5 rounded text-xs bg-slate-200 text-slate-500">Archived</span>
+                          </p>
+                          <p class="text-xs text-slate-300 whitespace-nowrap">
+                            <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 px-1.5 py-0.5 text-xs rounded bg-rose-100 text-rose-400">Liability</span><% end %>
+                          </p>
+                        <% end %>
+                      </td>
+                      <% @months.each do |month| %>
+                        <td class="px-2 py-2 bg-slate-100 group-hover:bg-slate-50">
+                          <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
+                          <% is_liability = asset.asset_type.is_liability %>
+                          <input type="text"
+                                 inputmode="decimal"
+                                 name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
+                                 value="<%= existing_value&.to_f %>"
+                                 tabindex="-1"
+                                 data-controller="currency-input"
+                                 data-currency-form-target="input"
+                                 data-currency-input-liability-value="<%= is_liability %>"
+                                 data-currency-input-original-value="<%= existing_value&.to_f %>"
+                                 data-action="focus->currency-input#unformat blur->currency-input#format"
+                                 class="w-32 text-right rounded-lg border-slate-200 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm text-slate-400 <%= existing_value ? 'bg-white' : 'bg-slate-50' %>"
+                                 placeholder="—">
+                        </td>
+                      <% end %>
+                    </tr>
+                  <% end %>
+              </tbody>
+              <tbody>
+                <% end %>
+
+                <%# Group totals row (active assets only) %>
                 <tr class="bg-slate-50 border-t border-slate-200">
-                  <td class="sticky left-0 bg-slate-50 px-4 py-2 z-10">
+                  <td class="sticky left-0 bg-slate-50 px-4 py-2 z-10 h-10">
                   </td>
                   <% @months.each do |month| %>
-                    <td class="bg-slate-50 px-2 py-2 text-right">
+                    <td class="bg-slate-50 px-2 py-2 text-right h-10">
                       <% net_value = @group_totals_by_month[group.id][month] %>
                       <% if net_value && net_value != 0 %>
                         <span class="font-semibold text-sm whitespace-nowrap text-slate-600"><%= format_currency(net_value, precision: 0) %></span>
@@ -136,6 +190,7 @@
                 </tr>
               <% end %>
 
+              <%# Total Net Worth row %>
               <tr class="bg-slate-200 border-t-4 border-slate-300">
                 <td class="sticky left-0 bg-slate-200 px-4 py-3 z-10">
                   <span class="font-bold text-slate-800 whitespace-nowrap">Total Net Worth</span>
