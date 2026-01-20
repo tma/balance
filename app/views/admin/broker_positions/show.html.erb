@@ -75,26 +75,25 @@
               <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value (<%= default_currency %>)</th>
             <% end %>
             <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Change</th>
+            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-20"></th>
           </tr>
         </thead>
         <tbody class="bg-white">
           <% previous_value = nil %>
           <% @valuations.each do |valuation| %>
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-              <td class="px-4 py-3 whitespace-nowrap">
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0" data-controller="inline-save">
+              <td class="px-4 py-2 whitespace-nowrap">
                 <span class="text-sm font-medium text-slate-700"><%= valuation.date.strftime("%Y-%m-%d") %></span>
                 <span class="text-xs text-slate-400 ml-2"><%= valuation.date.strftime("%a") %></span>
               </td>
-              <td class="px-4 py-3 text-right whitespace-nowrap">
-                <span class="text-sm text-slate-600"><%= number_with_delimiter(valuation.quantity) %></span>
+              <td class="px-4 py-2 text-right whitespace-nowrap">
+                <input type="text" name="position_valuation[quantity]" value="<%= valuation.quantity %>" form="valuation-form-<%= valuation.id %>" class="w-24 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm" data-inline-save-target="input" data-action="input->inline-save#check">
               </td>
-              <td class="px-4 py-3 text-right whitespace-nowrap">
-                <span class="text-sm font-medium text-slate-700">
-                  <%= format_currency(valuation.value, currency: valuation.currency) %>
-                </span>
+              <td class="px-4 py-2 text-right whitespace-nowrap">
+                <input type="text" name="position_valuation[value]" value="<%= valuation.value %>" form="valuation-form-<%= valuation.id %>" class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm" data-controller="currency-input" data-currency-input-original-value="<%= valuation.value %>" data-inline-save-target="input" data-action="input->inline-save#check focus->currency-input#unformat blur->currency-input#format">
               </td>
               <% if show_default_currency %>
-                <td class="px-4 py-3 text-right whitespace-nowrap">
+                <td class="px-4 py-2 text-right whitespace-nowrap">
                   <span class="text-sm text-slate-600">
                     <% if valuation.value_in_default_currency %>
                       <%= format_currency(valuation.value_in_default_currency, currency: default_currency) %>
@@ -107,7 +106,7 @@
                   </span>
                 </td>
               <% end %>
-              <td class="px-4 py-3 text-right whitespace-nowrap">
+              <td class="px-4 py-2 text-right whitespace-nowrap">
                 <% if previous_value %>
                   <% change = valuation.value - previous_value %>
                   <% change_percent = previous_value != 0 ? (change / previous_value * 100) : 0 %>
@@ -120,6 +119,17 @@
                 <% end %>
                 <% previous_value = valuation.value %>
               </td>
+              <td class="px-4 py-2 text-right whitespace-nowrap space-x-3">
+                <form id="valuation-form-<%= valuation.id %>" action="<%= admin_broker_connection_position_valuation_path(@connection, @position, valuation) %>" method="post" class="inline" data-action="submit->inline-save#unformatAll">
+                  <input type="hidden" name="_method" value="patch">
+                  <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+                  <button type="submit" class="text-slate-400 text-sm" disabled data-inline-save-target="save">Save</button>
+                </form>
+                <%= button_to "Delete", admin_broker_connection_position_valuation_path(@connection, @position, valuation), 
+                      method: :delete, 
+                      class: "text-rose-500 hover:text-rose-600 text-sm",
+                      form: { data: { turbo_confirm: "Delete valuation for #{valuation.date.strftime('%Y-%m-%d')}?" }, class: "inline" } %>
+              </td>
             </tr>
           <% end %>
         </tbody>
@@ -127,7 +137,7 @@
     <% else %>
       <div class="text-center py-8">
         <p class="text-slate-500 mb-2">No valuation history yet.</p>
-        <p class="text-sm text-slate-400">Valuations are recorded daily at 4am or when you sync.</p>
+        <p class="text-sm text-slate-400">Valuations are recorded daily at 11:30pm or when you sync.</p>
       </div>
     <% end %>
   </div>

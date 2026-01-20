@@ -63,6 +63,7 @@ Rails.application.routes.draw do
         collection do
           patch :bulk_update
         end
+        resources :position_valuations, path: "valuations", as: :valuations, only: [ :update, :destroy ]
       end
     end
   end
