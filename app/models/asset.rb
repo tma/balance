@@ -84,8 +84,8 @@ class Asset < ApplicationRecord
 
     date = Date.current.end_of_month
 
-    # Update asset value
-    self.value = total
+    # Update asset value (round to whole numbers to avoid form change detection issues)
+    self.value = total.round(0)
     calculate_default_currency_value
     save!
 
