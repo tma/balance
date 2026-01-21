@@ -42,54 +42,45 @@ A personal finance budgeting application for tracking income, expenses, budgets,
        image: ghcr.io/tma/balance:main
        ports:
          - "3000:80"
-       environment:
-         - RAILS_ENV=production
-         - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-         - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
-         - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
-         - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
-         - RAILS_LOG_TO_STDOUT=1
-         - TZ=Europe/Berlin  # Timezone (e.g., America/New_York, Asia/Tokyo)
-         - OLLAMA_HOST=http://host.docker.internal:11434
+       env_file: .env
        volumes:
          - balance_storage:/rails/storage
-       extra_hosts:
-         - "host.docker.internal:host-gateway"
        restart: unless-stopped
        depends_on:
          - worker
 
      worker:
        image: ghcr.io/tma/balance:main
-       command: bundle exec rails solid_queue:work
-       environment:
-         - RAILS_ENV=production
-         - SECRET_KEY_BASE=${SECRET_KEY_BASE}
-         - ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=${ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY}
-         - ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=${ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY}
-         - ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=${ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT}
-         - RAILS_LOG_TO_STDOUT=1
-         - TZ=Europe/Berlin
-         - OLLAMA_HOST=http://host.docker.internal:11434
+       command: bundle exec rails solid_queue:start
+       env_file: .env
        volumes:
          - balance_storage:/rails/storage
-       extra_hosts:
-         - "host.docker.internal:host-gateway"
        restart: unless-stopped
-   
+
    volumes:
      balance_storage:
    ```
 
-2. Generate secrets and set them as environment variables:
+2. Create a `.env` file with your configuration:
    ```bash
-   # Generate Rails secret key
-   export SECRET_KEY_BASE=$(openssl rand -hex 64)
+   # Rails environment
+   RAILS_ENV=production
+   RAILS_LOG_TO_STDOUT=1
 
-   # Generate Active Record encryption keys (required for broker integration)
-   export ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=$(openssl rand -hex 16)
-   export ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=$(openssl rand -hex 16)
-   export ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=$(openssl rand -hex 16)
+   # Generate with: openssl rand -hex 64
+   SECRET_KEY_BASE=<your-secret-key>
+
+   # Active Record encryption keys (required for broker integration)
+   # Generate each with: openssl rand -hex 16
+   ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=<your-key>
+   ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=<your-key>
+   ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=<your-key>
+
+   # Timezone (e.g., America/New_York, Asia/Tokyo, Europe/Berlin)
+   TZ=Europe/Berlin
+
+   # Ollama host for AI-powered transaction import (optional)
+   OLLAMA_HOST=http://ollama.example.com:11434
    ```
 
    > **Important:** Save these values securely. If you lose the encryption keys, any encrypted data (like broker API tokens) will become unreadable.
@@ -117,7 +108,7 @@ To enable AI-powered transaction import from bank statements:
    ```bash
    ollama pull llama3.1:8b
    ```
-3. The app will automatically connect to Ollama via `host.docker.internal:11434`
+3. Set `OLLAMA_HOST` in your `.env` file to point to your Ollama instance
 
 ### Stopping the Application
 
