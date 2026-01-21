@@ -56,3 +56,11 @@
 *.md
 /LICENSE*
 /CHANGELOG*
+/doc/
+
+# Ignore test files
+/test/
+
+# Ignore miscellaneous
+/Procfile
+/Makefile
