@@ -54,4 +54,15 @@ class CsvParserServiceTest < ActiveSupport::TestCase
     assert_includes result, "Café"
     assert_includes result, "Zürich"
   end
+
+  test "strips UTF-8 BOM from content" do
+    # UTF-8 BOM is \xEF\xBB\xBF
+    bom_content = "\xEF\xBB\xBFDate,Description,Amount\n2026-01-15,Coffee,5.50"
+    file = StringIO.new(bom_content)
+
+    result = CsvParserService.read_content(file)
+
+    assert result.start_with?("Date,"), "BOM should be stripped from start of content"
+    assert_not result.start_with?("\xEF\xBB\xBF"), "BOM bytes should not be present"
+  end
 end

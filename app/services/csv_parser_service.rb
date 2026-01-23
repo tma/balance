@@ -48,7 +48,12 @@ class CsvParserService
         File.read(file)
       end
 
-      normalize_encoding(content)
+      normalize_encoding(content).then { |c| strip_bom(c) }
+    end
+
+    # Remove UTF-8 BOM if present (common in Windows-generated CSVs)
+    def strip_bom(content)
+      content.sub(/\A\xEF\xBB\xBF/, "")
     end
 
     # Normalize content to valid UTF-8
