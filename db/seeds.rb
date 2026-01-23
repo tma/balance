@@ -985,108 +985,105 @@ if Rails.env.development?
   end
 
   # ---------------------------------------------------------------------------
-  # Import Sample Transactions via Import Feature (demonstrates full flow)
+  # Import Sample Transactions via CSV Import Feature
   # ---------------------------------------------------------------------------
   if OllamaService.available?
-    puts "\nImporting transactions via Import feature..."
+    puts "\nImporting transactions via CSV Import feature..."
 
-    csv_path = Rails.root.join("test/fixtures/files/sample_bank_statement.csv")
-    if File.exist?(csv_path)
-      account = accounts[:main_checking]
+    # Helper to import a CSV file and create transactions
+    import_csv = lambda do |csv_path, account, mark_done: true|
+      return unless File.exist?(csv_path)
 
-      # Create an Import record (simulates file upload)
+      filename = File.basename(csv_path)
+      puts "  Importing #{filename} → #{account.name}..."
+
       import = Import.create!(
         account: account,
-        original_filename: "sample_bank_statement.csv",
+        original_filename: filename,
         file_content_type: "text/csv",
         file_data: File.read(csv_path),
         status: "pending"
       )
-      puts "  Created Import ##{import.id}"
 
-      # Process the import synchronously (in production this runs async)
       begin
         TransactionImportJob.perform_now(import.id)
         import.reload
 
         if import.completed?
-          puts "  AI extraction completed in #{import.duration&.round(1)}s"
-          puts "  Extracted #{import.transactions_count} transactions"
+          puts "    ✓ Extracted #{import.extracted_transactions.size} transactions"
 
-          # Import non-duplicate transactions
-          imported_count = 0
-          skipped_count = 0
+          if mark_done
+            imported_count = 0
+            import.extracted_transactions.each do |txn_data|
+              next if txn_data[:is_duplicate]
 
-          import.extracted_transactions.each do |txn_data|
-            next if txn_data[:is_duplicate]
+              category_id = txn_data[:category_id]
+              unless category_id
+                fallback = txn_data[:transaction_type] == "income" ? "Other Income" : "Other Expense"
+                category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
+              end
 
-            # Find category or fall back to "other income"/"other expense"
-            category_id = txn_data[:category_id]
-            unless category_id
-              fallback = txn_data[:transaction_type] == "income" ? "other income" : "other expense"
-              category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
+              begin
+                Transaction.create!(
+                  account: account,
+                  import: import,
+                  category_id: category_id,
+                  date: txn_data[:date],
+                  description: txn_data[:description],
+                  amount: txn_data[:amount],
+                  transaction_type: txn_data[:transaction_type]
+                )
+                imported_count += 1
+              rescue ActiveRecord::RecordInvalid
+                next
+              end
             end
 
-            begin
-              Transaction.create!(
-                account: account,
-                import: import,
-                category_id: category_id,
-                date: txn_data[:date],
-                description: txn_data[:description],
-                amount: txn_data[:amount],
-                transaction_type: txn_data[:transaction_type]
-              )
-              imported_count += 1
-            rescue ActiveRecord::RecordInvalid
-              skipped_count += 1
-            end
+            import.update!(status: "done", transactions_count: imported_count)
+            puts "    ✓ Imported #{imported_count} transactions"
+          else
+            puts "    → Ready for review (#{import.extracted_transactions.size} transactions)"
           end
-
-          # Mark import as done since we've imported the transactions
-          import.update!(status: "done", transactions_count: imported_count)
-
-          puts "  Imported: #{imported_count}, Skipped: #{skipped_count}"
         elsif import.failed?
-          puts "  Import failed: #{import.error_message}"
+          puts "    ✗ Failed: #{import.error_message}"
         end
       rescue StandardError => e
-        puts "  Import job error: #{e.message}"
+        puts "    ✗ Error: #{e.message}"
       end
-    else
-      puts "  Sample CSV not found, skipping import"
+
+      import
     end
 
-    # Create a second import that stays in "completed" (ready for review) status
-    pending_csv_path = Rails.root.join("test/fixtures/files/pending_review_statement.csv")
-    if File.exist?(pending_csv_path)
-      account = accounts[:visa]
+    csv_samples_dir = Rails.root.join("test/fixtures/files/csv_samples")
 
-      import = Import.create!(
-        account: account,
-        original_filename: "pending_review_statement.csv",
-        file_content_type: "text/csv",
-        file_data: File.read(pending_csv_path),
-        status: "pending"
-      )
-      puts "  Created Import ##{import.id} (for review)"
+    # US Standard format → Main Checking (USD)
+    import_csv.call(csv_samples_dir.join("us_standard.csv"), accounts[:main_checking])
 
-      begin
-        TransactionImportJob.perform_now(import.id)
-        import.reload
+    # US with extra columns → Visa Credit Card (USD)
+    import_csv.call(csv_samples_dir.join("us_with_extra_columns.csv"), accounts[:visa])
 
-        if import.completed?
-          puts "  AI extraction completed - #{import.transactions_count} transactions ready for review"
-        elsif import.failed?
-          puts "  Import failed: #{import.error_message}"
-        end
-      rescue StandardError => e
-        puts "  Import job error: #{e.message}"
-      end
-    end
+    # US split columns (debit/credit) → Amex Gold (USD)
+    import_csv.call(csv_samples_dir.join("us_split_columns.csv"), accounts[:amex])
+
+    # UK YNAB style (GBP amounts, but account is USD - amounts will be treated as USD)
+    import_csv.call(csv_samples_dir.join("uk_ynab_style.csv"), accounts[:emergency_fund])
+
+    # EU German format → Euro Account (EUR)
+    import_csv.call(csv_samples_dir.join("eu_german.csv"), accounts[:euro_checking])
+
+    # EU German split (Soll/Haben) → Euro Cash (EUR)
+    import_csv.call(csv_samples_dir.join("eu_split_german.csv"), accounts[:euro_cash])
+
+    # Credit card multi-currency (CHF) → Swiss Savings
+    import_csv.call(csv_samples_dir.join("credit_card_multi_currency.csv"), accounts[:swiss_savings])
+
+    # Leave one import in "ready for review" status for demo purposes
+    # Re-import us_standard to a different account, but don't auto-confirm
+    import_csv.call(csv_samples_dir.join("us_standard.csv"), accounts[:vacation_savings], mark_done: false)
+
   else
-    puts "\nSkipping AI import (Ollama not available)"
-    puts "  To enable: brew install ollama && ollama pull llama3.1:8b && brew services start ollama"
+    puts "\nSkipping CSV import (Ollama not available)"
+    puts "  To enable: start Ollama in devcontainer or install locally"
   end
 
   # ---------------------------------------------------------------------------
