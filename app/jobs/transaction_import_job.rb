@@ -54,8 +54,10 @@ class TransactionImportJob < ApplicationJob
     transactions = parser.parse
     Rails.logger.info "Import #{import.id}: Parsed #{transactions.size} transactions"
 
-    import.update_progress!(2, 2, extracted_count: transactions.size, message: "Categorizing")
-    categorize_transactions(transactions, import.account)
+    progress_callback = ->(current, total) {
+      import.update_progress!(2, 2, extracted_count: transactions.size, message: "Categorizing #{current}/#{total}")
+    }
+    categorize_transactions(transactions, import.account, on_progress: progress_callback)
 
     transactions
   end
@@ -120,7 +122,7 @@ class TransactionImportJob < ApplicationJob
     extractor.extract
   end
 
-  def categorize_transactions(transactions, account)
+  def categorize_transactions(transactions, account, on_progress: nil)
     return if transactions.empty?
 
     # Step 1: Rule-based categorization using match_patterns
@@ -140,8 +142,14 @@ class TransactionImportJob < ApplicationJob
 
     # Step 2: LLM categorization for remaining transactions
     if uncategorized.any?
+      batch_size = TransactionExtractorService::CATEGORY_BATCH_SIZE
+      total_batches = (uncategorized.size.to_f / batch_size).ceil
+
       extractor = TransactionExtractorService.new([], account)
-      extractor.categorize_transactions(uncategorized)
+      uncategorized.each_slice(batch_size).with_index do |batch, index|
+        on_progress&.call(index + 1, total_batches)
+        extractor.send(:categorize_batch, batch, Category.expense, Category.income)
+      end
     end
   end
 
