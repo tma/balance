@@ -1,3 +1,5 @@
+require "csv"
+
 class TransactionImportJob < ApplicationJob
   queue_as :default
 
@@ -87,7 +89,7 @@ class TransactionImportJob < ApplicationJob
 
   def mapping_valid_for_content?(mapping, content)
     headers = content.lines.first&.strip || ""
-    columns = CSV.parse_line(headers).map(&:to_s).map(&:strip)
+    columns = ::CSV.parse_line(headers).map(&:to_s).map(&:strip)
 
     # Check required columns exist
     return false unless columns.include?(mapping[:date_column])
@@ -101,7 +103,7 @@ class TransactionImportJob < ApplicationJob
     end
 
     true
-  rescue CSV::MalformedCSVError
+  rescue ::CSV::MalformedCSVError
     false
   end
 
