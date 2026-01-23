@@ -239,8 +239,8 @@
                       </optgroup>
                     </select>
                   </td>
-                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium <%= txn[:transaction_type] == 'income' ? 'text-emerald-600' : 'text-slate-700' %>">
-                    <%= txn[:transaction_type] == 'income' ? '+' : '' %><%= format_amount(txn[:amount]) %>
+                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium text-slate-700">
+                    <%= txn[:transaction_type] == 'expense' ? '-' : '' %><%= format_amount(txn[:amount]) %>
                   </td>
                 </tr>
               <% end %>
@@ -359,8 +359,8 @@
                   <td class="px-4 py-3 text-sm text-slate-600">
                     <%= txn.category&.name || "—" %>
                   </td>
-                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium <%= txn.transaction_type == 'income' ? 'text-emerald-600' : 'text-slate-700' %>">
-                    <%= txn.transaction_type == 'income' ? '+' : '' %><%= format_amount(txn.amount) %>
+                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium text-slate-700">
+                    <%= txn.transaction_type == 'expense' ? '-' : '' %><%= format_amount(txn.amount) %>
                   </td>
                 </tr>
               <% end %>
