@@ -44,10 +44,10 @@ class TransactionImportJob < ApplicationJob
       CsvParserService.read_content(temp_file)
     end
 
-    # Step 1: LLM analyzes structure (headers + sample rows)
+    # Step 1: Get mapping (try cache first, then LLM)
     import.update_progress!(1, 3, message: "Analyzing CSV structure")
-    mapping = CsvMappingAnalyzerService.analyze(content)
-    Rails.logger.info "Import #{import.id}: CSV mapping detected: #{mapping.inspect}"
+    mapping = get_or_analyze_csv_mapping(content, import.account)
+    Rails.logger.info "Import #{import.id}: CSV mapping: #{mapping.inspect}"
 
     # Step 2: Deterministic parsing of all rows
     import.update_progress!(2, 3, message: "Parsing transactions")
@@ -60,6 +60,49 @@ class TransactionImportJob < ApplicationJob
     categorize_transactions(transactions, import.account)
 
     transactions
+  end
+
+  def get_or_analyze_csv_mapping(content, account)
+    # Try cached mapping first
+    cached = account.cached_csv_mapping
+    if cached
+      Rails.logger.info "Using cached CSV mapping for account #{account.id}"
+      # Validate cached mapping still works with this CSV
+      if mapping_valid_for_content?(cached, content)
+        return cached
+      else
+        Rails.logger.info "Cached mapping invalid for this CSV, re-analyzing"
+      end
+    end
+
+    # Analyze with LLM
+    mapping = CsvMappingAnalyzerService.analyze(content)
+
+    # Cache for future imports
+    account.cache_csv_mapping!(mapping)
+    Rails.logger.info "Cached CSV mapping for account #{account.id}"
+
+    mapping
+  end
+
+  def mapping_valid_for_content?(mapping, content)
+    headers = content.lines.first&.strip || ""
+    columns = CSV.parse_line(headers).map(&:to_s).map(&:strip)
+
+    # Check required columns exist
+    return false unless columns.include?(mapping[:date_column])
+    return false unless columns.include?(mapping[:description_column])
+
+    if mapping[:amount_type] == "single"
+      return false unless columns.include?(mapping[:amount_column])
+    else
+      return false unless columns.include?(mapping[:debit_column])
+      return false unless columns.include?(mapping[:credit_column])
+    end
+
+    true
+  rescue CSV::MalformedCSVError
+    false
   end
 
   def process_pdf(import)

@@ -41,6 +41,19 @@ class Account < ApplicationRecord
     Currency.default&.code || "USD"
   end
 
+  # Returns cached CSV column mapping as a hash, or nil if not set
+  def cached_csv_mapping
+    return nil if csv_column_mapping.blank?
+    JSON.parse(csv_column_mapping, symbolize_names: true)
+  rescue JSON::ParserError
+    nil
+  end
+
+  # Stores a CSV column mapping for future imports
+  def cache_csv_mapping!(mapping)
+    update!(csv_column_mapping: mapping.to_json)
+  end
+
   private
 
   def currency_must_exist

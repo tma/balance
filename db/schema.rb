@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_19_221309) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_23_224600) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.string "name"
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_19_221309) do
     t.decimal "balance"
     t.decimal "balance_in_default_currency"
     t.datetime "created_at", null: false
+    t.text "csv_column_mapping"
     t.string "currency"
     t.decimal "exchange_rate"
     t.text "import_ignore_patterns"
