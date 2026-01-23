@@ -125,9 +125,26 @@ class TransactionImportJob < ApplicationJob
   def categorize_transactions(transactions, account)
     return if transactions.empty?
 
-    # Reuse the categorization logic from TransactionExtractorService
-    extractor = TransactionExtractorService.new([], account)
-    extractor.categorize_transactions(transactions)
+    # Step 1: Rule-based categorization using match_patterns
+    uncategorized = []
+    transactions.each do |txn|
+      category = Category.find_by_pattern(txn[:description], txn[:transaction_type])
+      if category
+        txn[:category_id] = category.id
+        txn[:category_name] = category.name
+      else
+        uncategorized << txn
+      end
+    end
+
+    categorized_count = transactions.size - uncategorized.size
+    Rails.logger.info "Rule-based categorization: #{categorized_count}/#{transactions.size} matched"
+
+    # Step 2: LLM categorization for remaining transactions
+    if uncategorized.any?
+      extractor = TransactionExtractorService.new([], account)
+      extractor.categorize_transactions(uncategorized)
+    end
   end
 
   def with_temp_file(import, extension)
