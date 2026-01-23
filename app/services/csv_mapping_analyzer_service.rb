@@ -45,30 +45,30 @@ class CsvMappingAnalyzerService
 
         TASK: Identify the columns and formats by examining BOTH headers AND data values.
 
-        1. DATE COLUMN (IMPORTANT): 
+        1. DATE COLUMN (IMPORTANT):#{' '}
            - Choose the date when the transaction ACTUALLY HAPPENED
            - Prefer columns named: "Date", "Transaction Date", "Datum", "Buchungsdatum", "Trans Date"
            - AVOID accounting/settlement dates: "ValutaDate", "Valuta", "Value Date", "Posting Date", "Settlement Date", "Effective Date"
            - These valuta/settlement dates are when money moves between banks, NOT when you made the purchase
            - If you see both "Date" and "ValutaDate", always choose "Date"
-        
-        2. DESCRIPTION COLUMNS: 
+
+        2. DESCRIPTION COLUMNS:#{' '}
            - Primary: merchant name or main description
            - Secondary (optional): additional details, memo, or notes to append
            - If there are two useful text columns (e.g., "MerchantName" + "Details"), include both
-        
+
         3. AMOUNT COLUMNS - Look at the data carefully:
            - If ONE column has both positive and negative numbers → "single" (amount_column)
            - If TWO separate columns for money out/in (one often empty per row) → "split" (debit_column + credit_column)
            - German: "Soll" = debit (expense), "Haben" = credit (income)
            - English: "Debit"/"Outflow" = expense, "Credit"/"Inflow" = income
-        
+
         4. DATE FORMAT - Look at actual date values:
            - "DD.MM.YYYY" for 31.12.2024
            - "DD/MM/YYYY" for 31/12/2024
            - "MM/DD/YYYY" for 12/31/2024
            - "YYYY-MM-DD" for 2024-12-31
-        
+
         5. AMOUNT FORMAT - Look at actual numbers in the data:
            - "eu" if comma is decimal: "1.234,56" or "45,80"
            - "us" if dot is decimal: "1,234.56" or "45.80" or "£2,850.00"

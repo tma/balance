@@ -30,13 +30,13 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
     service = CsvMappingAnalyzerService
 
     # Simple header
-    assert_equal ["Date", "Description", "Amount"], service.send(:parse_header_columns, "Date,Description,Amount")
+    assert_equal [ "Date", "Description", "Amount" ], service.send(:parse_header_columns, "Date,Description,Amount")
 
     # Quoted header
-    assert_equal ["Date", "Description", "Amount"], service.send(:parse_header_columns, '"Date","Description","Amount"')
+    assert_equal [ "Date", "Description", "Amount" ], service.send(:parse_header_columns, '"Date","Description","Amount"')
 
     # Header with spaces
-    assert_equal ["Date", "Description", "Amount"], service.send(:parse_header_columns, "Date , Description , Amount")
+    assert_equal [ "Date", "Description", "Amount" ], service.send(:parse_header_columns, "Date , Description , Amount")
   end
 
   # Integration test - only runs if Ollama is available
@@ -56,7 +56,7 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
     assert_equal "Description", mapping[:description_column]
     assert_equal "single", mapping[:amount_type]
     assert_equal "Amount", mapping[:amount_column]
-    assert_includes ["%Y-%m-%d", "%y-%m-%d"], mapping[:date_format]
+    assert_includes [ "%Y-%m-%d", "%y-%m-%d" ], mapping[:date_format]
   end
 
   test "analyzes CSV with split debit/credit columns" do
@@ -92,6 +92,6 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
     assert_equal "Datum", mapping[:date_column]
     assert_equal "Beschreibung", mapping[:description_column]
     assert_equal "Betrag", mapping[:amount_column]
-    assert_includes ["%d.%m.%Y", "%d.%m.%y"], mapping[:date_format]
+    assert_includes [ "%d.%m.%Y", "%d.%m.%y" ], mapping[:date_format]
   end
 end

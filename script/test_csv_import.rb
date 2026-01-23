@@ -56,7 +56,7 @@ def test_csv_file(filepath)
   # Validate results
   puts "\n[Step 3] Validating results..."
   csv_row_count = content.lines.drop(1).reject { |l| l.strip.empty? }.size
-  
+
   issues = []
   issues << "Row count mismatch: expected ~#{csv_row_count}, got #{transactions.size}" if transactions.size < csv_row_count * 0.8
 
