@@ -38,25 +38,23 @@ class TransactionImportJob < ApplicationJob
   private
 
   def process_csv(import)
-    Rails.logger.info "Import #{import.id}: Processing CSV with two-step approach"
+    Rails.logger.info "Import #{import.id}: Processing CSV"
 
     content = with_temp_file(import, ".csv") do |temp_file|
       CsvParserService.read_content(temp_file)
     end
 
     # Step 1: Get mapping (try cache first, then LLM)
-    import.update_progress!(1, 3, message: "Analyzing CSV structure")
+    cached = import.account.cached_csv_mapping.present?
+    import.update_progress!(1, 2, message: cached ? "Using saved format" : "Detecting CSV format")
     mapping = get_or_analyze_csv_mapping(content, import.account)
-    Rails.logger.info "Import #{import.id}: CSV mapping: #{mapping.inspect}"
 
-    # Step 2: Deterministic parsing of all rows
-    import.update_progress!(2, 3, message: "Parsing transactions")
+    # Step 2: Parse all rows and categorize
     parser = DeterministicCsvParserService.new(content, mapping, import.account)
     transactions = parser.parse
     Rails.logger.info "Import #{import.id}: Parsed #{transactions.size} transactions"
 
-    # Step 3: Categorize using LLM
-    import.update_progress!(3, 3, extracted_count: transactions.size, message: "Categorizing transactions")
+    import.update_progress!(2, 2, extracted_count: transactions.size, message: "Categorizing")
     categorize_transactions(transactions, import.account)
 
     transactions
