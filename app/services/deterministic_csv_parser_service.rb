@@ -73,8 +73,10 @@ class DeterministicCsvParserService
 
     if secondary_column.present?
       secondary = row[secondary_column].to_s.strip
-      if secondary.present? && secondary != primary
+      if primary.present? && secondary.present? && secondary != primary
         return "#{primary} - #{secondary}"
+      elsif secondary.present? && primary.blank?
+        return secondary
       end
     end
 
