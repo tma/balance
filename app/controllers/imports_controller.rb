@@ -158,6 +158,9 @@ class ImportsController < ApplicationController
     # Reset the import status and clear error
     @import.update!(status: "pending", error_message: nil, extracted_data: "[]")
 
+    # Clear cached CSV mapping to force re-analysis
+    @import.account.update!(csv_column_mapping: nil) if @import.file_content_type == "text/csv"
+
     # Enqueue the background job again
     TransactionImportJob.perform_later(@import.id)
 
