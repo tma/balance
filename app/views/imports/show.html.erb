@@ -20,7 +20,7 @@
         <% end %>
       </div>
       <p class="text-sm text-slate-500">
-        Importing to <span class="font-medium text-slate-700"><%= @import.account.name %></span>
+        Importing to <%= link_to @import.account.name, edit_account_path(@import.account), class: "font-medium text-slate-700 hover:text-cyan-600" %>
         <span class="text-slate-300 mx-1">&middot;</span>
         <%= time_ago_in_words(@import.created_at) %> ago
       </p>
