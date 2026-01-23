@@ -1,36 +1,23 @@
+# Extracts transactions from PDF bank statements using LLM
+# For CSV files, use CsvMappingAnalyzerService + DeterministicCsvParserService instead
 class TransactionExtractorService
   class Error < StandardError; end
   class ExtractionError < Error; end
 
   CATEGORY_BATCH_SIZE = 10
 
-  attr_reader :chunks, :account, :file_type, :on_progress, :statement_period
+  attr_reader :chunks, :account, :on_progress, :statement_period
 
-  # Initialize with text chunks and account
-  # @param chunks [Array<String>, String] Text chunks to process (or single string for backward compatibility)
+  # Initialize with text chunks (PDF pages) and account
+  # @param chunks [Array<String>, String] Text chunks to process
   # @param account [Account] The account for transactions
-  # @param file_type [Symbol] The file type (:csv or :pdf)
   # @param on_progress [Proc, nil] Optional callback called with (current_chunk, total_chunks)
-  def initialize(chunks, account, file_type: :pdf, on_progress: nil)
+  def initialize(chunks, account, on_progress: nil)
     @chunks = chunks.is_a?(Array) ? chunks : [ chunks ]
     @account = account
-    @file_type = file_type
     @on_progress = on_progress
-    @statement_period = extract_statement_period(@chunks.join("\n")) if pdf?
+    @statement_period = extract_statement_period(@chunks.join("\n"))
     @extracted_count = 0
-  end
-
-  def pdf?
-    file_type == :pdf
-  end
-
-  def csv?
-    file_type == :csv
-  end
-
-  # For backward compatibility - returns first chunk's text
-  def text
-    @chunks.first
   end
 
   # Extract transactions from all chunks using Ollama
@@ -40,23 +27,34 @@ class TransactionExtractorService
       raise ExtractionError, "Ollama is not available. Please ensure it is running."
     end
 
-    # Step 1: Extract transactions from PDF chunks
     all_transactions = extract_from_chunks
-
-    # Step 2: Assign categories in batches
     categorize_transactions(all_transactions)
-
     all_transactions
   rescue OllamaService::Error => e
     raise ExtractionError, "Failed to extract transactions: #{e.message}"
   end
 
+  # Categorize transactions using LLM (public so CSV imports can use it)
+  # @param transactions [Array<Hash>] Array of transaction hashes with :description, :transaction_type
+  def categorize_transactions(transactions)
+    return if transactions.empty?
+
+    @on_progress&.call(@chunks.size + 1, @chunks.size + 1, extracted_count: transactions.size, message: "Categorizing transactions")
+    Rails.logger.info "Categorizing #{transactions.size} transactions"
+
+    expense_categories = Category.expense
+    income_categories = Category.income
+
+    transactions.each_slice(CATEGORY_BATCH_SIZE) do |batch|
+      categorize_batch(batch, expense_categories, income_categories)
+    end
+  end
+
   private
 
-  # Step 1: Extract raw transactions from document chunks
   def extract_from_chunks
     all_transactions = []
-    total_steps = @chunks.size + 1 # +1 for categorization step
+    total_steps = @chunks.size + 1
 
     @chunks.each_with_index do |chunk, index|
       current = index + 1
@@ -75,26 +73,9 @@ class TransactionExtractorService
     all_transactions
   end
 
-  # Step 2: Assign categories in batches
-  def categorize_transactions(transactions)
-    return if transactions.empty?
-
-    total_steps = @chunks.size + 1
-    @on_progress&.call(total_steps, total_steps, extracted_count: transactions.size, message: "Categorizing transactions")
-    Rails.logger.info "Categorizing #{transactions.size} transactions"
-
-    expense_categories = Category.expense
-    income_categories = Category.income
-
-    transactions.each_slice(CATEGORY_BATCH_SIZE) do |batch|
-      categorize_batch(batch, expense_categories, income_categories)
-    end
-  end
-
   def categorize_batch(transactions, expense_categories, income_categories)
     prompt = build_categorization_prompt(transactions, expense_categories, income_categories)
     response = OllamaService.generate_json(prompt)
-
     categories = parse_categories_response(response)
 
     transactions.each_with_index do |txn, index|
@@ -107,38 +88,9 @@ class TransactionExtractorService
     end
   rescue OllamaService::Error => e
     Rails.logger.warn "Failed to categorize batch: #{e.message}"
-    # Leave transactions without categories rather than failing
   end
 
   def build_extraction_prompt(chunk_text)
-    csv? ? build_csv_extraction_prompt(chunk_text) : build_pdf_extraction_prompt(chunk_text)
-  end
-
-  def build_csv_extraction_prompt(chunk_text)
-    row_count = chunk_text.lines.size - 1 # subtract header
-
-    <<~PROMPT
-      Parse this CSV into JSON. There are exactly #{row_count} data rows. Return exactly #{row_count} transactions.
-
-      RULES:
-      - date: Convert to YYYY-MM-DD format
-      - description: Use merchant/description column
-      - amount: Always POSITIVE number (remove minus sign)
-      - transaction_type: Look at the ORIGINAL amount sign:
-        * Negative amount (e.g., -50.00) → "expense"
-        * Positive amount (e.g., 50.00) → "income"
-
-      CRITICAL: Return ALL #{row_count} rows. Do not skip any rows.
-
-      OUTPUT FORMAT:
-      {"transactions": [{"date": "YYYY-MM-DD", "description": "...", "amount": 123.45, "transaction_type": "expense"}]}
-
-      CSV:
-      #{chunk_text.truncate(8000)}
-    PROMPT
-  end
-
-  def build_pdf_extraction_prompt(chunk_text)
     ignore_list = account.ignore_patterns_list.join(", ")
 
     <<~PROMPT
@@ -213,12 +165,10 @@ class TransactionExtractorService
 
     (expense_categories + income_categories).each do |category|
       next unless category.has_match_patterns?
-
       hints << "- #{category.name}: #{category.match_patterns_list.join(", ")}"
     end
 
     return "" if hints.empty?
-
     "\nCATEGORY HINTS (assign category if description contains these):\n#{hints.join("\n")}\n"
   end
 
@@ -244,7 +194,6 @@ class TransactionExtractorService
     when Array
       response
     when Hash
-      # Handle {"categories": [...]} or {"transactions": [...]}
       if response["categories"].is_a?(Array)
         response["categories"]
       elsif response["transactions"].is_a?(Array)
@@ -252,7 +201,6 @@ class TransactionExtractorService
       elsif response.values.first.is_a?(Array)
         response.values.first
       else
-        # Handle {"category1": "x", "category2": "y", ...} format
         response.keys.sort.map { |k| response[k] }
       end
     when String
@@ -261,7 +209,6 @@ class TransactionExtractorService
       []
     end
 
-    # Ensure all categories are strings
     Array(categories).map { |c| c.to_s.presence }
   end
 
@@ -279,10 +226,7 @@ class TransactionExtractorService
         next
       end
 
-      normalized = normalize_transaction(txn)
-      next if normalized.nil?
-
-      normalized
+      normalize_transaction(txn)
     end
   end
 
@@ -291,30 +235,18 @@ class TransactionExtractorService
       "date" => txn["date"] || txn["transaction_date"] || txn["Date"],
       "description" => txn["description"] || txn["name"] || txn["merchant"] || txn["Description"] || txn["memo"],
       "amount" => txn["amount"] || txn["value"] || txn["Amount"],
-      "type" => txn["type"] || txn["transaction_type"] || txn["Type"] || infer_type(txn)
+      "type" => txn["type"] || txn["transaction_type"] || txn["Type"]
     }
   end
 
-  def infer_type(txn)
-    if txn["credit"].present? || txn["deposit"].present?
-      "income"
-    elsif txn["debit"].present? || txn["withdrawal"].present?
-      "expense"
-    end
-  end
-
   def valid_transaction?(txn)
-    txn["date"].present? &&
-      txn["description"].present? &&
-      txn["amount"].present?
+    txn["date"].present? && txn["description"].present? && txn["amount"].present?
   end
 
   def valid_transaction_content?(txn)
     description = txn["description"].to_s.strip
     return false if description.blank?
-    # Apply ignore patterns as a post-processing filter
     return false if account.should_ignore_for_import?(description)
-
     true
   end
 
@@ -337,11 +269,8 @@ class TransactionExtractorService
 
   def parse_date(date_str)
     parsed = Date.parse(date_str.to_s)
-    # Only apply statement period filtering for PDFs
-    return parsed if csv?
     return parsed unless statement_period
     return parsed if statement_period.cover?(parsed)
-
     nil
   rescue ArgumentError
     nil
@@ -353,20 +282,13 @@ class TransactionExtractorService
     name_str = name.to_s.strip
     return nil if name_str.empty?
 
-    # Try exact match first
     category = Category.find_by(name: name_str, category_type: type)
     return category if category
 
-    # Try case-insensitive match
-    category = Category.where(category_type: type)
-                       .where("LOWER(name) = ?", name_str.downcase)
-                       .first
+    category = Category.where(category_type: type).where("LOWER(name) = ?", name_str.downcase).first
     return category if category
 
-    # Try partial match
-    Category.where(category_type: type)
-            .where("LOWER(name) LIKE ?", "%#{name_str.downcase}%")
-            .first
+    Category.where(category_type: type).where("LOWER(name) LIKE ?", "%#{name_str.downcase}%").first
   end
 
   def extract_statement_period(text)
@@ -409,7 +331,6 @@ class TransactionExtractorService
 
   def build_statement_range(start_date, end_date)
     return nil unless start_date && end_date
-
     start_date, end_date = [ start_date, end_date ].minmax
     start_date..end_date
   end

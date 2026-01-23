@@ -10,10 +10,9 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
   # Initialization tests
   # ========================================
 
-  test "initializes with text and account (backward compatibility)" do
+  test "initializes with text and account" do
     extractor = TransactionExtractorService.new(@text, @account)
 
-    assert_equal @text, extractor.text
     assert_equal [ @text ], extractor.chunks
     assert_equal @account, extractor.account
   end
@@ -24,27 +23,12 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
 
     assert_equal chunks, extractor.chunks
     assert_equal @account, extractor.account
-    assert_equal "Page 1 content", extractor.text # First chunk for backward compat
   end
 
   test "error classes are defined" do
     assert_kind_of Class, TransactionExtractorService::Error
     assert_kind_of Class, TransactionExtractorService::ExtractionError
     assert TransactionExtractorService::ExtractionError < TransactionExtractorService::Error
-  end
-
-  test "initializes with file_type option" do
-    extractor = TransactionExtractorService.new(@text, @account, file_type: :csv)
-
-    assert extractor.csv?
-    refute extractor.pdf?
-  end
-
-  test "defaults to pdf file type" do
-    extractor = TransactionExtractorService.new(@text, @account)
-
-    assert extractor.pdf?
-    refute extractor.csv?
   end
 
   test "initializes with on_progress callback" do
@@ -185,18 +169,6 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
     assert_equal "expense", result["type"]
   end
 
-  test "normalize_field_names handles credit/debit fields for type inference" do
-    extractor = TransactionExtractorService.new(@text, @account)
-
-    credit_txn = { "date" => "2026-01-15", "description" => "Deposit", "credit" => 100 }
-    result = extractor.send(:normalize_field_names, credit_txn)
-    assert_equal "income", result["type"]
-
-    debit_txn = { "date" => "2026-01-15", "description" => "Purchase", "debit" => 50 }
-    result = extractor.send(:normalize_field_names, debit_txn)
-    assert_equal "expense", result["type"]
-  end
-
   # ========================================
   # Transaction validation tests
   # ========================================
@@ -285,7 +257,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
   # ========================================
 
   test "parse_date handles ISO format" do
-    extractor = TransactionExtractorService.new(@text, @account, file_type: :csv)
+    extractor = TransactionExtractorService.new(@text, @account)
 
     result = extractor.send(:parse_date, "2026-01-15")
 
@@ -293,7 +265,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
   end
 
   test "parse_date handles European format" do
-    extractor = TransactionExtractorService.new(@text, @account, file_type: :csv)
+    extractor = TransactionExtractorService.new(@text, @account)
 
     result = extractor.send(:parse_date, "15.01.2026")
 
@@ -301,7 +273,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
   end
 
   test "parse_date returns nil for invalid date" do
-    extractor = TransactionExtractorService.new(@text, @account, file_type: :csv)
+    extractor = TransactionExtractorService.new(@text, @account)
 
     result = extractor.send(:parse_date, "not-a-date")
 
@@ -422,30 +394,39 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
   # Prompt building tests
   # ========================================
 
-  test "build_extraction_prompt uses CSV prompt for CSV files" do
-    extractor = TransactionExtractorService.new("header\nrow1", @account, file_type: :csv)
-
-    prompt = extractor.send(:build_extraction_prompt, "header\nrow1")
-
-    assert_match(/Parse this CSV into JSON/, prompt)
-    assert_match(/exactly 1 data rows/, prompt)
-  end
-
-  test "build_extraction_prompt uses PDF prompt for PDF files" do
-    extractor = TransactionExtractorService.new(@text, @account, file_type: :pdf)
+  test "build_extraction_prompt includes account currency" do
+    extractor = TransactionExtractorService.new(@text, @account)
 
     prompt = extractor.send(:build_extraction_prompt, @text)
 
-    assert_match(/financial transaction parser/, prompt)
-    assert_match(/ACCOUNT CURRENCY:/, prompt)
+    assert_match(/ACCOUNT CURRENCY: USD/, prompt)
   end
 
-  test "build_pdf_extraction_prompt includes account currency" do
+  test "build_extraction_prompt includes date format instructions" do
     extractor = TransactionExtractorService.new(@text, @account)
 
-    prompt = extractor.send(:build_pdf_extraction_prompt, @text)
+    prompt = extractor.send(:build_extraction_prompt, @text)
 
-    assert_match(/ACCOUNT CURRENCY: USD/, prompt)
+    assert_match(/European format/, prompt)
+    assert_match(/YYYY-MM-DD/, prompt)
+  end
+
+  # ========================================
+  # Categorize method tests
+  # ========================================
+
+  test "categorize_transactions is public" do
+    extractor = TransactionExtractorService.new(@text, @account)
+
+    assert extractor.respond_to?(:categorize_transactions)
+  end
+
+  test "categorize_transactions does nothing for empty array" do
+    extractor = TransactionExtractorService.new(@text, @account)
+
+    # Should not raise and should return nil
+    result = extractor.categorize_transactions([])
+    assert_nil result
   end
 
   # ========================================
@@ -455,6 +436,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
   test "extract raises error when Ollama is not available" do
     extractor = TransactionExtractorService.new(@text, @account)
 
+    original_method = OllamaService.method(:available?)
     OllamaService.define_singleton_method(:available?) { false }
 
     begin
@@ -463,12 +445,7 @@ class TransactionExtractorServiceTest < ActiveSupport::TestCase
       end
       assert_match(/Ollama is not available/, error.message)
     ensure
-      OllamaService.define_singleton_method(:available?) do
-        response = Net::HTTP.get_response(URI("#{base_url}/api/tags"))
-        response.is_a?(Net::HTTPSuccess)
-      rescue
-        false
-      end
+      OllamaService.define_singleton_method(:available?, original_method)
     end
   end
 end
