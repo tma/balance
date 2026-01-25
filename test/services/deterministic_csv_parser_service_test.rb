@@ -274,4 +274,94 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     # Parser skips invalid rows and returns empty array
     assert_equal [], transactions
   end
+
+  test "inverts transaction types for credit card accounts with single amount column" do
+    credit_account = accounts(:credit_card_account)
+
+    content = <<~CSV
+      Date,Description,Amount
+      2026-01-15,Amazon Purchase,50.00
+      2026-01-16,Payment Received,-200.00
+    CSV
+
+    mapping = {
+      date_column: "Date",
+      description_column: "Description",
+      amount_type: "single",
+      amount_column: "Amount",
+      date_format: "%Y-%m-%d",
+      amount_format: "plain"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, credit_account)
+    transactions = parser.parse
+
+    assert_equal 2, transactions.size
+
+    # Positive amount on credit card = purchase = expense (inverted from income)
+    assert_equal "expense", transactions[0][:transaction_type]
+    assert_equal 50.00, transactions[0][:amount]
+
+    # Negative amount on credit card = payment = income (inverted from expense)
+    assert_equal "income", transactions[1][:transaction_type]
+    assert_equal 200.00, transactions[1][:amount]
+  end
+
+  test "inverts transaction types for credit card accounts with split columns" do
+    credit_account = accounts(:credit_card_account)
+
+    content = <<~CSV
+      Date,Description,Debit,Credit
+      2026-01-15,Amazon Purchase,50.00,
+      2026-01-16,Payment Received,,200.00
+    CSV
+
+    mapping = {
+      date_column: "Date",
+      description_column: "Description",
+      amount_type: "split",
+      debit_column: "Debit",
+      credit_column: "Credit",
+      date_format: "%Y-%m-%d",
+      amount_format: "plain"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, credit_account)
+    transactions = parser.parse
+
+    assert_equal 2, transactions.size
+
+    # Debit on credit card = purchase = income (inverted from expense)
+    assert_equal "income", transactions[0][:transaction_type]
+    assert_equal 50.00, transactions[0][:amount]
+
+    # Credit on credit card = payment = expense (inverted from income)
+    assert_equal "expense", transactions[1][:transaction_type]
+    assert_equal 200.00, transactions[1][:amount]
+  end
+
+  test "does not invert transaction types for normal accounts" do
+    # checking_account has invert_amounts_on_import: false
+    content = <<~CSV
+      Date,Description,Amount
+      2026-01-15,Coffee,-5.50
+      2026-01-16,Salary,3000.00
+    CSV
+
+    mapping = {
+      date_column: "Date",
+      description_column: "Description",
+      amount_type: "single",
+      amount_column: "Amount",
+      date_format: "%Y-%m-%d",
+      amount_format: "plain"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, @account)
+    transactions = parser.parse
+
+    assert_equal 2, transactions.size
+    assert_equal "expense", transactions[0][:transaction_type]
+    assert_equal "income", transactions[1][:transaction_type]
+  end
 end

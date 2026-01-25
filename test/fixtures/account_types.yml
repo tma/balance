@@ -2,6 +2,12 @@
 
 checking:
   name: checking
+  invert_amounts_on_import: false
 
 savings:
   name: savings
+  invert_amounts_on_import: false
+
+credit:
+  name: credit
+  invert_amounts_on_import: true

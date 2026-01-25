@@ -10,9 +10,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_23_224600) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_25_160606) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.boolean "invert_amounts_on_import", default: false, null: false
     t.string "name"
     t.datetime "updated_at", null: false
   end

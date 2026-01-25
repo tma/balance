@@ -45,6 +45,6 @@ class Admin::AccountTypesController < ApplicationController
   end
 
   def account_type_params
-    params.expect(account_type: [ :name ])
+    params.expect(account_type: [ :name, :invert_amounts_on_import ])
   end
 end

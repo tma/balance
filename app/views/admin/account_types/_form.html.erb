@@ -15,6 +15,14 @@
     <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "checking" %>
   </div>
 
+  <div class="mb-4">
+    <label class="flex items-center space-x-3">
+      <%= form.check_box :invert_amounts_on_import, class: "rounded border-slate-300 text-cyan-600 focus:ring-cyan-500" %>
+      <span class="text-sm font-medium text-slate-700">Invert amounts on import</span>
+    </label>
+    <p class="mt-1 text-sm text-slate-500">Enable for credit cards where positive amounts are purchases (expenses) and negative amounts are payments (income).</p>
+  </div>
+
   <div class="flex space-x-4">
     <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
     <%= link_to "Cancel", admin_account_types_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>

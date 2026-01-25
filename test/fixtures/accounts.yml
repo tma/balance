@@ -11,3 +11,9 @@ savings_account:
   account_type: savings
   balance: 5000.00
   currency: USD
+
+credit_card_account:
+  name: My Credit Card
+  account_type: credit
+  balance: -500.00
+  currency: USD

@@ -21,8 +21,17 @@ end
 # Account Types
 puts "Creating account types..."
 account_types = {}
-%w[Checking Savings Credit Cash Investment].each do |name|
-  account_types[name.downcase] = AccountType.find_or_create_by!(name: name)
+[
+  { name: "Checking", invert_amounts_on_import: false },
+  { name: "Savings", invert_amounts_on_import: false },
+  { name: "Credit", invert_amounts_on_import: true },
+  { name: "Cash", invert_amounts_on_import: false },
+  { name: "Investment", invert_amounts_on_import: false }
+].each do |attrs|
+  account_type = AccountType.find_or_initialize_by(name: attrs[:name])
+  account_type.invert_amounts_on_import = attrs[:invert_amounts_on_import]
+  account_type.save!
+  account_types[attrs[:name].downcase] = account_type
 end
 
 # Asset Types

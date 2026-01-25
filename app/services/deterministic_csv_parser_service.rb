@@ -137,9 +137,9 @@ class DeterministicCsvParserService
     return [ nil, nil ] if amount.nil?
 
     if amount < 0
-      [ amount.abs, "expense" ]
+      [ amount.abs, invert_type("expense") ]
     else
-      [ amount, "income" ]
+      [ amount, invert_type("income") ]
     end
   end
 
@@ -151,12 +151,21 @@ class DeterministicCsvParserService
     credit = parse_amount_value(credit_raw) if credit_raw.present?
 
     if debit && debit != 0
-      [ debit.abs, "expense" ]
+      [ debit.abs, invert_type("expense") ]
     elsif credit && credit != 0
-      [ credit.abs, "income" ]
+      [ credit.abs, invert_type("income") ]
     else
       [ nil, nil ]
     end
+  end
+
+  # Inverts the transaction type if the account type requires it (e.g., credit cards).
+  # For credit cards, positive amounts in CSV are purchases (expenses) and
+  # negative amounts are payments/refunds (income), which is opposite of normal accounts.
+  def invert_type(type)
+    return type unless account.account_type&.invert_amounts_on_import
+
+    type == "income" ? "expense" : "income"
   end
 
   def parse_amount_value(raw_value)
