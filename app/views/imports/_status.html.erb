@@ -8,11 +8,11 @@
     <% if import.processing? %>
       <% if import.progress_message.present? %>
         <%= import.progress_message %>
-        <% if import.extracted_count.present? %>
-          - <%= import.extracted_count %> found
+        <% if import.extracted_count.present? && import.extracted_count > 0 %>
+          (<%= pluralize(import.extracted_count, "transaction") %> found)
         <% end %>
       <% elsif (progress = import.progress_info) %>
-        Processing step <%= progress[:current] %> of <%= progress[:total] %>...
+        Processing...
       <% else %>
         AI is extracting and categorizing transactions.
       <% end %>

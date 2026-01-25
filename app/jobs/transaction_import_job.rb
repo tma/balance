@@ -42,24 +42,29 @@ class TransactionImportJob < ApplicationJob
   def process_csv(import)
     Rails.logger.info "Import #{import.id}: Processing CSV"
 
+    # Stage 1: Reading file (5%)
+    import.update_progress!(5, 100, message: "Reading file...")
     content = with_temp_file(import, ".csv") do |temp_file|
       CsvParserService.read_content(temp_file)
     end
 
-    # Step 1: Get mapping (try cache first, then LLM)
+    # Stage 2: Analyzing format (10-25%)
     cached = import.account.cached_csv_mapping.present?
-    import.update_progress!(1, 2, message: cached ? "Using saved format" : "Detecting CSV format")
+    import.update_progress!(10, 100, message: cached ? "Using saved format" : "Analyzing CSV format...")
     mapping = get_or_analyze_csv_mapping(content, import.account)
+    import.update_progress!(25, 100, message: "Format detected")
 
-    # Step 2: Parse all rows and categorize
+    # Stage 3: Parsing transactions (25-40%)
+    import.update_progress!(30, 100, message: "Parsing transactions...")
     parser = DeterministicCsvParserService.new(content, mapping, import.account)
     transactions = parser.parse
     Rails.logger.info "Import #{import.id}: Parsed #{transactions.size} transactions"
 
-    progress_callback = ->(current, total) {
-      import.update_progress!(2, 2, extracted_count: transactions.size, message: "Categorizing #{current}/#{total}")
-    }
-    categorize_transactions(transactions, import.account, on_progress: progress_callback)
+    # Stage 4: Categorizing (40-95%)
+    categorize_transactions(transactions, import.account, import: import, base_progress: 40, progress_range: 55)
+
+    # Stage 5: Detecting duplicates (95-100%)
+    import.update_progress!(95, 100, message: "Checking for duplicates...")
 
     transactions
   end
@@ -110,26 +115,39 @@ class TransactionImportJob < ApplicationJob
   def process_pdf(import)
     Rails.logger.info "Import #{import.id}: Processing PDF"
 
+    # Stage 1: Reading PDF (5%)
+    import.update_progress!(5, 100, message: "Reading PDF...")
     chunks = with_temp_file(import, ".pdf") do |temp_file|
       PdfParserService.extract_pages(temp_file)
     end
 
     Rails.logger.info "Import #{import.id}: Extracted #{chunks.size} page(s)"
+    import.update_progress!(10, 100, message: "Extracted #{chunks.size} page(s)")
 
+    # Stage 2-4: Extracting transactions (10-90%)
     progress_callback = lambda do |current, total, extracted_count: nil, message: nil|
-      import.update_progress!(current, total, extracted_count: extracted_count, message: message)
+      # Map page progress to 10-90% range
+      percent = 10 + ((current.to_f / total) * 80).round
+      import.update_progress!(percent, 100, extracted_count: extracted_count, message: message)
     end
 
     extractor = TransactionExtractorService.new(chunks, import.account, on_progress: progress_callback)
-    extractor.extract
+    transactions = extractor.extract
+
+    # Stage 5: Detecting duplicates (95%)
+    import.update_progress!(95, 100, message: "Checking for duplicates...")
+
+    transactions
   end
 
-  def categorize_transactions(transactions, account, on_progress: nil)
+  def categorize_transactions(transactions, account, import: nil, base_progress: 0, progress_range: 100)
     return if transactions.empty?
+
+    total_txns = transactions.size
 
     # Step 1: Rule-based categorization using match_patterns
     uncategorized = []
-    transactions.each do |txn|
+    transactions.each_with_index do |txn, idx|
       category = Category.find_by_pattern(txn[:description], txn[:transaction_type])
       if category
         txn[:category_id] = category.id
@@ -137,21 +155,34 @@ class TransactionImportJob < ApplicationJob
       else
         uncategorized << txn
       end
+
+      # Update progress during rule matching (first 20% of categorization)
+      if import && (idx % 10 == 0 || idx == total_txns - 1)
+        rule_progress = (idx.to_f / total_txns * 0.2 * progress_range).round
+        import.update_progress!(base_progress + rule_progress, 100, message: "Applying rules... (#{idx + 1}/#{total_txns})")
+      end
     end
 
     categorized_count = transactions.size - uncategorized.size
     Rails.logger.info "Rule-based categorization: #{categorized_count}/#{transactions.size} matched"
 
-    # Step 2: LLM categorization for remaining transactions
+    # Step 2: LLM categorization for remaining transactions (remaining 80% of categorization)
     if uncategorized.any?
       batch_size = TransactionExtractorService::CATEGORY_BATCH_SIZE
       total_batches = (uncategorized.size.to_f / batch_size).ceil
+      llm_base = base_progress + (0.2 * progress_range).round
+      llm_range = 0.8 * progress_range
 
       extractor = TransactionExtractorService.new([], account)
       uncategorized.each_slice(batch_size).with_index do |batch, index|
-        on_progress&.call(index + 1, total_batches)
+        batch_progress = ((index + 1).to_f / total_batches * llm_range).round
+        processed = [((index + 1) * batch_size), uncategorized.size].min
+        import&.update_progress!(llm_base + batch_progress, 100, message: "Categorizing transactions... (#{processed}/#{uncategorized.size})")
         extractor.send(:categorize_batch, batch, Category.expense, Category.income)
       end
+    elsif import
+      # No LLM needed, jump to end of categorization
+      import.update_progress!(base_progress + progress_range, 100, message: "All transactions categorized by rules")
     end
   end
 
