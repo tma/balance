@@ -24,9 +24,6 @@ class BrokerSyncService
   def sync!
     result = perform_sync!
 
-    # Enrich position descriptions from Twelve Data
-    enrich_position_descriptions!
-
     # Record position valuations for historical tracking
     record_position_valuations!
 
@@ -57,36 +54,5 @@ class BrokerSyncService
     @connection.broker_positions.each do |position|
       position.record_valuation!(date: Date.current)
     end
-  end
-
-  # Enrich position descriptions using Yahoo Finance API
-  # Only updates positions with ugly broker descriptions (all uppercase)
-  def enrich_position_descriptions!
-    @connection.broker_positions.open.each do |position|
-      next unless needs_description_update?(position)
-
-      new_description = YahooFinanceService.lookup_name(position.symbol, exchange: position.exchange)
-      if new_description.present? && new_description != position.description
-        position.update!(description: new_description)
-        Rails.logger.info "[BrokerSync] Updated description for #{position.symbol}: #{new_description}"
-      end
-    rescue StandardError => e
-      # Don't fail sync if description lookup fails
-      Rails.logger.warn "[BrokerSync] Failed to enrich description for #{position.symbol}: #{e.message}"
-    end
-  end
-
-  private
-
-  # Check if a position's description needs updating
-  # Returns true if description is all uppercase or very short
-  def needs_description_update?(position)
-    return true if position.description.blank?
-
-    # Skip cash positions (e.g., "Cash (USD)")
-    return false if position.description.start_with?("Cash (")
-
-    # Update if description is all uppercase (typical broker format)
-    position.description == position.description.upcase
   end
 end

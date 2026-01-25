@@ -180,7 +180,7 @@ class IbkrSyncService < BrokerSyncService
 
       positions << {
         symbol: pos.attributes["symbol"],
-        description: pos.attributes["description"],
+        description: pos.attributes["longName"].presence || pos.attributes["description"],
         quantity: pos.attributes["position"]&.to_d,
         value: pos.attributes["positionValue"]&.to_d || pos.attributes["markValue"]&.to_d,
         currency: pos.attributes["currency"],
