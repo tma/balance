@@ -183,7 +183,8 @@ class IbkrSyncService < BrokerSyncService
         description: pos.attributes["description"],
         quantity: pos.attributes["position"]&.to_d,
         value: pos.attributes["positionValue"]&.to_d || pos.attributes["markValue"]&.to_d,
-        currency: pos.attributes["currency"]
+        currency: pos.attributes["currency"],
+        exchange: pos.attributes["listingExchange"]
       }
     end
 
@@ -210,6 +211,7 @@ class IbkrSyncService < BrokerSyncService
     position = @connection.broker_positions.find_or_create_by!(symbol: position_data[:symbol]) do |p|
       p.description = position_data[:description]
       p.currency = position_data[:currency]
+      p.exchange = position_data[:exchange]
     end
 
     # Reopen if previously closed (position reappeared)
@@ -224,6 +226,7 @@ class IbkrSyncService < BrokerSyncService
       last_quantity: position_data[:quantity],
       last_value: position_data[:value],
       currency: position_data[:currency],
+      exchange: position_data[:exchange],
       last_synced_at: Time.current
     )
   end
