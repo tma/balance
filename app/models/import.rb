@@ -1,4 +1,6 @@
 class Import < ApplicationRecord
+  include Turbo::Broadcastable
+
   belongs_to :account
   has_many :transactions, dependent: :nullify
 
@@ -69,6 +71,7 @@ class Import < ApplicationRecord
       extracted_count: 0,
       progress_message: "Starting extraction"
     )
+    broadcast_status_update
   end
 
   def update_progress!(current, total, extracted_count: nil, message: nil)
@@ -76,6 +79,9 @@ class Import < ApplicationRecord
     updates[:extracted_count] = extracted_count if extracted_count
     updates[:progress_message] = message if message
     update_columns(updates)
+    # Reload attributes so broadcast uses fresh data
+    reload
+    broadcast_status_update
   end
 
   def progress_info
@@ -92,6 +98,7 @@ class Import < ApplicationRecord
       extracted_data: transactions_data.to_json,
       completed_at: Time.current
     )
+    broadcast_status_complete
   end
 
   def mark_failed!(message)
@@ -100,6 +107,7 @@ class Import < ApplicationRecord
       error_message: message,
       completed_at: Time.current
     )
+    broadcast_status_complete
   end
 
   # Returns the most recent month from extracted transactions
@@ -115,6 +123,29 @@ class Import < ApplicationRecord
   end
 
   private
+
+  def broadcast_status_update
+    Turbo::StreamsChannel.broadcast_stream_to(
+      self,
+      content: turbo_stream_content
+    )
+  end
+
+  def turbo_stream_content
+    ApplicationController.render(
+      partial: "imports/status_stream",
+      locals: { import: self }
+    )
+  end
+
+  def broadcast_status_complete
+    broadcast_action_to(
+      self,
+      action: :replace,
+      target: "import_status",
+      html: '<div id="import_status" data-status-complete="true"></div>'
+    )
+  end
 
   def parse_transaction_date(date_value)
     case date_value

@@ -6,18 +6,7 @@
     <div>
       <h1 class="text-2xl font-bold text-slate-800 mb-1"><%= @import.original_filename %></h1>
       <div class="flex items-center gap-2">
-        <% case @import.status %>
-        <% when "pending" %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Pending</span>
-        <% when "processing" %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-cyan-100 text-cyan-700">Processing</span>
-        <% when "completed" %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700">Ready</span>
-        <% when "failed" %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-rose-100 text-rose-700">Failed</span>
-        <% when "done" %>
-          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Done</span>
-        <% end %>
+        <%= render "imports/status_badge", import: @import %>
         <span class="text-slate-300">&middot;</span>
         <span class="text-sm text-slate-500"><%= time_ago_in_words(@import.created_at) %> ago</span>
         <span class="text-slate-300">&middot;</span>
@@ -42,23 +31,20 @@
   </div>
 
   <% if @import.pending? || @import.processing? %>
-    <!-- Processing State with Turbo Frame polling -->
-    <div class="bg-white rounded-xl border border-slate-200 p-8 md:p-12">
+    <!-- Processing State with Turbo Stream updates -->
+    <%= turbo_stream_from @import %>
+    
+    <div class="bg-white rounded-xl border border-slate-200 p-8 md:p-12" data-controller="import-status">
       <div class="max-w-md mx-auto text-center">
-        <!-- Animated spinner (kept outside polling to stay smooth) -->
+        <!-- Animated spinner (kept outside stream target to stay smooth) -->
         <div class="relative mx-auto w-16 h-16 mb-6">
           <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
           <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-500 animate-spin"></div>
           <div class="absolute inset-2 rounded-full border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
         </div>
         
-        <!-- Polled content (text and progress bar only) -->
-        <div id="import-status" 
-             data-controller="poll" 
-             data-poll-url-value="<%= status_import_path(@import) %>"
-             data-poll-interval-value="2000">
-          <%= render partial: "imports/status", locals: { import: @import } %>
-        </div>
+        <!-- Turbo Stream target for live updates -->
+        <%= render partial: "imports/status", locals: { import: @import } %>
       </div>
     </div>
 

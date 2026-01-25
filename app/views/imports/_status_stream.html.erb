@@ -1,0 +1,10 @@
+<turbo-stream action="replace" target="import_status">
+  <template>
+    <%= render partial: "imports/status", locals: { import: import } %>
+  </template>
+</turbo-stream>
+<turbo-stream action="replace" target="import_status_badge">
+  <template>
+    <%= render partial: "imports/status_badge", locals: { import: import } %>
+  </template>
+</turbo-stream>

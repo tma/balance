@@ -1,3 +1,4 @@
+<div id="import_status">
 <% if import.pending? || import.processing? %>
   <h2 class="text-xl font-semibold text-slate-800 mb-2">
     <%= import.pending? ? "Waiting in Queue" : "Analyzing Statement" %>
@@ -54,3 +55,4 @@
   <!-- Signal to stop polling - status is complete or failed -->
   <div data-poll-complete="true"></div>
 <% end %>
+</div>

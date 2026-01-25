@@ -155,11 +155,12 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal "Import is not ready for confirmation.", flash[:alert]
   end
 
-  test "show pending import includes auto-refresh polling" do
+  test "show pending import includes turbo stream subscription" do
     get import_path(@pending_import)
     assert_response :success
-    # The page should include Stimulus polling controller
-    assert_includes @response.body, 'data-controller="poll"'
+    # The page should include Turbo Stream subscription for live updates
+    assert_includes @response.body, "turbo-cable-stream-source"
+    assert_includes @response.body, 'data-controller="import-status"'
   end
 
   test "destroy deletes completed import" do
