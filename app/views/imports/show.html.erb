@@ -4,8 +4,8 @@
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     <div>
-      <div class="flex items-center gap-3 mb-1">
-        <h1 class="text-2xl font-bold text-slate-800"><%= @import.original_filename %></h1>
+      <h1 class="text-2xl font-bold text-slate-800 mb-1"><%= @import.original_filename %></h1>
+      <div class="flex items-center gap-2">
         <% case @import.status %>
         <% when "pending" %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Pending</span>
@@ -18,12 +18,13 @@
         <% when "done" %>
           <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700">Done</span>
         <% end %>
+        <span class="text-slate-300">&middot;</span>
+        <span class="text-sm text-slate-500"><%= time_ago_in_words(@import.created_at) %> ago</span>
+        <span class="text-slate-300">&middot;</span>
+        <span class="text-sm text-slate-500">
+          <%= link_to @import.account.name, edit_account_path(@import.account), class: "font-medium text-slate-700 hover:text-cyan-600" %>
+        </span>
       </div>
-      <p class="text-sm text-slate-500">
-        Importing to <%= link_to @import.account.name, edit_account_path(@import.account), class: "font-medium text-slate-700 hover:text-cyan-600" %>
-        <span class="text-slate-300 mx-1">&middot;</span>
-        <%= time_ago_in_words(@import.created_at) %> ago
-      </p>
     </div>
     <div class="flex items-center gap-2">
       <% if @import.completed? || @import.failed? %>
