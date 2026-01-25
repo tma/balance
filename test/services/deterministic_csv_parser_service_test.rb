@@ -410,4 +410,69 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     # Mixed - semicolon should win if equal or more
     assert_equal ";", parser.send(:detect_delimiter, "A;B,C;D")
   end
+
+  test "parses grouped transactions with header and detail rows" do
+    content = File.read(Rails.root.join("test/fixtures/files/csv_samples/ch_grouped_transactions.csv"))
+
+    # Note: NOT providing detail_amount_column or detail_description_column
+    # The parser should auto-detect them
+    mapping = {
+      date_column: "Datum",
+      description_column: "Buchungstext",
+      description_secondary_column: "Zahlungszweck",
+      amount_type: "split",
+      debit_column: "Belastung CHF",
+      credit_column: "Gutschrift CHF",
+      date_format: "%d.%m.%Y",
+      amount_format: "plain"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, @account)
+    transactions = parser.parse
+
+    # Summary rows should be excluded (their amounts equal the sum of their detail rows)
+    # So we should NOT see "Sammelüberweisung - Monatliche Zahlungen" or "Sammelüberweisung - Kleinausgaben"
+    sammel = transactions.find { |t| t[:description].include?("Sammelüberweisung") }
+    assert_nil sammel, "Summary rows should be excluded when details sum to header amount"
+
+    # Detail rows from first grouped transaction
+    migros = transactions.find { |t| t[:description] == "Migros Supermarkt Einkauf" }
+    assert_not_nil migros, "Should find Migros detail row (auto-detected)"
+    assert_equal Date.new(2026, 1, 15), migros[:date]
+    assert_equal 350.00, migros[:amount]
+    assert_equal "expense", migros[:transaction_type]
+
+    coop = transactions.find { |t| t[:description] == "Coop Pronto Tankstelle" }
+    assert_not_nil coop, "Should find Coop detail row"
+    assert_equal Date.new(2026, 1, 15), coop[:date]
+    assert_equal 450.00, coop[:amount]
+
+    # Regular transaction (salary) - should have both Buchungstext and Zahlungszweck
+    salary = transactions.find { |t| t[:description].include?("Lohneingang") }
+    assert_not_nil salary, "Should find salary"
+    assert_equal Date.new(2026, 1, 20), salary[:date]
+    assert_equal 6500.00, salary[:amount]
+    assert_equal "income", salary[:transaction_type]
+    assert_equal "Lohneingang - Gehalt Januar 2026", salary[:description], "Should combine Buchungstext and Zahlungszweck"
+
+    # Detail rows from second grouped transaction
+    denner = transactions.find { |t| t[:description] == "Denner Lebensmittel" }
+    assert_not_nil denner, "Should find Denner detail row"
+    assert_equal Date.new(2026, 1, 28), denner[:date]
+    assert_equal 45.80, denner[:amount]
+
+    manor = transactions.find { |t| t[:description] == "Manor Kleider" }
+    assert_not_nil manor, "Should find Manor detail row"
+    assert_equal Date.new(2026, 1, 28), manor[:date]
+
+    # Verify we have the expected total count of detail rows
+    detail_rows = transactions.select { |t|
+      [ "Migros Supermarkt Einkauf", "Coop Pronto Tankstelle", "Swisscom Mobile Rechnung",
+        "SBB Generalabonnement", "Denner Lebensmittel", "Manor Kleider", "Kino Pathé Tickets" ].include?(t[:description])
+    }
+    assert_equal 7, detail_rows.size, "Should have 7 detail rows total"
+
+    # Total should be 11: 7 detail rows + 4 standalone transactions (salary, IKEA, rent, interest)
+    assert_equal 11, transactions.size, "Should have 11 transactions (7 details + 4 standalone)"
+  end
 end
