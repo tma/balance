@@ -59,13 +59,13 @@ class BrokerSyncService
     end
   end
 
-  # Enrich position descriptions using Twelve Data API
+  # Enrich position descriptions using Yahoo Finance API
   # Only updates positions with ugly broker descriptions (all uppercase)
   def enrich_position_descriptions!
     @connection.broker_positions.open.each do |position|
       next unless needs_description_update?(position)
 
-      new_description = TwelveDataService.lookup_name(position.symbol, currency: position.currency)
+      new_description = YahooFinanceService.lookup_name(position.symbol, exchange: position.exchange)
       if new_description.present? && new_description != position.description
         position.update!(description: new_description)
         Rails.logger.info "[BrokerSync] Updated description for #{position.symbol}: #{new_description}"
