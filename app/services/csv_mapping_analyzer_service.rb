@@ -4,7 +4,7 @@ class CsvMappingAnalyzerService
   class Error < StandardError; end
   class AnalysisError < Error; end
 
-  SAMPLE_ROWS = 5
+  SAMPLE_ROWS = 8
 
   class << self
     # Analyze CSV structure and return column mapping
@@ -15,10 +15,11 @@ class CsvMappingAnalyzerService
       raise AnalysisError, "CSV file is empty" if lines.empty?
 
       header = lines.first.strip
-      sample_rows = lines.drop(1).reject { |l| l.strip.empty? }.first(SAMPLE_ROWS)
+      data_rows = lines.drop(1).reject { |l| l.strip.empty? }
 
-      raise AnalysisError, "CSV has no data rows" if sample_rows.empty?
+      raise AnalysisError, "CSV has no data rows" if data_rows.empty?
 
+      sample_rows = select_representative_rows(header, data_rows)
       sample_csv = ([ header ] + sample_rows).join("\n")
 
       prompt = build_prompt(sample_csv)
@@ -34,16 +35,91 @@ class CsvMappingAnalyzerService
 
     private
 
+    # Select representative rows to show the LLM a variety of row types
+    # Prioritizes: rows with dates, rows without dates (detail rows), variety of amounts
+    def select_representative_rows(header, data_rows)
+      return data_rows.first(SAMPLE_ROWS) if data_rows.size <= SAMPLE_ROWS
+
+      delimiter = detect_delimiter(header)
+      date_col_index = find_likely_date_column_index(header, delimiter)
+
+      # Categorize rows
+      rows_with_dates = []
+      rows_without_dates = []
+
+      data_rows.each do |row|
+        parsed = safe_parse_row(row, delimiter)
+        next unless parsed
+
+        if date_col_index && parsed[date_col_index].to_s.strip.present?
+          rows_with_dates << row
+        else
+          rows_without_dates << row
+        end
+      end
+
+      # Build representative sample
+      selected = []
+
+      # Include rows with dates (header/regular transactions)
+      if rows_with_dates.any?
+        # Take first few and try to get variety (different amounts/types)
+        selected += rows_with_dates.first(4)
+      end
+
+      # Include rows without dates (detail rows for grouped transactions)
+      if rows_without_dates.any?
+        selected += rows_without_dates.first(3)
+      end
+
+      # Fill remaining slots if needed
+      remaining = SAMPLE_ROWS - selected.size
+      if remaining > 0
+        unused = data_rows - selected
+        selected += unused.first(remaining)
+      end
+
+      # Return in original order for context
+      data_rows.select { |r| selected.include?(r) }.first(SAMPLE_ROWS)
+    end
+
+    def find_likely_date_column_index(header, delimiter)
+      columns = safe_parse_row(header, delimiter)
+      return nil unless columns
+
+      # Look for date-like column names
+      date_patterns = /\b(date|datum|buchungsdatum|valuta|trans.*date)\b/i
+      columns.each_with_index do |col, idx|
+        return idx if col.to_s.match?(date_patterns)
+      end
+
+      # Fallback: first column is often date
+      0
+    end
+
+    def safe_parse_row(row, delimiter)
+      require "csv"
+      CSV.parse_line(row, col_sep: delimiter)
+    rescue CSV::MalformedCSVError
+      row.split(delimiter).map { |c| c.gsub(/^"|"$/, "").strip }
+    end
+
     def build_prompt(sample_csv)
       <<~PROMPT
         Analyze this CSV and identify the column mappings for a financial transaction import.
 
-        CSV SAMPLE (header + first rows):
+        CSV SAMPLE (header + representative rows):
         ```
         #{sample_csv}
         ```
 
         TASK: Identify the columns and formats by examining BOTH headers AND data values.
+
+        NOTE: Some CSVs have GROUPED TRANSACTIONS where:
+        - A "header row" has the date and total amount
+        - Following "detail rows" have NO date but individual amounts and descriptions
+        - Detail rows inherit the date from their header row
+        Look for rows with empty date columns but populated amount/description in different columns.
 
         1. DATE COLUMN (IMPORTANT):#{' '}
            - Choose the date when the transaction ACTUALLY HAPPENED
@@ -52,15 +128,19 @@ class CsvMappingAnalyzerService
            - These valuta/settlement dates are when money moves between banks, NOT when you made the purchase
            - If you see both "Date" and "ValutaDate", always choose "Date"
 
-        2. DESCRIPTION COLUMNS:#{' '}
-           - Primary: merchant name or main description
-           - Secondary (optional): additional details, memo, or notes to append
-           - If there are two useful text columns (e.g., "MerchantName" + "Details"), include both
+        2. DESCRIPTION COLUMNS (CRITICAL - ALWAYS CHECK FOR SECONDARY):#{' '}
+           - Primary: The main transaction type or merchant name (e.g., "Buchungstext", "Description", "Beschreibung")
+           - Secondary: ALWAYS look for a secondary column with additional details! Common names:
+             * German: "Zahlungszweck", "Verwendungszweck", "Details", "Bemerkung", "Mitteilung"
+             * English: "Memo", "Details", "Notes", "Reference", "Purpose", "Narrative"
+           - If you see columns like "Zahlungszweck" or "Details" that contain meaningful text, ALWAYS include as secondary
+           - IGNORE currency columns like "Whg", "Currency", "Währung" - these contain currency codes (CHF, EUR, USD), not descriptions
+           - IGNORE pure reference/ID columns like "Referenz", "Referenznummer" that only contain IDs
 
         3. AMOUNT COLUMNS - Look at the data carefully:
            - If ONE column has both positive and negative numbers → "single" (amount_column)
            - If TWO separate columns for money out/in (one often empty per row) → "split" (debit_column + credit_column)
-           - German: "Soll" = debit (expense), "Haben" = credit (income)
+           - German: "Soll" = debit (expense), "Haben" = credit (income), "Belastung" = debit, "Gutschrift" = credit
            - English: "Debit"/"Outflow" = expense, "Credit"/"Inflow" = income
 
         4. DATE FORMAT - Look at actual date values:

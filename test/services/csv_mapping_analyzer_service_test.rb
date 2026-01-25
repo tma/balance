@@ -71,6 +71,34 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
     assert_equal ";", service.send(:detect_delimiter, "A;B,C;D")
   end
 
+  test "select_representative_rows includes both dated and dateless rows" do
+    service = CsvMappingAnalyzerService
+
+    header = "Datum;Buchungstext;Betrag Detail;Details"
+    data_rows = [
+      '"15.01.2026";"Sammelüberweisung";"";""',           # Row with date
+      '"";"";350.00;"Migros Einkauf"',                     # Detail row (no date)
+      '"";"";450.00;"Coop Tankstelle"',                    # Detail row (no date)
+      '"";"";250.00;"Swisscom Rechnung"',                  # Detail row (no date)
+      '"20.01.2026";"Lohneingang";"";""',                  # Row with date
+      '"22.01.2026";"Kartenzahlung";"";""',                # Row with date
+      '"28.01.2026";"Dauerauftrag";"";""',                 # Row with date
+      '"";"";45.80;"Denner Lebensmittel"',                 # Detail row (no date)
+      '"";"";67.00;"Manor Kleider"',                       # Detail row (no date)
+      '"30.01.2026";"Zinsgutschrift";"";""'                # Row with date
+    ]
+
+    selected = service.send(:select_representative_rows, header, data_rows)
+
+    # Should include both types of rows
+    dated_rows = selected.count { |r| r.include?("2026") }
+    dateless_rows = selected.count { |r| !r.include?("2026") }
+
+    assert dated_rows >= 1, "Should include rows with dates"
+    assert dateless_rows >= 1, "Should include detail rows without dates"
+    assert selected.size <= 8, "Should not exceed SAMPLE_ROWS limit"
+  end
+
   test "parses semicolon-delimited headers correctly" do
     service = CsvMappingAnalyzerService
 
