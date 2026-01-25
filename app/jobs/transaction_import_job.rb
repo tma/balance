@@ -176,7 +176,7 @@ class TransactionImportJob < ApplicationJob
       extractor = TransactionExtractorService.new([], account)
       uncategorized.each_slice(batch_size).with_index do |batch, index|
         batch_progress = ((index + 1).to_f / total_batches * llm_range).round
-        processed = [((index + 1) * batch_size), uncategorized.size].min
+        processed = [ ((index + 1) * batch_size), uncategorized.size ].min
         import&.update_progress!(llm_base + batch_progress, 100, message: "Categorizing transactions... (#{processed}/#{uncategorized.size})")
         extractor.send(:categorize_batch, batch, Category.expense, Category.income)
       end
