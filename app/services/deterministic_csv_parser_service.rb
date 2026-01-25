@@ -20,7 +20,8 @@ class DeterministicCsvParserService
   # Parse all transactions from CSV
   # @return [Array<Hash>] Array of transaction hashes
   def parse
-    rows = CSV.parse(content, headers: true, liberal_parsing: true)
+    delimiter = detect_delimiter(content.lines.first || "")
+    rows = CSV.parse(content, headers: true, liberal_parsing: true, col_sep: delimiter)
     transactions = []
     errors = []
 
@@ -44,6 +45,22 @@ class DeterministicCsvParserService
   end
 
   private
+
+  def detect_delimiter(line)
+    # Count occurrences of common delimiters
+    semicolons = line.count(";")
+    commas = line.count(",")
+    tabs = line.count("\t")
+
+    # Return the most frequent delimiter (semicolon preferred over comma if equal)
+    if semicolons >= commas && semicolons >= tabs
+      ";"
+    elsif tabs > commas
+      "\t"
+    else
+      ","
+    end
+  end
 
   def parse_row(row)
     date = parse_date(row[mapping[:date_column]])

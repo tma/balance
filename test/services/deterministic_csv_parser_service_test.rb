@@ -364,4 +364,50 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     assert_equal "expense", transactions[0][:transaction_type]
     assert_equal "income", transactions[1][:transaction_type]
   end
+
+  test "parses semicolon-delimited CSV (European format)" do
+    content = <<~CSV
+      Datum;Buchungstext;Belastung CHF;Gutschrift CHF
+      15.01.2026;Kaffee Haus;5,50;
+      16.01.2026;Gehalt;;3000,00
+    CSV
+
+    mapping = {
+      date_column: "Datum",
+      description_column: "Buchungstext",
+      amount_type: "split",
+      debit_column: "Belastung CHF",
+      credit_column: "Gutschrift CHF",
+      date_format: "%d.%m.%Y",
+      amount_format: "eu"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, @account)
+    transactions = parser.parse
+
+    assert_equal 2, transactions.size
+
+    assert_equal Date.new(2026, 1, 15), transactions[0][:date]
+    assert_equal "Kaffee Haus", transactions[0][:description]
+    assert_equal 5.50, transactions[0][:amount]
+    assert_equal "expense", transactions[0][:transaction_type]
+
+    assert_equal Date.new(2026, 1, 16), transactions[1][:date]
+    assert_equal "Gehalt", transactions[1][:description]
+    assert_equal 3000.00, transactions[1][:amount]
+    assert_equal "income", transactions[1][:transaction_type]
+  end
+
+  test "detect_delimiter identifies semicolon delimiter" do
+    parser = DeterministicCsvParserService.new("", {}, @account)
+
+    # Semicolon-delimited
+    assert_equal ";", parser.send(:detect_delimiter, "Datum;Beschreibung;Betrag")
+    # Comma-delimited
+    assert_equal ",", parser.send(:detect_delimiter, "Date,Description,Amount")
+    # Tab-delimited
+    assert_equal "\t", parser.send(:detect_delimiter, "Date\tDescription\tAmount")
+    # Mixed - semicolon should win if equal or more
+    assert_equal ";", parser.send(:detect_delimiter, "A;B,C;D")
+  end
 end

@@ -39,6 +39,45 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
     assert_equal [ "Date", "Description", "Amount" ], service.send(:parse_header_columns, "Date , Description , Amount")
   end
 
+  test "find_column matches case-insensitively and returns actual column name" do
+    service = CsvMappingAnalyzerService
+    columns = [ "datum", "BESCHREIBUNG", "Betrag" ]
+
+    # Exact match
+    assert_equal "Betrag", service.send(:find_column, columns, "Betrag", "Amount")
+
+    # Case-insensitive match returns actual column name
+    assert_equal "datum", service.send(:find_column, columns, "Datum", "Date")
+    assert_equal "BESCHREIBUNG", service.send(:find_column, columns, "Beschreibung", "Description")
+
+    # Not found raises error with available columns listed
+    error = assert_raises CsvMappingAnalyzerService::AnalysisError do
+      service.send(:find_column, columns, "NotFound", "Test")
+    end
+    assert_includes error.message, "NotFound"
+    assert_includes error.message, "Available:"
+  end
+
+  test "detect_delimiter identifies semicolon delimiter" do
+    service = CsvMappingAnalyzerService
+
+    # Semicolon-delimited (European)
+    assert_equal ";", service.send(:detect_delimiter, "Datum;Beschreibung;Betrag")
+    # Comma-delimited (Standard)
+    assert_equal ",", service.send(:detect_delimiter, "Date,Description,Amount")
+    # Tab-delimited
+    assert_equal "\t", service.send(:detect_delimiter, "Date\tDescription\tAmount")
+    # Mixed - semicolon preferred if equal or more
+    assert_equal ";", service.send(:detect_delimiter, "A;B,C;D")
+  end
+
+  test "parses semicolon-delimited headers correctly" do
+    service = CsvMappingAnalyzerService
+
+    columns = service.send(:parse_header_columns, '"Datum";"Buchungstext";"Betrag"')
+    assert_equal [ "Datum", "Buchungstext", "Betrag" ], columns
+  end
+
   # Integration test - only runs if Ollama is available
   test "analyzes simple CSV structure" do
     skip "Ollama not available" unless OllamaService.available?

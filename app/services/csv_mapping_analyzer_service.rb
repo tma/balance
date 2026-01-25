@@ -128,36 +128,61 @@ class CsvMappingAnalyzerService
     def validate_mapping!(mapping, header)
       columns = parse_header_columns(header)
 
-      # Check required columns exist
-      unless columns.include?(mapping[:date_column])
-        raise AnalysisError, "Date column '#{mapping[:date_column]}' not found in CSV headers"
-      end
-
-      unless columns.include?(mapping[:description_column])
-        raise AnalysisError, "Description column '#{mapping[:description_column]}' not found in CSV headers"
-      end
+      # Check required columns exist (case-insensitive matching with correction)
+      mapping[:date_column] = find_column(columns, mapping[:date_column], "Date")
+      mapping[:description_column] = find_column(columns, mapping[:description_column], "Description")
 
       if mapping[:amount_type] == "single"
-        unless columns.include?(mapping[:amount_column])
-          raise AnalysisError, "Amount column '#{mapping[:amount_column]}' not found in CSV headers"
-        end
+        mapping[:amount_column] = find_column(columns, mapping[:amount_column], "Amount")
       else
-        unless columns.include?(mapping[:debit_column])
-          raise AnalysisError, "Debit column '#{mapping[:debit_column]}' not found in CSV headers"
-        end
-        unless columns.include?(mapping[:credit_column])
-          raise AnalysisError, "Credit column '#{mapping[:credit_column]}' not found in CSV headers"
-        end
+        mapping[:debit_column] = find_column(columns, mapping[:debit_column], "Debit")
+        mapping[:credit_column] = find_column(columns, mapping[:credit_column], "Credit")
+      end
+
+      # Also fix secondary description column if present
+      if mapping[:description_secondary_column].present?
+        actual = columns.find { |c| c.downcase == mapping[:description_secondary_column].downcase }
+        mapping[:description_secondary_column] = actual # nil if not found, which is fine
       end
     end
 
+    # Find column with case-insensitive matching, returning the actual column name
+    def find_column(columns, expected, column_type)
+      return expected if columns.include?(expected)
+
+      # Try case-insensitive match
+      actual = columns.find { |c| c.downcase == expected.to_s.downcase }
+      return actual if actual
+
+      # No match found
+      raise AnalysisError, "#{column_type} column '#{expected}' not found in CSV headers. Available: #{columns.join(', ')}"
+    end
+
     def parse_header_columns(header)
-      # Handle quoted CSV headers
       require "csv"
-      CSV.parse_line(header).map(&:to_s).map(&:strip)
+      # Detect delimiter: semicolon-delimited CSVs are common in European exports
+      delimiter = detect_delimiter(header)
+      CSV.parse_line(header, col_sep: delimiter).map(&:to_s).map(&:strip)
     rescue CSV::MalformedCSVError
-      # Fallback to simple split
-      header.split(",").map(&:strip).map { |c| c.gsub(/^"|"$/, "") }
+      # Fallback to simple split using detected delimiter
+      delimiter = detect_delimiter(header)
+      header.split(delimiter).map(&:strip).map { |c| c.gsub(/^"|"$/, "") }
+    end
+
+    def detect_delimiter(line)
+      # Count occurrences of common delimiters
+      semicolons = line.count(";")
+      commas = line.count(",")
+      tabs = line.count("\t")
+
+      # Return the most frequent delimiter (semicolon preferred over comma if equal)
+      if semicolons >= commas && semicolons >= tabs
+        ";"
+      elsif tabs > commas
+        "\t"
+      else
+        ","
+      end
     end
   end
 end
