@@ -1,0 +1,14 @@
+"Datum";"Buchungstext";"Whg";"Betrag Detail";"Referenz";"Referenznummer";"Belastung CHF";"Gutschrift CHF";"Valuta";"Saldo CHF";"Zahlungszweck";"Details"
+"15.01.2026";"Sammelüberweisung";"CHF";"";"REF123456789";"REF001";"-1250.00";"";"15.01.2026";"8750.00";"Monatliche Zahlungen";""
+"";"";"";"350.00";"";"";"";"";"";"";"";Migros Supermarkt Einkauf
+"";"";"";"450.00";"";"";"";"";"";"";"";Coop Pronto Tankstelle
+"";"";"";"250.00";"";"";"";"";"";"";"";Swisscom Mobile Rechnung
+"";"";"";"200.00";"";"";"";"";"";"";"";SBB Generalabonnement
+"20.01.2026";"Lohneingang";"CHF";"";"REF987654321";"REF002";"";"+6500.00";"20.01.2026";"15250.00";"Gehalt Januar 2026";""
+"22.01.2026";"Kartenzahlung";"CHF";"";"REF111222333";"REF003";"-89.50";"";"22.01.2026";"15160.50";"IKEA Spreitenbach";""
+"25.01.2026";"Dauerauftrag";"CHF";"";"REF444555666";"REF004";"-2200.00";"";"25.01.2026";"12960.50";"Miete Januar";""
+"28.01.2026";"Sammelüberweisung";"CHF";"";"REF777888999";"REF005";"-156.80";"";"28.01.2026";"12803.70";"Kleinausgaben";""
+"";"";"";"45.80";"";"";"";"";"";"";"";Denner Lebensmittel
+"";"";"";"67.00";"";"";"";"";"";"";"";Manor Kleider
+"";"";"";"44.00";"";"";"";"";"";"";"";Kino Pathé Tickets
+"30.01.2026";"Zinsgutschrift";"CHF";"";"REF000111222";"REF006";"";"+12.35";"30.01.2026";"12816.05";"Zinsertrag Q4";""
