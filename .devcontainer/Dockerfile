@@ -16,10 +16,6 @@ RUN apt-get update -qq && \
     pkg-config \
     watchman \
     libffi-dev \
-    # OCR dependencies for PDF text extraction
-    tesseract-ocr \
-    tesseract-ocr-deu \
-    tesseract-ocr-fra \
     poppler-utils \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
 

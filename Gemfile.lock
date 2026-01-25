@@ -268,7 +268,6 @@ GEM
     reline (0.6.3)
       io-console (~> 0.5)
     rexml (3.4.4)
-    rtesseract (3.1.4)
     rubocop (1.82.1)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -394,7 +393,6 @@ DEPENDENCIES
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.2)
-  rtesseract
   rubocop-rails-omakase
   selenium-webdriver
   solid_cable
