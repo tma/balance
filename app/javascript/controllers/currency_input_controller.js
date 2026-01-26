@@ -4,6 +4,7 @@ export default class extends Controller {
   static values = { liability: Boolean, original: String }
 
   connect() {
+    this.element.classList.add("currency-input")
     this.format()
     this.checkModified()
   }

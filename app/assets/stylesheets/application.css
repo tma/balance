@@ -8,3 +8,29 @@
  *
  * Consider organizing styles into separate files for maintainability.
  */
+
+/* Privacy mode - blur currency values */
+body.privacy-mode .currency-value {
+  filter: blur(8px);
+  user-select: none;
+}
+
+/* Large text needs more blur */
+body.privacy-mode .text-3xl .currency-value,
+body.privacy-mode .text-4xl .currency-value,
+body.privacy-mode .text-5xl .currency-value,
+body.privacy-mode .text-3xl.currency-value,
+body.privacy-mode .text-4xl.currency-value,
+body.privacy-mode .text-5xl.currency-value {
+  filter: blur(12px);
+}
+
+/* Also blur currency inputs */
+body.privacy-mode input.currency-input {
+  filter: blur(8px);
+}
+
+/* Unblur on focus so user can still edit */
+body.privacy-mode input.currency-input:focus {
+  filter: none;
+}
