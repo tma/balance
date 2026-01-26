@@ -24,8 +24,31 @@ class BrokerConnection < ApplicationRecord
   def sync_status
     return :never if last_synced_at.nil?
     return :error if last_sync_error.present?
+    return :behind if days_behind && days_behind > 1
 
     :ok
+  end
+
+  # Number of days since last successful sync date
+  # Returns nil if never synced
+  def days_behind
+    return nil if last_sync_date.nil?
+
+    (Date.current - last_sync_date).to_i
+  end
+
+  # Human-readable sync status for display
+  def sync_status_label
+    case sync_status
+    when :never
+      "Never synced"
+    when :error
+      "Failed: #{last_sync_error.to_s.truncate(50)}"
+    when :behind
+      "#{days_behind} days behind"
+    else
+      "Synced"
+    end
   end
 
   # Display name for the broker type

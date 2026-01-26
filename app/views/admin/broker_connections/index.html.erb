@@ -38,13 +38,15 @@
                 <% end %>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-sm">
-                <% if connection.last_synced_at %>
-                  <span class="text-slate-600"><%= time_ago_in_words(connection.last_synced_at) %> ago</span>
-                  <% if connection.last_sync_error.present? %>
-                    <span class="ml-2 px-1.5 py-0.5 rounded text-xs bg-rose-50 text-rose-600">Error</span>
-                  <% end %>
-                <% else %>
-                  <span class="text-slate-400">Never</span>
+                <% case connection.sync_status %>
+                <% when :ok %>
+                  <span class="text-emerald-600">Synced <%= connection.last_sync_date&.strftime("%b %-d") %></span>
+                <% when :behind %>
+                  <span class="text-amber-600"><%= connection.days_behind %> days behind</span>
+                <% when :error %>
+                  <span class="px-1.5 py-0.5 rounded text-xs bg-rose-50 text-rose-600">Error</span>
+                <% when :never %>
+                  <span class="text-slate-400">Never synced</span>
                 <% end %>
               </td>
               <td class="px-4 py-3 whitespace-nowrap text-right text-sm space-x-2">

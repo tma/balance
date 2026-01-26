@@ -442,6 +442,37 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     assert_equal "REF123456", reference
   end
 
+  test "request_report includes date parameters when sync_date provided" do
+    sync_date = Date.new(2026, 1, 15)
+
+    stub_request(:get, %r{/SendRequest})
+      .with(query: hash_including(
+        "t" => "test_token_abc123",
+        "q" => "999999",
+        "v" => "3",
+        "FromDate" => "20260115",
+        "ToDate" => "20260115"
+      ))
+      .to_return(status: 200, body: success_send_response)
+
+    reference = @service.send(:request_report, sync_date: sync_date)
+
+    assert_equal "REF123456", reference
+  end
+
+  test "request_report omits date parameters when sync_date is nil" do
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    @service.send(:request_report, sync_date: nil)
+
+    # Verify request was made without FromDate/ToDate
+    assert_requested(:get, %r{/SendRequest}) do |req|
+      query = URI.decode_www_form(req.uri.query).to_h
+      !query.key?("FromDate") && !query.key?("ToDate")
+    end
+  end
+
   test "fetch_report includes correct query parameters" do
     reference_code = "TEST123"
 
@@ -509,6 +540,22 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
 
     # Should have created valuations for each position (2 positions)
     assert_equal initial_count + 2, PositionValuation.count
+  end
+
+  test "sync records valuations for specified date" do
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    stub_request(:get, %r{/GetStatement})
+      .to_return(status: 200, body: success_statement_response)
+
+    sync_date = Date.new(2026, 1, 15)
+
+    @service.sync!(sync_date: sync_date)
+
+    # Valuations should be recorded for the specified date
+    valuations = PositionValuation.where(date: sync_date)
+    assert_equal 2, valuations.count
   end
 
   # ============================================================

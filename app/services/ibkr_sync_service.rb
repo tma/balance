@@ -8,12 +8,13 @@ class IbkrSyncService < BrokerSyncService
 
   # Sync positions from IBKR Flex API and update mappings
   # Returns { positions: [...], updated_count: N, closed_count: N, errors: [...] }
-  def perform_sync!
+  # @param sync_date [Date, nil] The date to sync data for
+  def perform_sync!(sync_date: nil)
     result = { positions: [], updated_count: 0, closed_count: 0, errors: [] }
 
     begin
       # Fetch positions from IBKR
-      positions = fetch_positions
+      positions = fetch_positions(sync_date: sync_date)
       synced_symbols = []
 
       # Update or create position mappings
@@ -59,9 +60,10 @@ class IbkrSyncService < BrokerSyncService
   end
 
   # Fetch positions from IBKR Flex API
-  def fetch_positions
+  # @param sync_date [Date, nil] The date to fetch data for (nil = current/default)
+  def fetch_positions(sync_date: nil)
     # Step 1: Request report generation
-    reference_code = request_report
+    reference_code = request_report(sync_date: sync_date)
 
     # Step 2: Wait briefly for report to generate
     wait(2)
@@ -80,13 +82,25 @@ class IbkrSyncService < BrokerSyncService
     sleep(seconds)
   end
 
-  def request_report
+  # Request report generation from IBKR
+  # @param sync_date [Date, nil] The date to request data for
+  def request_report(sync_date: nil)
     uri = URI("#{BASE_URL}/SendRequest")
-    uri.query = URI.encode_www_form(
+
+    params = {
       t: @connection.flex_token,
       q: @connection.flex_query_id,
       v: FLEX_VERSION
-    )
+    }
+
+    # Add date range parameters if a specific date is requested
+    if sync_date
+      date_str = sync_date.strftime("%Y%m%d")
+      params[:FromDate] = date_str
+      params[:ToDate] = date_str
+    end
+
+    uri.query = URI.encode_www_form(params)
 
     response = make_request(uri)
     parse_send_response(response.body)

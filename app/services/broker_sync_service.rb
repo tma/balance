@@ -21,11 +21,13 @@ class BrokerSyncService
 
   # Sync positions from broker, update mappings, and record position valuations
   # Returns { positions: [...], updated_count: N, errors: [...] }
-  def sync!
-    result = perform_sync!
+  # @param sync_date [Date, nil] The date to sync data for (defaults to today)
+  def sync!(sync_date: nil)
+    date = sync_date || Date.current
+    result = perform_sync!(sync_date: date)
 
     # Record position valuations for historical tracking
-    record_position_valuations!
+    record_position_valuations!(date: date)
 
     result
   end
@@ -34,7 +36,8 @@ class BrokerSyncService
 
   # Subclasses must implement this method to perform the actual sync
   # Returns { positions: [...], updated_count: N, errors: [...] }
-  def perform_sync!
+  # @param sync_date [Date, nil] The date to sync data for
+  def perform_sync!(sync_date: nil)
     raise NotImplementedError, "Subclasses must implement perform_sync!"
   end
 
@@ -50,9 +53,10 @@ class BrokerSyncService
   end
 
   # Record a valuation snapshot for each position
-  def record_position_valuations!
+  # @param date [Date] The date to record valuations for
+  def record_position_valuations!(date:)
     @connection.broker_positions.each do |position|
-      position.record_valuation!(date: Date.current)
+      position.record_valuation!(date: date)
     end
   end
 end

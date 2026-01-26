@@ -21,13 +21,23 @@
       <p class="font-medium">Last sync failed</p>
       <p class="text-sm mt-1"><%= @connection.last_sync_error %></p>
     </div>
+  <% elsif @connection.sync_status == :behind %>
+    <div class="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg mb-6">
+      <p class="font-medium">Sync is <%= @connection.days_behind %> days behind</p>
+      <p class="text-sm mt-1">Last synced data is from <%= @connection.last_sync_date&.strftime("%B %-d, %Y") %>. Missing days will be backfilled on the next sync.</p>
+    </div>
   <% end %>
 
   <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
     <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
       <h2 class="font-semibold text-slate-700">Positions</h2>
       <% if @connection.last_synced_at %>
-        <span class="text-xs text-slate-500">Last synced: <%= @connection.last_synced_at.strftime("%Y-%m-%d %H:%M") %></span>
+        <span class="text-xs text-slate-500">
+          Last synced: <%= @connection.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
+          <% if @connection.last_sync_date %>
+            (data as of <%= @connection.last_sync_date.strftime("%b %-d") %>)
+          <% end %>
+        </span>
       <% end %>
     </div>
 

@@ -42,7 +42,7 @@ class BrokerSyncServiceTest < ActiveSupport::TestCase
     end
 
     initial_count = PositionValuation.count
-    service.send(:record_position_valuations!)
+    service.send(:record_position_valuations!, date: Date.current)
 
     assert_equal initial_count + connection.broker_positions.count, PositionValuation.count
   end
