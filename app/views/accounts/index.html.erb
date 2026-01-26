@@ -2,43 +2,45 @@
 
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">Accounts</h1>
-    <%= link_to "New Account", new_account_path, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
+    <h1 class="<%= ui_title_class %>">Accounts</h1>
+    <%= link_to "New Account", new_account_path, class: ui_btn_primary_class %>
   </div>
 
   <% if @accounts.any? %>
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="<%= ui_card_table_class %>">
       <table class="min-w-full">
-        <thead class="bg-slate-50 border-b border-slate-200">
+        <thead class="<%= ui_table_header_class %> border-b border-slate-200 dark:border-slate-700">
           <tr>
-            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Account</th>
-            <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Currency</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Balance</th>
-            <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
+            <th class="<%= ui_table_th_class %>">Account</th>
+            <th class="<%= ui_table_th_class %>">Currency</th>
+            <th class="<%= ui_table_th_class %> text-right">Balance</th>
+            <th class="<%= ui_table_th_class %> text-right w-24"></th>
           </tr>
         </thead>
-        <tbody class="bg-white">
+        <tbody>
           <% @accounts.includes(:account_type).order("account_types.name", :name).group_by(&:account_type).each do |account_type, type_accounts| %>
-            <tr class="bg-slate-50 border-t border-b border-slate-200">
-              <td colspan="4" class="px-4 py-1.5 text-xs font-medium text-slate-500">
+            <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
+              <td colspan="4" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= account_type.name %>
-                <span class="text-slate-400 ml-2"><%= type_accounts.size %> account<%= type_accounts.size == 1 ? '' : 's' %></span>
+                <span class="<%= ui_text_muted_class %> ml-2"><%= type_accounts.size %> account<%= type_accounts.size == 1 ? '' : 's' %></span>
               </td>
             </tr>
             <% type_accounts.each do |account| %>
-              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-                <td class="px-4 py-2 text-sm text-slate-700 font-medium">
-                  <%= link_to account.name, transactions_path(account_id: account.id), class: "hover:text-cyan-600" %>
+              <tr class="<%= ui_table_row_class %> last:border-b-0">
+                <td class="<%= ui_table_td_class %> text-sm <%= ui_text_class %> font-medium">
+                  <%= link_to account.name, transactions_path(account_id: account.id), class: "hover:text-cyan-600 dark:hover:text-cyan-400" %>
                 </td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm text-slate-500">
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_muted_class %>">
                   <%= account.currency %>
                 </td>
-                <td class="px-4 py-2 whitespace-nowrap text-sm text-right font-medium <%= account.balance >= 0 ? 'text-emerald-500' : 'text-rose-400' %>">
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm text-right font-medium <%= account.balance >= 0 ? ui_positive_class : ui_negative_class %>">
                   <%= format_amount(account.balance) %>
                 </td>
-                <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
-                  <%= link_to "Edit", edit_account_path(account), class: "text-cyan-600 hover:text-cyan-700" %>
-                  <%= button_to "Delete", account, method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure? This will delete all associated transactions." }, class: "inline" } %>
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-right text-sm">
+                  <div class="flex items-center justify-end gap-2">
+                    <%= link_to "Edit", edit_account_path(account), class: ui_link_class %>
+                    <%= button_to "Delete", account, method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure? This will delete all associated transactions." } } %>
+                  </div>
                 </td>
               </tr>
             <% end %>
@@ -47,9 +49,9 @@
       </table>
     </div>
   <% else %>
-    <div class="bg-white rounded-xl border border-slate-200 p-6 text-center">
-      <p class="text-slate-500 mb-4">No accounts yet.</p>
-      <%= link_to "Create an account", new_account_path, class: "text-cyan-600 hover:underline" %>
+    <div class="<%= ui_card_class %> <%= ui_empty_class %>">
+      <p class="<%= ui_text_muted_class %> mb-4">No accounts yet.</p>
+      <%= link_to "Create an account", new_account_path, class: ui_link_class %>
     </div>
   <% end %>
 </div>

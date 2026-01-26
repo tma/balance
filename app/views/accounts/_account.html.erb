@@ -1,18 +1,18 @@
 <div id="<%= dom_id account %>" class="w-full sm:w-auto my-5 space-y-5">
   <div>
-    <strong class="block font-medium mb-1">Name:</strong>
-    <%= account.name %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Name:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= account.name %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Account type:</strong>
-    <%= account.account_type_id %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Account type:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= account.account_type_id %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Balance:</strong>
-    <%= format_amount(account.balance) %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Balance:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= format_amount(account.balance) %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Currency:</strong>
-    <%= account.currency %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Currency:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= account.currency %></span>
   </div>
 </div>

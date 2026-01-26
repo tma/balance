@@ -1,6 +1,6 @@
 <%= form_with(model: [:admin, account_type], class: "contents") do |form| %>
   <% if account_type.errors.any? %>
-    <div class="bg-rose-50 text-rose-500 px-4 py-3 rounded-lg mb-4">
+    <div class="<%= ui_alert_error_class %> mb-4">
       <h2 class="font-medium"><%= pluralize(account_type.errors.count, "error") %> prohibited this account type from being saved:</h2>
       <ul class="list-disc ml-6 mt-2">
         <% account_type.errors.each do |error| %>
@@ -11,20 +11,20 @@
   <% end %>
 
   <div class="mb-4">
-    <%= form.label :name, class: "block text-sm font-medium text-slate-700" %>
-    <%= form.text_field :name, class: "mt-1 block w-full rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "checking" %>
+    <%= form.label :name, class: ui_label_class %>
+    <%= form.text_field :name, class: ui_input_class, placeholder: "checking" %>
   </div>
 
   <div class="mb-4">
     <label class="flex items-center space-x-3">
-      <%= form.check_box :invert_amounts_on_import, class: "rounded border-slate-300 text-cyan-600 focus:ring-cyan-500" %>
-      <span class="text-sm font-medium text-slate-700">Invert amounts on import</span>
+      <%= form.check_box :invert_amounts_on_import, class: ui_checkbox_class %>
+      <span class="<%= ui_label_class %>">Invert amounts on import</span>
     </label>
-    <p class="mt-1 text-sm text-slate-500">Enable for credit cards where positive amounts are purchases (expenses) and negative amounts are payments (income).</p>
+    <p class="mt-1 text-sm <%= ui_text_muted_class %>">Enable for credit cards where positive amounts are purchases (expenses) and negative amounts are payments (income).</p>
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
-    <%= link_to "Cancel", admin_account_types_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+    <%= form.submit class: ui_btn_primary_class + " cursor-pointer" %>
+    <%= link_to "Cancel", admin_account_types_path, class: ui_btn_secondary_class %>
   </div>
 <% end %>

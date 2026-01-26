@@ -2,41 +2,43 @@
 
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-slate-800">Asset Types</h1>
-    <%= link_to "New Asset Type", new_admin_asset_type_path, class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition" %>
+    <h1 class="<%= ui_title_class %>">Asset Types</h1>
+    <%= link_to "New Asset Type", new_admin_asset_type_path, class: ui_btn_primary_class %>
   </div>
 
-  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+  <div class="<%= ui_card_class %> overflow-hidden">
     <% if @asset_types.any? %>
       <table class="min-w-full">
-        <thead class="bg-slate-50 border-b border-slate-200">
+        <thead class="<%= ui_table_header_class %>">
           <tr>
-            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Name</th>
-            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Type</th>
-            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-24"></th>
+            <th class="<%= ui_table_th_class %> text-left">Name</th>
+            <th class="<%= ui_table_th_class %> text-left">Type</th>
+            <th class="<%= ui_table_th_class %> text-right w-24"></th>
           </tr>
         </thead>
-        <tbody class="bg-white">
+        <tbody>
           <% @asset_types.each do |asset_type| %>
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-              <td class="px-4 py-2 whitespace-nowrap text-sm font-medium text-slate-700"><%= asset_type.name %></td>
-              <td class="px-4 py-2 whitespace-nowrap text-sm">
+            <tr class="<%= ui_table_row_class %>">
+              <td class="<%= ui_table_td_class %> font-medium <%= ui_text_class %>"><%= asset_type.name %></td>
+              <td class="<%= ui_table_td_class %>">
                 <% if asset_type.is_liability? %>
-                  <span class="px-1.5 py-0.5 text-xs rounded bg-rose-50 text-rose-400">Liability</span>
+                  <span class="<%= ui_badge_danger_class %>">Liability</span>
                 <% else %>
-                  <span class="px-1.5 py-0.5 text-xs rounded bg-emerald-50 text-emerald-600">Asset</span>
+                  <span class="<%= ui_badge_success_class %>">Asset</span>
                 <% end %>
               </td>
-              <td class="px-4 py-2 whitespace-nowrap text-right text-sm space-x-2">
-                <%= link_to "Edit", edit_admin_asset_type_path(asset_type), class: "text-cyan-600 hover:text-cyan-700" %>
-                <%= button_to "Delete", admin_asset_type_path(asset_type), method: :delete, class: "text-rose-500 hover:text-rose-600", form: { data: { turbo_confirm: "Are you sure?" }, class: "inline" } %>
+              <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <%= link_to "Edit", edit_admin_asset_type_path(asset_type), class: ui_link_class %>
+                  <%= button_to "Delete", admin_asset_type_path(asset_type), method: :delete, class: "text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure?" } } %>
+                </div>
               </td>
             </tr>
           <% end %>
         </tbody>
       </table>
     <% else %>
-      <p class="text-center py-8 text-slate-500">No asset types found.</p>
+      <p class="<%= ui_empty_class %>">No asset types found.</p>
     <% end %>
   </div>
 </div>

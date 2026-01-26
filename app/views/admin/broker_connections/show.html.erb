@@ -3,39 +3,39 @@
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800"><%= @connection.name %></h1>
+      <h1 class="<%= ui_title_class %>"><%= @connection.name %></h1>
       <div class="flex items-center gap-2 text-sm">
-        <span class="text-slate-500"><%= @connection.broker_type_name %> · Account: <%= @connection.account_id %></span>
-        <span class="text-slate-300">·</span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600"><span>Open:</span> <span class="font-semibold"><%= @positions.open.count %></span></span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700"><span>Mapped:</span> <span class="font-semibold"><%= @connection.mapped_positions.open.count %></span></span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full <%= @connection.unmapped_positions.open.any? ? 'bg-amber-50 text-amber-700' : 'bg-slate-50 text-slate-400' %>"><span>Unmapped:</span> <span class="font-semibold"><%= @connection.unmapped_positions.open.count %></span></span>
-        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-50 text-slate-400"><span>Closed:</span> <span class="font-semibold"><%= @positions.closed.count %></span></span>
+        <span class="<%= ui_text_muted_class %>"><%= @connection.broker_type_name %> · Account: <%= @connection.account_id %></span>
+        <span class="<%= ui_text_subtle_class %>">·</span>
+        <span class="<%= ui_badge_class %>"><span>Open:</span> <span class="font-semibold"><%= @positions.open.count %></span></span>
+        <span class="<%= ui_badge_success_class %>"><span>Mapped:</span> <span class="font-semibold"><%= @connection.mapped_positions.open.count %></span></span>
+        <span class="<%= @connection.unmapped_positions.open.any? ? ui_badge_warning_class : ui_badge_class %>"><span>Unmapped:</span> <span class="font-semibold"><%= @connection.unmapped_positions.open.count %></span></span>
+        <span class="<%= ui_badge_class %>"><span>Closed:</span> <span class="font-semibold"><%= @positions.closed.count %></span></span>
       </div>
     </div>
     <div class="flex items-center gap-2">
-      <%= button_to "Sync Now", sync_admin_broker_connection_path(@connection), method: :post, form: { data: { turbo_confirm: "This will sync positions from the broker. Continue?" } }, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
-      <%= link_to "Edit", edit_admin_broker_connection_path(@connection), class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+      <%= button_to "Sync Now", sync_admin_broker_connection_path(@connection), method: :post, form: { data: { turbo_confirm: "This will sync positions from the broker. Continue?" } }, class: ui_btn_secondary_class %>
+      <%= link_to "Edit", edit_admin_broker_connection_path(@connection), class: ui_btn_secondary_class %>
     </div>
   </div>
 
   <% if @connection.last_sync_error.present? %>
-    <div class="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-lg mb-6">
+    <div class="<%= ui_alert_error_class %> mb-6">
       <p class="font-medium">Last sync failed</p>
       <p class="text-sm mt-1"><%= @connection.last_sync_error %></p>
     </div>
   <% elsif @connection.sync_status == :behind %>
-    <div class="bg-amber-50 border border-amber-200 text-amber-700 px-4 py-3 rounded-lg mb-6">
+    <div class="<%= ui_alert_warning_class %> mb-6">
       <p class="font-medium">Sync is <%= @connection.days_behind %> days behind</p>
       <p class="text-sm mt-1">Last synced data is from <%= @connection.last_sync_date&.strftime("%B %-d, %Y") %>. Missing days will be backfilled on the next sync.</p>
     </div>
   <% end %>
 
-  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
-      <h2 class="font-semibold text-slate-700">Positions</h2>
+  <div class="<%= ui_card_class %> overflow-hidden">
+    <div class="<%= ui_table_header_class %> px-4 py-2 flex justify-between items-center">
+      <h2 class="font-semibold <%= ui_text_class %>">Positions</h2>
       <% if @connection.last_synced_at %>
-        <span class="text-xs text-slate-500">
+        <span class="text-xs <%= ui_text_muted_class %>">
           Last synced: <%= @connection.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
           <% if @connection.last_sync_date %>
             (data as of <%= @connection.last_sync_date.strftime("%b %-d") %>)
@@ -47,38 +47,38 @@
     <% if @positions.any? %>
       <%= form_with url: bulk_update_admin_broker_connection_positions_path(@connection), method: :patch, class: "contents" do |form| %>
         <table class="min-w-full">
-          <thead class="bg-slate-50 border-b border-slate-200">
+          <thead class="<%= ui_table_header_class %>">
             <tr>
-              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Symbol</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
-              <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value</th>
-              <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider min-w-[200px]">Mapped Asset</th>
+              <th class="<%= ui_table_th_class %> text-left">Symbol</th>
+              <th class="<%= ui_table_th_class %> text-left">Description</th>
+              <th class="<%= ui_table_th_class %> text-right">Quantity</th>
+              <th class="<%= ui_table_th_class %> text-right">Value</th>
+              <th class="<%= ui_table_th_class %> text-left min-w-[200px]">Mapped Asset</th>
             </tr>
           </thead>
-          <tbody class="bg-white">
+          <tbody>
             <% @positions.open.each do |position| %>
-              <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0">
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <%= link_to admin_broker_connection_position_path(@connection, position), class: "text-sm font-medium text-cyan-600 hover:text-cyan-700" do %>
+              <tr class="<%= ui_table_row_class %>">
+                <td class="<%= ui_table_td_class %> whitespace-nowrap">
+                  <%= link_to admin_broker_connection_position_path(@connection, position), class: "font-medium #{ui_link_class}" do %>
                     <%= position.symbol %>
                   <% end %>
                 </td>
-                <td class="px-4 py-3">
-                  <span class="text-sm text-slate-600"><%= position.description || "—" %></span>
+                <td class="<%= ui_table_td_class %>">
+                  <span class="<%= ui_text_muted_class %>"><%= position.description || "—" %></span>
                 </td>
-                <td class="px-4 py-3 text-right whitespace-nowrap">
-                  <span class="text-sm text-slate-600"><%= number_with_delimiter(position.last_quantity) if position.last_quantity %></span>
+                <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                  <span class="<%= ui_text_muted_class %>"><%= number_with_delimiter(position.last_quantity) if position.last_quantity %></span>
                 </td>
-                <td class="px-4 py-3 text-right whitespace-nowrap">
-                  <span class="text-sm font-medium text-slate-700">
+                <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                  <span class="font-medium <%= ui_text_class %>">
                     <% if position.last_value %>
                       <%= format_currency(position.last_value, currency: position.currency) %>
                     <% end %>
                   </span>
                 </td>
-                <td class="px-4 py-3">
-                  <select name="positions[<%= position.id %>]" class="w-full rounded-lg border-slate-300 text-sm focus:border-cyan-500 focus:ring-cyan-500">
+                <td class="<%= ui_table_td_class %>">
+                  <select name="positions[<%= position.id %>]" class="<%= ui_input_sm_class %> w-full">
                     <option value="">— Not mapped —</option>
                     <% @asset_groups.each do |group| %>
                       <optgroup label="<%= group.name %>">
@@ -94,49 +94,49 @@
               </tr>
             <% end %>
             <% if @positions.closed.any? %>
-              <tr class="bg-slate-50">
-                <td colspan="5" class="px-4 py-2 text-xs font-medium text-slate-500 uppercase">Closed Positions</td>
+              <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
+                <td colspan="5" class="px-4 py-2 text-xs font-medium <%= ui_table_group_text_class %> uppercase">Closed Positions</td>
               </tr>
               <% @positions.closed.each do |position| %>
-                <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0 opacity-60">
-                  <td class="px-4 py-3 whitespace-nowrap">
-                    <%= link_to admin_broker_connection_position_path(@connection, position), class: "text-sm font-medium text-slate-500 hover:text-slate-700" do %>
+                <tr class="<%= ui_table_row_class %> opacity-60">
+                  <td class="<%= ui_table_td_class %> whitespace-nowrap">
+                    <%= link_to admin_broker_connection_position_path(@connection, position), class: "font-medium #{ui_link_muted_class}" do %>
                       <%= position.symbol %>
-                      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-600 ml-1">Closed</span>
+                      <span class="<%= ui_badge_class %> ml-1">Closed</span>
                     <% end %>
                   </td>
-                  <td class="px-4 py-3">
-                    <span class="text-sm text-slate-500"><%= position.description || "—" %></span>
+                  <td class="<%= ui_table_td_class %>">
+                    <span class="<%= ui_text_muted_class %>"><%= position.description || "—" %></span>
                   </td>
-                  <td class="px-4 py-3 text-right whitespace-nowrap">
-                    <span class="text-sm text-slate-400">0</span>
+                  <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                    <span class="<%= ui_text_subtle_class %>">0</span>
                   </td>
-                  <td class="px-4 py-3 text-right whitespace-nowrap">
-                    <span class="text-sm text-slate-400">
+                  <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                    <span class="<%= ui_text_subtle_class %>">
                       <%= format_currency(0, currency: position.currency) %>
                     </span>
                   </td>
-                  <td class="px-4 py-3">
-                    <span class="text-xs text-slate-400">Closed <%= position.closed_at&.strftime("%Y-%m-%d") %></span>
+                  <td class="<%= ui_table_td_class %>">
+                    <span class="text-xs <%= ui_text_subtle_class %>">Closed <%= position.closed_at&.strftime("%Y-%m-%d") %></span>
                   </td>
                 </tr>
               <% end %>
             <% end %>
           </tbody>
         </table>
-        <div class="px-4 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
-          <%= form.submit "Save Mappings", class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition" %>
+        <div class="<%= ui_table_header_class %> px-4 py-2 flex justify-end">
+          <%= form.submit "Save Mappings", class: ui_btn_primary_class + " cursor-pointer" %>
         </div>
       <% end %>
     <% else %>
-      <div class="text-center py-8">
-        <p class="text-slate-500 mb-2">No positions found.</p>
-        <p class="text-sm text-slate-400">Positions sync automatically daily.</p>
+      <div class="<%= ui_empty_class %>">
+        <p class="<%= ui_text_muted_class %> mb-2">No positions found.</p>
+        <p class="text-sm <%= ui_text_subtle_class %>">Positions sync automatically daily.</p>
       </div>
     <% end %>
   </div>
 
   <div class="mt-6">
-    <%= link_to "← Back to Connections", admin_broker_connections_path, class: "text-cyan-600 hover:text-cyan-700 text-sm" %>
+    <%= link_to "← Back to Connections", admin_broker_connections_path, class: ui_link_class + " text-sm" %>
   </div>
 </div>

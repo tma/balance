@@ -3,25 +3,25 @@
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800">
+      <h1 class="<%= ui_title_class %>">
         <%= @position.symbol %>
         <% if @position.closed? %>
-          <span class="inline-flex items-center px-2 py-0.5 rounded text-sm font-medium bg-slate-200 text-slate-600 ml-2">Closed</span>
+          <span class="<%= ui_badge_class %> ml-2">Closed</span>
         <% end %>
       </h1>
-      <p class="text-sm text-slate-500"><%= @position.description %></p>
+      <p class="text-sm <%= ui_text_muted_class %>"><%= @position.description %></p>
     </div>
     <div class="flex items-center space-x-4">
       <% if @position.closed? %>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
+        <span class="<%= ui_badge_class %>">
           Closed <%= @position.closed_at&.strftime("%Y-%m-%d") %>
         </span>
       <% elsif @position.mapped? %>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+        <span class="<%= ui_badge_success_class %>">
           Mapped to <%= @position.asset.name %>
         </span>
       <% else %>
-        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">
+        <span class="<%= ui_badge_warning_class %>">
           Unmapped
         </span>
       <% end %>
@@ -30,21 +30,21 @@
 
   <!-- Current Position -->
   <div class="grid grid-cols-3 gap-4 mb-6">
-    <div class="bg-white rounded-xl border border-slate-200 p-4">
-      <p class="text-xs font-medium text-slate-500 uppercase">Quantity</p>
-      <p class="text-2xl font-bold text-slate-800 mt-1">
+    <div class="<%= ui_card_class %> p-4">
+      <p class="text-xs font-medium <%= ui_text_muted_class %> uppercase">Quantity</p>
+      <p class="text-2xl font-bold <%= ui_text_class %> mt-1">
         <%= number_with_delimiter(@position.last_quantity) if @position.last_quantity %>
       </p>
     </div>
-    <div class="bg-white rounded-xl border border-slate-200 p-4">
-      <p class="text-xs font-medium text-slate-500 uppercase">Value</p>
-      <p class="text-2xl font-bold text-slate-800 mt-1">
+    <div class="<%= ui_card_class %> p-4">
+      <p class="text-xs font-medium <%= ui_text_muted_class %> uppercase">Value</p>
+      <p class="text-2xl font-bold <%= ui_text_class %> mt-1">
         <%= format_currency(@position.last_value, currency: @position.currency) if @position.last_value %>
       </p>
     </div>
-    <div class="bg-white rounded-xl border border-slate-200 p-4">
-      <p class="text-xs font-medium text-slate-500 uppercase">Last Synced</p>
-      <p class="text-lg font-medium text-slate-700 mt-1">
+    <div class="<%= ui_card_class %> p-4">
+      <p class="text-xs font-medium <%= ui_text_muted_class %> uppercase">Last Synced</p>
+      <p class="text-lg font-medium <%= ui_text_class %> mt-1">
         <% if @position.last_synced_at %>
           <%= @position.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
         <% else %>
@@ -58,91 +58,93 @@
   <% default_currency = Currency.default&.code || "USD" %>
   <% show_default_currency = @position.currency != default_currency %>
   
-  <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-    <div class="px-4 py-3 border-b border-slate-200 bg-slate-50">
-      <h2 class="font-semibold text-slate-700">Valuation History</h2>
-      <p class="text-xs text-slate-500 mt-1">Daily snapshots of position value (last 90 days)</p>
+  <div class="<%= ui_card_class %> overflow-hidden">
+    <div class="<%= ui_table_header_class %> px-4 py-2">
+      <h2 class="font-semibold <%= ui_text_class %>">Valuation History</h2>
+      <p class="text-xs <%= ui_text_muted_class %> mt-1">Daily snapshots of position value (last 90 days)</p>
     </div>
 
     <% if @valuations.any? %>
       <table class="min-w-full">
-        <thead class="bg-slate-50 border-b border-slate-200">
+        <thead class="<%= ui_table_header_class %>">
           <tr>
-            <th class="px-4 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Quantity</th>
-            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value (<%= @position.currency %>)</th>
+            <th class="<%= ui_table_th_class %> text-left">Date</th>
+            <th class="<%= ui_table_th_class %> text-right">Quantity</th>
+            <th class="<%= ui_table_th_class %> text-right">Value (<%= @position.currency %>)</th>
             <% if show_default_currency %>
-              <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Value (<%= default_currency %>)</th>
+              <th class="<%= ui_table_th_class %> text-right">Value (<%= default_currency %>)</th>
             <% end %>
-            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Change</th>
-            <th class="px-4 py-2 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-20"></th>
+            <th class="<%= ui_table_th_class %> text-right">Change</th>
+            <th class="<%= ui_table_th_class %> text-right w-20"></th>
           </tr>
         </thead>
-        <tbody class="bg-white">
+        <tbody>
           <% previous_value = nil %>
           <% @valuations.each do |valuation| %>
-            <tr class="hover:bg-slate-50 transition border-b border-slate-100 last:border-b-0" data-controller="inline-save">
-              <td class="px-4 py-2 whitespace-nowrap">
-                <span class="text-sm font-medium text-slate-700"><%= valuation.date.strftime("%Y-%m-%d") %></span>
-                <span class="text-xs text-slate-400 ml-2"><%= valuation.date.strftime("%a") %></span>
+            <tr class="<%= ui_table_row_class %>" data-controller="inline-save">
+              <td class="<%= ui_table_td_class %> whitespace-nowrap">
+                <span class="font-medium <%= ui_text_class %>"><%= valuation.date.strftime("%Y-%m-%d") %></span>
+                <span class="text-xs <%= ui_text_subtle_class %> ml-2"><%= valuation.date.strftime("%a") %></span>
               </td>
-              <td class="px-4 py-2 text-right whitespace-nowrap">
-                <input type="text" name="position_valuation[quantity]" value="<%= valuation.quantity %>" form="valuation-form-<%= valuation.id %>" class="w-24 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm" data-inline-save-target="input" data-action="input->inline-save#check">
+              <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                <input type="text" name="position_valuation[quantity]" value="<%= valuation.quantity %>" form="valuation-form-<%= valuation.id %>" class="<%= ui_input_sm_class %> w-24 text-right" data-inline-save-target="input" data-action="input->inline-save#check">
               </td>
-              <td class="px-4 py-2 text-right whitespace-nowrap">
-                <input type="text" name="position_valuation[value]" value="<%= valuation.value %>" form="valuation-form-<%= valuation.id %>" class="w-32 text-right rounded-lg border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-2 py-1.5 text-sm" data-controller="currency-input" data-currency-input-original-value="<%= valuation.value %>" data-inline-save-target="input" data-action="input->inline-save#check focus->currency-input#unformat blur->currency-input#format">
+              <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                <input type="text" name="position_valuation[value]" value="<%= valuation.value %>" form="valuation-form-<%= valuation.id %>" class="<%= ui_input_sm_class %> w-32 text-right" data-controller="currency-input" data-currency-input-original-value="<%= valuation.value %>" data-inline-save-target="input" data-action="input->inline-save#check focus->currency-input#unformat blur->currency-input#format">
               </td>
               <% if show_default_currency %>
-                <td class="px-4 py-2 text-right whitespace-nowrap">
-                  <span class="text-sm text-slate-600">
+                <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                  <span class="<%= ui_text_muted_class %>">
                     <% if valuation.value_in_default_currency %>
                       <%= format_currency(valuation.value_in_default_currency, currency: default_currency) %>
                       <% if valuation.exchange_rate && valuation.exchange_rate != 1.0 %>
-                        <span class="text-xs text-slate-400 block">@ <%= number_with_precision(valuation.exchange_rate, precision: 4) %></span>
+                        <span class="text-xs <%= ui_text_subtle_class %> block">@ <%= number_with_precision(valuation.exchange_rate, precision: 4) %></span>
                       <% end %>
                     <% else %>
-                      <span class="text-slate-400">—</span>
+                      <span class="<%= ui_text_subtle_class %>">—</span>
                     <% end %>
                   </span>
                 </td>
               <% end %>
-              <td class="px-4 py-2 text-right whitespace-nowrap">
+              <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
                 <% if previous_value %>
                   <% change = valuation.value - previous_value %>
                   <% change_percent = previous_value != 0 ? (change / previous_value * 100) : 0 %>
-                  <span class="text-sm <%= change >= 0 ? 'text-emerald-600' : 'text-rose-600' %>">
+                  <span class="<%= change >= 0 ? ui_positive_class : ui_negative_class %>">
                     <%= change >= 0 ? '+' : '' %><%= format_amount(change) %>
                     <span class="text-xs">(<%= change >= 0 ? '+' : '' %><%= number_to_percentage(change_percent, precision: 1) %>)</span>
                   </span>
                 <% else %>
-                  <span class="text-sm text-slate-400">—</span>
+                  <span class="<%= ui_text_subtle_class %>">—</span>
                 <% end %>
                 <% previous_value = valuation.value %>
               </td>
-              <td class="px-4 py-2 text-right whitespace-nowrap space-x-3">
-                <form id="valuation-form-<%= valuation.id %>" action="<%= admin_broker_connection_position_valuation_path(@connection, @position, valuation) %>" method="post" class="inline" data-action="submit->inline-save#unformatAll">
-                  <input type="hidden" name="_method" value="patch">
-                  <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
-                  <button type="submit" class="text-slate-400 text-sm" disabled data-inline-save-target="save">Save</button>
-                </form>
-                <%= button_to "Delete", admin_broker_connection_position_valuation_path(@connection, @position, valuation), 
-                      method: :delete, 
-                      class: "text-rose-500 hover:text-rose-600 text-sm",
-                      form: { data: { turbo_confirm: "Delete valuation for #{valuation.date.strftime('%Y-%m-%d')}?" }, class: "inline" } %>
+              <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                <div class="flex items-center justify-end gap-2">
+                  <form id="valuation-form-<%= valuation.id %>" action="<%= admin_broker_connection_position_valuation_path(@connection, @position, valuation) %>" method="post" class="inline" data-action="submit->inline-save#unformatAll">
+                    <input type="hidden" name="_method" value="patch">
+                    <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>">
+                    <button type="submit" class="<%= ui_text_subtle_class %>" disabled data-inline-save-target="save">Save</button>
+                  </form>
+                  <%= button_to "Delete", admin_broker_connection_position_valuation_path(@connection, @position, valuation), 
+                        method: :delete, 
+                        class: "text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300",
+                        form: { data: { turbo_confirm: "Delete valuation for #{valuation.date.strftime('%Y-%m-%d')}?" } } %>
+                </div>
               </td>
             </tr>
           <% end %>
         </tbody>
       </table>
     <% else %>
-      <div class="text-center py-8">
-        <p class="text-slate-500 mb-2">No valuation history yet.</p>
-        <p class="text-sm text-slate-400">Valuations are recorded daily or when you sync.</p>
+      <div class="<%= ui_empty_class %>">
+        <p class="<%= ui_text_muted_class %> mb-2">No valuation history yet.</p>
+        <p class="text-sm <%= ui_text_subtle_class %>">Valuations are recorded daily or when you sync.</p>
       </div>
     <% end %>
   </div>
 
   <div class="mt-6">
-    <%= link_to "← Back to #{@connection.name}", admin_broker_connection_path(@connection), class: "text-cyan-600 hover:text-cyan-700 text-sm" %>
+    <%= link_to "← Back to #{@connection.name}", admin_broker_connection_path(@connection), class: ui_link_class + " text-sm" %>
   </div>
 </div>

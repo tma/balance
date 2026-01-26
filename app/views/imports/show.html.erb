@@ -4,27 +4,27 @@
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-slate-800 mb-1"><%= @import.original_filename %></h1>
+      <h1 class="<%= ui_title_class %> mb-1"><%= @import.original_filename %></h1>
       <div class="flex items-center gap-2">
         <%= render "imports/status_badge", import: @import %>
-        <span class="text-slate-300">&middot;</span>
-        <span class="text-sm text-slate-500"><%= time_ago_in_words(@import.created_at) %> ago</span>
-        <span class="text-slate-300">&middot;</span>
-        <span class="text-sm text-slate-500">
-          <%= link_to @import.account.name, edit_account_path(@import.account), class: "font-medium text-slate-700 hover:text-cyan-600" %>
+        <span class="<%= ui_text_subtle_class %>">&middot;</span>
+        <span class="text-sm <%= ui_text_muted_class %>"><%= time_ago_in_words(@import.created_at) %> ago</span>
+        <span class="<%= ui_text_subtle_class %>">&middot;</span>
+        <span class="text-sm <%= ui_text_muted_class %>">
+          <%= link_to @import.account.name, edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" %>
         </span>
       </div>
     </div>
     <div class="flex items-center gap-2">
       <% if @import.completed? || @import.failed? %>
-        <%= button_to reprocess_import_path(@import), method: :post, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm flex items-center gap-2", form: { data: { turbo_confirm: "Reprocess this import? Current results will be replaced." } } do %>
+        <%= button_to reprocess_import_path(@import), method: :post, class: "#{ui_btn_secondary_class} text-sm flex items-center gap-2", form: { data: { turbo_confirm: "Reprocess this import? Current results will be replaced." } } do %>
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           Reprocess
         <% end %>
       <% end %>
-      <%= link_to imports_path, class: "rounded-lg px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 font-medium transition text-sm" do %>
+      <%= link_to imports_path, class: "#{ui_btn_secondary_class} text-sm" do %>
         Imports
       <% end %>
     </div>
@@ -34,11 +34,11 @@
     <!-- Processing State with Turbo Stream updates -->
     <%= turbo_stream_from @import %>
     
-    <div class="bg-white rounded-xl border border-slate-200 p-8 md:p-12" data-controller="import-status">
+    <div class="<%= ui_card_class %> p-8 md:p-12" data-controller="import-status">
       <div class="max-w-md mx-auto text-center">
         <!-- Animated spinner (kept outside stream target to stay smooth) -->
         <div class="relative mx-auto w-16 h-16 mb-6">
-          <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+          <div class="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-700"></div>
           <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-500 animate-spin"></div>
           <div class="absolute inset-2 rounded-full border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
         </div>
@@ -50,47 +50,47 @@
 
   <% elsif @import.failed? %>
     <!-- Failed State -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
-      <div class="bg-rose-50 border-b border-rose-100 px-6 py-4">
+    <div class="<%= ui_card_table_class %>">
+      <div class="bg-rose-50 dark:bg-rose-900/30 border-b border-rose-100 dark:border-rose-800 px-6 py-4">
         <div class="flex items-center gap-3">
-          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
-            <svg class="w-5 h-5 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+            <svg class="w-5 h-5 text-rose-500 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
           <div>
-            <h2 class="font-semibold text-rose-800">Import Failed</h2>
-            <p class="text-sm text-rose-600">Unable to process the file</p>
+            <h2 class="font-semibold text-rose-800 dark:text-rose-300">Import Failed</h2>
+            <p class="text-sm text-rose-600 dark:text-rose-400">Unable to process the file</p>
           </div>
         </div>
       </div>
       
       <div class="p-6">
-        <div class="bg-slate-50 rounded-lg p-4 mb-6">
-          <p class="text-sm font-medium text-slate-700 mb-1">Error Details</p>
-          <p class="text-sm text-slate-600 font-mono"><%= @import.error_message %></p>
+        <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-6">
+          <p class="text-sm font-medium <%= ui_text_class %> mb-1">Error Details</p>
+          <p class="text-sm <%= ui_text_muted_class %> font-mono"><%= @import.error_message %></p>
         </div>
         
         <div class="flex flex-col sm:flex-row gap-3">
-          <%= button_to reprocess_import_path(@import), method: :post, class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition text-sm" do %>
+          <%= button_to reprocess_import_path(@import), method: :post, class: "inline-flex items-center justify-center gap-2 #{ui_btn_primary_class} text-sm" do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Reprocess
           <% end %>
-          <%= link_to new_import_path, class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm" do %>
+          <%= link_to new_import_path, class: "inline-flex items-center justify-center gap-2 #{ui_btn_secondary_class} text-sm" do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             Try Different File
           <% end %>
-          <%= link_to new_transaction_path(account_id: @import.account_id), class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm" do %>
+          <%= link_to new_transaction_path(account_id: @import.account_id), class: "inline-flex items-center justify-center gap-2 #{ui_btn_secondary_class} text-sm" do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
             Add Manually
           <% end %>
-          <%= button_to import_path(@import), method: :delete, class: "inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-rose-500 hover:bg-rose-50 font-medium transition text-sm", form: { data: { turbo_confirm: "Delete this failed import?" } } do %>
+          <%= button_to import_path(@import), method: :delete, class: "inline-flex items-center justify-center gap-2 px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium rounded-lg transition text-sm", form: { data: { turbo_confirm: "Delete this failed import?" } } do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -110,46 +110,46 @@
       total_expense = expense_txns.sum { |t| t[:amount].to_f }
     %>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Transactions</p>
-        <p class="text-2xl font-semibold text-slate-800"><%= @transactions.size %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Transactions</p>
+        <p class="text-2xl font-semibold <%= ui_text_class %>"><%= @transactions.size %></p>
       </div>
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Income</p>
-        <p class="text-2xl font-semibold text-emerald-500">+<%= format_amount(total_income) %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Income</p>
+        <p class="text-2xl font-semibold <%= ui_positive_class %>">+<%= format_amount(total_income) %></p>
       </div>
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Expenses</p>
-        <p class="text-2xl font-semibold text-rose-400">-<%= format_amount(total_expense) %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Expenses</p>
+        <p class="text-2xl font-semibold <%= ui_negative_class %>">-<%= format_amount(total_expense) %></p>
       </div>
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Duplicates</p>
-        <p class="text-2xl font-semibold <%= duplicate_count > 0 ? 'text-amber-500' : 'text-slate-400' %>"><%= duplicate_count %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Duplicates</p>
+        <p class="text-2xl font-semibold <%= duplicate_count > 0 ? 'text-amber-500 dark:text-amber-400' : ui_text_subtle_class %>"><%= duplicate_count %></p>
       </div>
     </div>
 
     <!-- Review Transactions -->
     <%= form_with url: confirm_import_path(@import), method: :post, data: { controller: "import-table" } do |form| %>
-      <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
+      <div class="<%= ui_card_table_class %> mb-6">
         <!-- Table Header -->
-        <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div class="px-4 py-3 <%= ui_table_header_class %> flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div class="flex items-center gap-3">
-            <span class="font-medium text-slate-700">Review & Import</span>
+            <span class="font-medium <%= ui_text_class %>">Review & Import</span>
             <% if @import.duration %>
-              <span class="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded">Processed in <%= @import.duration.round(1) %>s</span>
+              <span class="text-xs <%= ui_text_subtle_class %> bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">Processed in <%= @import.duration.round(1) %>s</span>
             <% end %>
           </div>
           <div class="flex items-center gap-4">
-            <span class="text-xs text-slate-400 hidden sm:inline">
-              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">j</kbd>/<kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500">k</kbd> navigate
-              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 ml-2">space</kbd> toggle
-              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 ml-2">t</kbd> type
-              <kbd class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 ml-2">c</kbd> category
+            <span class="text-xs <%= ui_text_subtle_class %> hidden sm:inline">
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %>">j</kbd>/<kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %>">k</kbd> navigate
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">space</kbd> toggle
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">t</kbd> type
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">c</kbd> category
             </span>
-            <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
+            <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:<%= ui_text_class %>">
               <input type="checkbox" 
                      checked 
-                     class="rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0"
+                     class="<%= ui_checkbox_class %>"
                      data-import-table-target="selectAll"
                      data-action="change->import-table#selectAllChanged">
               <span>Select all</span>
@@ -160,19 +160,19 @@
         <!-- Transactions Table -->
         <div class="overflow-x-auto">
           <table class="min-w-full">
-            <thead class="bg-slate-50 border-b border-slate-200">
+            <thead class="<%= ui_table_header_class %>">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-12"></th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-28">Type</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider w-40">Category</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider w-32">Amount</th>
+                <th class="<%= ui_table_th_class %> w-12"></th>
+                <th class="<%= ui_table_th_class %>">Date</th>
+                <th class="<%= ui_table_th_class %>">Description</th>
+                <th class="<%= ui_table_th_class %> w-28">Type</th>
+                <th class="<%= ui_table_th_class %> w-40">Category</th>
+                <th class="<%= ui_table_th_class %> text-right w-32">Amount</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="<%= ui_card_body_class %>">
               <% @transactions.each_with_index do |txn, index| %>
-                <tr class="<%= txn[:is_duplicate] ? 'bg-amber-50/50 duplicate-row' : 'hover:bg-slate-50' %> transition-colors cursor-pointer"
+                <tr class="<%= txn[:is_duplicate] ? 'bg-amber-50/50 dark:bg-amber-900/20 duplicate-row' : ui_table_row_class %> cursor-pointer"
                     data-import-table-target="row"
                     data-action="click->import-table#rowClicked">
                   <td class="px-4 py-3">
@@ -180,7 +180,7 @@
                            name="transactions[<%= index %>][selected]" 
                            value="1"
                            <%= txn[:is_duplicate] ? '' : 'checked' %>
-                           class="transaction-checkbox rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0"
+                           class="transaction-checkbox <%= ui_checkbox_class %>"
                            data-action="change->import-table#checkboxChanged">
                     <%= hidden_field_tag "transactions[#{index}][description]", txn[:description] %>
                     <%= hidden_field_tag "transactions[#{index}][amount]", txn[:amount] %>
@@ -190,21 +190,19 @@
                     <input type="date" 
                            name="transactions[<%= index %>][date]" 
                            value="<%= txn[:date].is_a?(Date) ? txn[:date].strftime('%Y-%m-%d') : txn[:date] %>"
-                           class="text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
+                           class="text-sm rounded-lg <%= ui_input_sm_class %> py-1.5">
                   </td>
-                  <td class="px-4 py-3 text-sm text-slate-800">
+                  <td class="px-4 py-3 text-sm <%= ui_text_class %>">
                     <div class="flex items-center gap-2">
-                      <span class="<%= txn[:is_duplicate] ? 'text-slate-500' : '' %>"><%= txn[:description] %></span>
+                      <span class="<%= txn[:is_duplicate] ? ui_text_muted_class : '' %>"><%= txn[:description] %></span>
                       <% if txn[:is_duplicate] %>
-                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
-                          Duplicate
-                        </span>
+                        <span class="<%= ui_badge_warning_class %>">Duplicate</span>
                       <% end %>
                     </div>
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][transaction_type]" 
-                            class="transaction-type w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
+                            class="transaction-type w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5">
                       <option value="expense" <%= txn[:transaction_type] == 'expense' ? 'selected' : '' %>>Expense</option>
                       <option value="income" <%= txn[:transaction_type] == 'income' ? 'selected' : '' %>>Income</option>
                     </select>
@@ -212,7 +210,7 @@
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][category_id]" 
                             required
-                            class="transaction-category w-full text-sm rounded-lg border-slate-200 bg-slate-50 focus:border-cyan-500 focus:ring-cyan-500 py-1.5">
+                            class="transaction-category w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5">
                       <option value="" disabled <%= txn[:category_id].present? ? '' : 'selected' %>></option>
                       <optgroup label="Expense">
                         <% @expense_categories.each do |cat| %>
@@ -226,7 +224,7 @@
                       </optgroup>
                     </select>
                   </td>
-                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium text-slate-700">
+                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium <%= ui_text_class %>">
                     <%= txn[:transaction_type] == 'expense' ? '-' : '' %><%= format_amount(txn[:amount]) %>
                   </td>
                 </tr>
@@ -237,49 +235,49 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white rounded-xl border border-slate-200 p-4">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 <%= ui_card_class %> p-4">
         <div class="flex items-center gap-4">
-          <p class="text-sm text-slate-500">
-            <span class="font-medium text-slate-700" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected
+          <p class="text-sm <%= ui_text_muted_class %>">
+            <span class="font-medium <%= ui_text_class %>" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected
           </p>
-          <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer hover:text-slate-800">
+          <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:<%= ui_text_class %>">
             <input type="checkbox" 
                    name="mark_as_done" 
                    value="1"
-                   class="rounded border-slate-300 text-cyan-500 focus:ring-cyan-500 focus:ring-offset-0">
+                   class="<%= ui_checkbox_class %>">
             <span>Mark as done</span>
           </label>
         </div>
         <div class="flex items-center gap-3">
-          <%= link_to "Cancel", new_import_path, class: "rounded-lg px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition text-sm" %>
-          <%= form.submit "Import", class: "rounded-lg px-5 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium cursor-pointer transition text-sm" %>
+          <%= link_to "Cancel", new_import_path, class: "px-4 py-2 #{ui_text_muted_class} hover:#{ui_text_class} font-medium transition text-sm" %>
+          <%= form.submit "Import", class: "#{ui_btn_primary_class} cursor-pointer text-sm" %>
         </div>
       </div>
     <% end %>
 
   <% elsif @import.completed? && @transactions.empty? %>
     <!-- No Transactions Found -->
-    <div class="bg-white rounded-xl border border-slate-200 p-8 md:p-12">
+    <div class="<%= ui_card_class %> p-8 md:p-12">
       <div class="max-w-md mx-auto text-center">
-        <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-6">
-          <svg class="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mx-auto mb-6">
+          <svg class="w-8 h-8 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
         
-        <h2 class="text-xl font-semibold text-slate-800 mb-2">No Transactions Found</h2>
-        <p class="text-slate-500 mb-6">
+        <h2 class="text-xl font-semibold <%= ui_text_class %> mb-2">No Transactions Found</h2>
+        <p class="<%= ui_text_muted_class %> mb-6">
           The AI couldn't extract any transactions from this file. This might happen if the file format is unusual or the content is image-based.
         </p>
         
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <%= link_to new_import_path, class: "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 bg-cyan-500 hover:bg-cyan-600 text-white font-medium transition text-sm" do %>
+          <%= link_to new_import_path, class: "inline-flex items-center gap-2 #{ui_btn_primary_class} text-sm" do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             Try Different File
           <% end %>
-          <%= link_to new_transaction_path(account_id: @import.account_id), class: "inline-flex items-center gap-2 rounded-lg px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition text-sm" do %>
+          <%= link_to new_transaction_path(account_id: @import.account_id), class: "inline-flex items-center gap-2 #{ui_btn_secondary_class} text-sm" do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -300,53 +298,53 @@
     
     <!-- Summary Stats -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Imported</p>
-        <p class="text-2xl font-semibold text-slate-800"><%= @imported_transactions.size %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Imported</p>
+        <p class="text-2xl font-semibold <%= ui_text_class %>"><%= @imported_transactions.size %></p>
       </div>
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Income</p>
-        <p class="text-2xl font-semibold text-emerald-500">+<%= format_amount(total_income) %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Income</p>
+        <p class="text-2xl font-semibold <%= ui_positive_class %>">+<%= format_amount(total_income) %></p>
       </div>
-      <div class="bg-white rounded-xl border border-slate-200 p-4">
-        <p class="text-sm text-slate-500 mb-1">Expenses</p>
-        <p class="text-2xl font-semibold text-rose-400">-<%= format_amount(total_expense) %></p>
+      <div class="<%= ui_card_class %> p-4">
+        <p class="text-sm <%= ui_text_muted_class %> mb-1">Expenses</p>
+        <p class="text-2xl font-semibold <%= ui_negative_class %>">-<%= format_amount(total_expense) %></p>
       </div>
     </div>
 
     <!-- Imported Transactions Table -->
-    <div class="bg-white rounded-xl border border-slate-200 overflow-hidden mb-6">
-      <div class="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
-        <span class="font-medium text-slate-700">Imported Transactions</span>
+    <div class="<%= ui_card_table_class %> mb-6">
+      <div class="px-4 py-3 <%= ui_table_header_class %> flex items-center justify-between">
+        <span class="font-medium <%= ui_text_class %>">Imported Transactions</span>
         <% if @import.completed_at %>
-          <span class="text-xs text-slate-400">Completed <%= time_ago_in_words(@import.completed_at) %> ago</span>
+          <span class="text-xs <%= ui_text_subtle_class %>">Completed <%= time_ago_in_words(@import.completed_at) %> ago</span>
         <% end %>
       </div>
 
       <% if @imported_transactions.any? %>
         <div class="overflow-x-auto">
           <table class="min-w-full">
-            <thead class="bg-slate-50 border-b border-slate-200">
+            <thead class="<%= ui_table_header_class %>">
               <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Date</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Description</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Category</th>
-                <th class="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Amount</th>
+                <th class="<%= ui_table_th_class %>">Date</th>
+                <th class="<%= ui_table_th_class %>">Description</th>
+                <th class="<%= ui_table_th_class %>">Category</th>
+                <th class="<%= ui_table_th_class %> text-right">Amount</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody class="<%= ui_card_body_class %>">
               <% @imported_transactions.each do |txn| %>
-                <tr class="hover:bg-slate-50 transition-colors">
-                  <td class="px-4 py-3 text-sm text-slate-600 whitespace-nowrap">
+                <tr class="<%= ui_table_row_class %>">
+                  <td class="<%= ui_table_td_class %> <%= ui_text_muted_class %> whitespace-nowrap">
                     <%= txn.date.strftime("%b %d, %Y") %>
                   </td>
-                  <td class="px-4 py-3 text-sm text-slate-800">
-                    <%= link_to txn.description, edit_transaction_path(txn), class: "hover:text-cyan-600" %>
+                  <td class="<%= ui_table_td_class %> <%= ui_text_class %>">
+                    <%= link_to txn.description, edit_transaction_path(txn), class: ui_link_class %>
                   </td>
-                  <td class="px-4 py-3 text-sm text-slate-600">
+                  <td class="<%= ui_table_td_class %> <%= ui_text_muted_class %>">
                     <%= txn.category&.name || "—" %>
                   </td>
-                  <td class="px-4 py-3 text-sm text-right whitespace-nowrap font-medium text-slate-700">
+                  <td class="<%= ui_table_td_class %> text-right whitespace-nowrap font-medium <%= ui_text_class %>">
                     <%= txn.transaction_type == 'expense' ? '-' : '' %><%= format_amount(txn.amount) %>
                   </td>
                 </tr>
@@ -355,22 +353,22 @@
           </table>
         </div>
       <% else %>
-        <div class="p-8 text-center text-slate-500">
+        <div class="<%= ui_empty_class %> <%= ui_text_muted_class %>">
           No transactions were imported from this file.
         </div>
       <% end %>
     </div>
 
     <!-- Actions -->
-    <div class="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-4">
-      <p class="text-sm text-slate-500">
+    <div class="flex items-center justify-between <%= ui_card_class %> p-4">
+      <p class="text-sm <%= ui_text_muted_class %>">
         This import has been reviewed and completed.
       </p>
       <div class="flex items-center gap-3">
-        <%= link_to transactions_path, class: "rounded-lg px-4 py-2 text-slate-600 hover:text-slate-800 font-medium transition text-sm" do %>
+        <%= link_to transactions_path, class: "px-4 py-2 #{ui_text_muted_class} hover:#{ui_text_class} font-medium transition text-sm" do %>
           View All Transactions
         <% end %>
-        <%= button_to import_path(@import), method: :delete, class: "rounded-lg px-4 py-2 text-rose-500 hover:bg-rose-50 font-medium transition text-sm", form: { data: { turbo_confirm: "Delete this import? The imported transactions will remain." } } do %>
+        <%= button_to import_path(@import), method: :delete, class: "px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium rounded-lg transition text-sm", form: { data: { turbo_confirm: "Delete this import? The imported transactions will remain." } } do %>
           Delete Import
         <% end %>
       </div>

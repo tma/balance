@@ -1,6 +1,6 @@
 <% content_for :title, "New Budget" %>
 
 <div>
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">New Budget</h1>
+  <h1 class="<%= ui_title_class %> mb-6">New Budget</h1>
   <%= render "form", budget: @budget %>
 </div>

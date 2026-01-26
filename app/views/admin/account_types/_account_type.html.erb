@@ -1,6 +1,6 @@
 <div id="<%= dom_id account_type %>" class="w-full sm:w-auto my-5 space-y-5">
   <div>
-    <strong class="block font-medium mb-1">Name:</strong>
-    <%= account_type.name %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Name:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= account_type.name %></span>
   </div>
 </div>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html class="dark">
   <head>
     <title><%= content_for(:title) || "Balance" %></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -23,10 +23,10 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="bg-slate-50 min-h-screen" data-controller="privacy-toggle">
+  <body class="bg-slate-50 dark:bg-slate-900 min-h-screen" data-controller="privacy-toggle">
     <!-- Desktop sidebar -->
-    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white border-r border-slate-200">
-      <div class="flex items-center h-16 px-2 border-b border-slate-200">
+    <aside class="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700">
+      <div class="flex items-center h-16 px-2 border-b border-slate-200 dark:border-slate-700">
         <a href="/" class="flex items-center gap-3 px-4">
           <svg class="flex-shrink-0" viewBox="0 0 32 20" fill="none" width="32" height="20">
             <defs>
@@ -39,11 +39,11 @@
             <rect x="0" y="6" width="32" height="4" fill="rgba(255,255,255,0.3)"/>
             <circle cx="26" cy="14" r="3" fill="white"/>
           </svg>
-          <span class="text-xl font-semibold tracking-tight text-slate-800">Balance</span>
+          <span class="text-xl font-semibold tracking-tight text-slate-800 dark:text-slate-100">Balance</span>
         </a>
         <button type="button"
                 data-action="privacy-toggle#toggle"
-                class="ml-auto mr-2 p-2 text-slate-300 hover:text-slate-500 hover:bg-slate-100 rounded-lg"
+                class="ml-auto mr-2 p-2 text-slate-300 hover:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg"
                 title="Toggle privacy mode">
           <span data-privacy-toggle-target="icon">◎</span>
         </button>
@@ -51,38 +51,38 @@
       <nav class="flex-1 px-2 py-4 space-y-1">
         <!-- Overview -->
         <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Overview</span>
-        <%= link_to "Net Worth", net_worth_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == '/net-worth' ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-        <%= link_to "Cash Flow", cash_flow_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == '/cash-flow' ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+        <%= link_to "Net Worth", net_worth_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path == '/net-worth' ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+        <%= link_to "Cash Flow", cash_flow_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path == '/cash-flow' ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
 
         <!-- Records -->
-        <div class="pt-4 mt-4 border-t border-slate-200">
+        <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
           <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Records</span>
           <div class="flex items-center gap-2">
-            <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-            <%= link_to "Valuations", update_valuations_path, class: "rounded-lg py-1 px-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path == update_valuations_path ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+            <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+            <%= link_to "Valuations", update_valuations_path, class: "rounded-lg py-1 px-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path == update_valuations_path ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
           </div>
           <div class="flex items-center gap-2">
-            <%= link_to "Transactions", transactions_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path == transactions_path ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-            <%= link_to "Import", new_import_path, class: "rounded-lg py-1 px-2 text-slate-400 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/imports') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+            <%= link_to "Transactions", transactions_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path == transactions_path ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+            <%= link_to "Import", new_import_path, class: "rounded-lg py-1 px-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/imports') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
           </div>
-          <%= link_to "Accounts", accounts_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path.start_with?('/accounts') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-          <%= link_to "Budgets", budgets_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 #{request.path.start_with?('/budgets') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Accounts", accounts_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path.start_with?('/accounts') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+          <%= link_to "Budgets", budgets_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path.start_with?('/budgets') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
         </div>
 
         <!-- Settings - Configuration -->
-        <div class="pt-4 mt-4 border-t border-slate-200">
+        <div class="pt-4 mt-4 border-t border-slate-200 dark:border-slate-700">
           <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Settings</span>
-          <%= link_to "Currencies", admin_currencies_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/currencies') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-          <%= link_to "Asset Types", admin_asset_types_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/asset_types') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-          <%= link_to "Account Types", admin_account_types_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/account_types') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-          <%= link_to "Categories", admin_categories_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/categories') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
-          <%= link_to "Brokers", admin_broker_connections_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-100 hover:text-slate-900 text-sm #{request.path.start_with?('/admin/brokers') ? 'bg-slate-100 text-slate-900 font-medium' : ''}" %>
+          <%= link_to "Currencies", admin_currencies_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/admin/currencies') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+          <%= link_to "Asset Types", admin_asset_types_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/admin/asset_types') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+          <%= link_to "Account Types", admin_account_types_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/admin/account_types') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+          <%= link_to "Categories", admin_categories_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/admin/categories') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+          <%= link_to "Brokers", admin_broker_connections_path, class: "flex items-center px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/admin/brokers') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
         </div>
       </nav>
     </aside>
 
     <!-- Mobile header -->
-    <header class="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 z-50">
+    <header class="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 z-50">
       <div class="flex items-center justify-between h-14 px-4">
         <a href="/" class="flex items-center gap-2.5 pl-1">
           <svg class="flex-shrink-0" viewBox="0 0 32 20" fill="none" width="28" height="17">
@@ -96,11 +96,11 @@
             <rect x="0" y="6" width="32" height="4" fill="rgba(255,255,255,0.3)"/>
             <circle cx="26" cy="14" r="3" fill="white"/>
           </svg>
-          <span class="text-lg font-semibold tracking-tight text-slate-800">Balance</span>
+          <span class="text-lg font-semibold tracking-tight text-slate-800 dark:text-slate-100">Balance</span>
         </a>
         <button type="button"
                 data-action="privacy-toggle#toggle"
-                class="p-2 text-slate-300 hover:text-slate-500"
+                class="p-2 text-slate-300 hover:text-slate-500 dark:hover:text-slate-300"
                 title="Toggle privacy mode">
           <span data-privacy-toggle-target="icon">◎</span>
         </button>
@@ -111,16 +111,12 @@
     <main class="md:ml-64 pt-14 md:pt-0 pb-20 md:pb-4">
       <div class="p-4 md:p-6">
         <% if notice.present? %>
-          <div class="mb-4 p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg"
-               data-controller="flash"
-               data-flash-delay-value="5000">
+          <div class="mb-4 <%= ui_alert_success_class %>" data-controller="flash" data-flash-delay-value="5000">
             <%= notice %>
           </div>
         <% end %>
         <% if alert.present? %>
-          <div class="mb-4 p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-lg"
-               data-controller="flash"
-               data-flash-delay-value="8000">
+          <div class="mb-4 <%= ui_alert_error_class %>" data-controller="flash" data-flash-delay-value="8000">
             <%= alert %>
           </div>
         <% end %>
@@ -129,25 +125,25 @@
     </main>
 
     <!-- Mobile bottom navigation -->
-    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 z-50">
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 z-50">
       <div class="flex justify-around py-2">
-        <%= link_to net_worth_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/net-worth' ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to net_worth_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/net-worth' ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}" do %>
           <span class="text-xl">#</span>
           <span class="text-xs">Net Worth</span>
         <% end %>
-        <%= link_to cash_flow_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/cash-flow' ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to cash_flow_path, class: "flex flex-col items-center px-3 py-1 #{request.path == '/cash-flow' ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}" do %>
           <span class="text-xl">$</span>
           <span class="text-xs">Cash Flow</span>
         <% end %>
-        <%= link_to assets_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to assets_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}" do %>
           <span class="text-xl">~</span>
           <span class="text-xs">Assets</span>
         <% end %>
-        <%= link_to transactions_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/transactions') || request.path.start_with?('/imports') ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to transactions_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/transactions') || request.path.start_with?('/imports') ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}" do %>
           <span class="text-xl">=</span>
           <span class="text-xs">Transactions</span>
         <% end %>
-        <%= link_to accounts_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/accounts', '/budgets', '/admin', '/valuations') ? 'text-cyan-600' : 'text-slate-400'}" do %>
+        <%= link_to accounts_path, class: "flex flex-col items-center px-3 py-1 #{request.path.start_with?('/accounts', '/budgets', '/admin', '/valuations') ? 'text-cyan-600 dark:text-cyan-400' : 'text-slate-400'}" do %>
           <span class="text-xl">*</span>
           <span class="text-xs">More</span>
         <% end %>

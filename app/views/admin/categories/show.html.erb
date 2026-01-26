@@ -1,23 +1,23 @@
 <% content_for :title, "Category - Admin" %>
 
 <div class="max-w-md">
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">Category: <%= @category.name %></h1>
+  <h1 class="<%= ui_title_class %> mb-6">Category: <%= @category.name %></h1>
 
-  <div class="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-    <p class="text-slate-700 mb-2"><strong>Name:</strong> <%= @category.name %></p>
-    <p class="text-slate-700">
+  <div class="<%= ui_card_class %> p-6 mb-6">
+    <p class="<%= ui_text_class %> mb-2"><strong>Name:</strong> <%= @category.name %></p>
+    <p class="<%= ui_text_class %>">
       <strong>Type:</strong>
       <% if @category.category_type == "income" %>
-        <span class="px-2 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-600">Income</span>
+        <span class="<%= ui_badge_success_class %>">Income</span>
       <% else %>
-        <span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Expense</span>
+        <span class="<%= ui_badge_danger_class %>">Expense</span>
       <% end %>
     </p>
   </div>
 
   <div class="flex space-x-4">
-    <%= link_to "Edit", edit_admin_category_path(@category), class: "rounded-lg px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
-    <%= link_to "Back", admin_categories_path, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
-    <%= button_to "Delete", admin_category_path(@category), method: :delete, class: "rounded-lg px-4 py-2 bg-red-600 hover:bg-rose-500 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+    <%= link_to "Edit", edit_admin_category_path(@category), class: ui_btn_primary_class %>
+    <%= link_to "Back", admin_categories_path, class: ui_btn_secondary_class %>
+    <%= button_to "Delete", admin_category_path(@category), method: :delete, class: ui_btn_danger_class + " cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

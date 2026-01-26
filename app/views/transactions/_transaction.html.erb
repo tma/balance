@@ -1,26 +1,26 @@
 <div id="<%= dom_id transaction %>" class="w-full sm:w-auto my-5 space-y-5">
   <div>
-    <strong class="block font-medium mb-1">Account:</strong>
-    <%= transaction.account_id %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Account:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= transaction.account_id %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Category:</strong>
-    <%= transaction.category_id %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Category:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= transaction.category_id %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Amount:</strong>
-    <%= format_amount(transaction.amount) %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Amount:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= format_amount(transaction.amount) %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Transaction type:</strong>
-    <%= transaction.transaction_type %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Transaction type:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= transaction.transaction_type %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Date:</strong>
-    <%= transaction.date %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Date:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= transaction.date %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Description:</strong>
-    <%= transaction.description %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Description:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= transaction.description %></span>
   </div>
 </div>

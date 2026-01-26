@@ -1,44 +1,44 @@
 <% content_for :title, "Budget" %>
 
 <div class="max-w-md">
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">Budget: <%= @budget.category.name %></h1>
+  <h1 class="<%= ui_title_class %> mb-6">Budget: <%= @budget.category.name %></h1>
 
-  <div class="bg-white rounded-lg shadow p-6 mb-6">
+  <div class="<%= ui_card_class %> p-6 mb-6">
     <div class="flex justify-between items-center mb-4">
-      <span class="text-sm font-medium px-2 py-1 rounded-full <%= @budget.monthly? ? 'bg-cyan-100 text-cyan-700' : 'bg-purple-100 text-purple-700' %>">
+      <span class="text-sm font-medium px-2 py-1 rounded-full <%= @budget.monthly? ? ui_badge_info_class : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' %>">
         <%= @budget.monthly? ? "Monthly" : "Yearly" %>
       </span>
       <% if @budget.start_date %>
-        <span class="text-sm text-slate-500">Since <%= @budget.start_date.strftime("%b %Y") %></span>
+        <span class="text-sm <%= ui_text_muted_class %>">Since <%= @budget.start_date.strftime("%b %Y") %></span>
       <% end %>
     </div>
     
     <div class="mb-4">
-      <p class="text-sm text-slate-500">Budget</p>
-      <p class="text-2xl font-bold"><%= format_currency(@budget.amount) %> <%= @budget.period_label %></p>
+      <p class="text-sm <%= ui_text_muted_class %>">Budget</p>
+      <p class="text-2xl font-bold <%= ui_text_class %>"><%= format_currency(@budget.amount) %> <%= @budget.period_label %></p>
     </div>
     
     <div class="mb-4">
-      <p class="text-sm text-slate-500">Spent (<%= @budget.monthly? ? "#{Date::MONTHNAMES[@month]} #{@year}" : @year %>)</p>
-      <p class="text-2xl font-bold text-rose-500"><%= format_currency(@budget.spent(@year, @month)) %></p>
+      <p class="text-sm <%= ui_text_muted_class %>">Spent (<%= @budget.monthly? ? "#{Date::MONTHNAMES[@month]} #{@year}" : @year %>)</p>
+      <p class="text-2xl font-bold <%= ui_negative_class %>"><%= format_currency(@budget.spent(@year, @month)) %></p>
     </div>
     
-    <div class="w-full bg-slate-200 rounded-full h-3 mb-2">
+    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 mb-2">
       <% percentage = [@budget.percentage_used(@year, @month), 100].min %>
-      <% bar_color = percentage >= 100 ? 'bg-red-600' : percentage >= 80 ? 'bg-yellow-500' : 'bg-emerald-400' %>
+      <% bar_color = percentage >= 100 ? 'bg-rose-600' : percentage >= 80 ? 'bg-amber-500' : 'bg-emerald-400' %>
       <div class="<%= bar_color %> h-3 rounded-full" style="width: <%= percentage %>%"></div>
     </div>
     
     <% remaining = @budget.remaining(@year, @month) %>
-    <p class="text-sm <%= remaining >= 0 ? 'text-emerald-500' : 'text-rose-500' %>">
+    <p class="text-sm <%= remaining >= 0 ? ui_positive_class : ui_negative_class %>">
       <%= remaining >= 0 ? "#{format_currency(remaining)} remaining" : "#{format_currency(remaining.abs)} over budget" %>
       (<%= @budget.percentage_used(@year, @month) %>%)
     </p>
   </div>
 
   <div class="flex space-x-4">
-    <%= link_to "Edit", edit_budget_path(@budget), class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-600 text-white font-medium" %>
-    <%= link_to "Back", budgets_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-200 font-medium" %>
-    <%= button_to "Delete", @budget, method: :delete, class: "rounded-md px-4 py-2 bg-red-600 hover:bg-rose-400 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+    <%= link_to "Edit", edit_budget_path(@budget), class: ui_btn_primary_class %>
+    <%= link_to "Back", budgets_path, class: ui_btn_secondary_class %>
+    <%= button_to "Delete", @budget, method: :delete, class: "#{ui_btn_danger_class} cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

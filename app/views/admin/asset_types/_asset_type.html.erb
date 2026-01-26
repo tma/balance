@@ -1,10 +1,10 @@
 <div id="<%= dom_id asset_type %>" class="w-full sm:w-auto my-5 space-y-5">
   <div>
-    <strong class="block font-medium mb-1">Name:</strong>
-    <%= asset_type.name %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Name:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= asset_type.name %></span>
   </div>
   <div>
-    <strong class="block font-medium mb-1">Is liability:</strong>
-    <%= asset_type.is_liability? ? "Yes" : "No" %>
+    <strong class="block font-medium mb-1 <%= ui_text_class %>">Is liability:</strong>
+    <span class="<%= ui_text_muted_class %>"><%= asset_type.is_liability? ? "Yes" : "No" %></span>
   </div>
 </div>

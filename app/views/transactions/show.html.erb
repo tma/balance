@@ -1,23 +1,23 @@
 <% content_for :title, "Transaction" %>
 
 <div class="max-w-md">
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">Transaction Details</h1>
+  <h1 class="<%= ui_title_class %> mb-6">Transaction Details</h1>
 
-  <div class="bg-white rounded-lg shadow p-6 mb-6">
+  <div class="<%= ui_card_class %> p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
       <span class="text-4xl"><%= @transaction.transaction_type == 'income' ? '💰' : '💸' %></span>
-      <span class="text-3xl font-bold <%= @transaction.transaction_type == 'income' ? 'text-emerald-500' : 'text-rose-500' %>">
+      <span class="text-3xl font-bold <%= @transaction.transaction_type == 'income' ? ui_positive_class : ui_negative_class %>">
         <%= @transaction.transaction_type == 'income' ? '+' : '-' %><%= format_currency(@transaction.amount) %>
       </span>
     </div>
     
     <div class="space-y-2 text-sm">
-      <p><strong>Description:</strong> <%= @transaction.description.presence || "-" %></p>
-      <p><strong>Category:</strong> <%= @transaction.category.name %></p>
-      <p><strong>Account:</strong> <%= @transaction.account.name %></p>
-      <p><strong>Date:</strong> <%= @transaction.date.strftime("%B %d, %Y") %></p>
-      <p><strong>Type:</strong> 
-        <span class="px-2 py-0.5 text-xs rounded-full <%= @transaction.transaction_type == 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' %>">
+      <p class="<%= ui_text_class %>"><strong>Description:</strong> <%= @transaction.description.presence || "—" %></p>
+      <p class="<%= ui_text_class %>"><strong>Category:</strong> <%= @transaction.category.name %></p>
+      <p class="<%= ui_text_class %>"><strong>Account:</strong> <%= @transaction.account.name %></p>
+      <p class="<%= ui_text_class %>"><strong>Date:</strong> <%= @transaction.date.strftime("%B %d, %Y") %></p>
+      <p class="<%= ui_text_class %>"><strong>Type:</strong> 
+        <span class="<%= @transaction.transaction_type == 'income' ? ui_badge_success_class : ui_badge_danger_class %>">
           <%= @transaction.transaction_type.capitalize %>
         </span>
       </p>
@@ -25,8 +25,8 @@
   </div>
 
   <div class="flex space-x-4">
-    <%= link_to "Edit", edit_transaction_path(@transaction), class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium" %>
-    <%= link_to "Back", transactions_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
-    <%= button_to "Delete", @transaction, method: :delete, class: "rounded-md px-4 py-2 bg-red-600 hover:bg-rose-400 text-white font-medium cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+    <%= link_to "Edit", edit_transaction_path(@transaction), class: ui_btn_primary_class %>
+    <%= link_to "Back", transactions_path, class: ui_btn_secondary_class %>
+    <%= button_to "Delete", @transaction, method: :delete, class: "#{ui_btn_danger_class} cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

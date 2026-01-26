@@ -1,6 +1,6 @@
 <%= form_with(model: asset_group, class: "contents") do |form| %>
   <% if asset_group.errors.any? %>
-    <div class="bg-red-50 text-rose-500 px-4 py-3 rounded-md mb-4">
+    <div class="<%= ui_alert_error_class %> mb-4">
       <h2 class="font-medium"><%= pluralize(asset_group.errors.count, "error") %> prohibited this asset group from being saved:</h2>
       <ul class="list-disc ml-6 mt-2">
         <% asset_group.errors.each do |error| %>
@@ -11,23 +11,23 @@
   <% end %>
 
   <div class="mb-4">
-    <%= form.label :name, class: "block text-sm font-medium text-slate-700" %>
-    <%= form.text_field :name, class: "mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Real Estate Portfolio" %>
+    <%= form.label :name, class: ui_label_class %>
+    <%= form.text_field :name, class: ui_input_class, placeholder: "Real Estate Portfolio" %>
   </div>
 
   <div class="mb-4">
-    <%= form.label :description, class: "block text-sm font-medium text-slate-700" %>
-    <%= form.text_area :description, rows: 3, class: "mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-cyan-500 focus:ring-cyan-500 border px-3 py-2", placeholder: "Optional description" %>
+    <%= form.label :description, class: ui_label_class %>
+    <%= form.text_area :description, rows: 3, class: ui_input_class, placeholder: "Optional description" %>
   </div>
 
   <div class="mb-4">
-    <%= form.label :color, class: "block text-sm font-medium text-slate-700" %>
+    <%= form.label :color, class: ui_label_class %>
     <div class="mt-1 flex items-center space-x-3">
-      <%= form.color_field :color, class: "h-10 w-14 rounded border border-slate-300 cursor-pointer", data: { color_target: "picker" } %>
+      <%= form.color_field :color, class: "h-10 w-14 rounded border border-slate-300 dark:border-slate-600 cursor-pointer", data: { color_target: "picker" } %>
       <div class="flex space-x-1">
         <% %w[#93c5fd #86efac #fca5a5 #c4b5fd #fdba74 #67e8f9 #f0abfc #fde047 #cbd5e1 #5eead4].each do |preset| %>
           <button type="button" 
-                  class="w-6 h-6 rounded border border-slate-200 hover:scale-110 transition"
+                  class="w-6 h-6 rounded border border-slate-200 dark:border-slate-600 hover:scale-110 transition"
                   style="background-color: <%= preset %>;"
                   onclick="document.querySelector('[name=\'asset_group[color]\']').value = '<%= preset %>';"
                   title="<%= preset %>"></button>
@@ -37,7 +37,7 @@
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: "rounded-md px-4 py-2 bg-cyan-500 hover:bg-cyan-500 text-white font-medium cursor-pointer" %>
-    <%= link_to "Cancel", assets_path, class: "rounded-md px-4 py-2 bg-slate-100 hover:bg-slate-50 font-medium" %>
+    <%= form.submit class: ui_btn_primary_class + " cursor-pointer" %>
+    <%= link_to "Cancel", assets_path, class: ui_btn_secondary_class %>
   </div>
 <% end %>
