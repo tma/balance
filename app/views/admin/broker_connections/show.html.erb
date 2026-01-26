@@ -13,7 +13,10 @@
         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-50 text-slate-400"><span>Closed:</span> <span class="font-semibold"><%= @positions.closed.count %></span></span>
       </div>
     </div>
-    <%= link_to "Edit", edit_admin_broker_connection_path(@connection), class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+    <div class="flex items-center gap-2">
+      <%= button_to "Sync Now", sync_admin_broker_connection_path(@connection), method: :post, form: { data: { turbo_confirm: "This will sync positions from the broker. Continue?" } }, class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+      <%= link_to "Edit", edit_admin_broker_connection_path(@connection), class: "rounded-lg px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition" %>
+    </div>
   </div>
 
   <% if @connection.last_sync_error.present? %>

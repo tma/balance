@@ -1,5 +1,5 @@
 class Admin::BrokerConnectionsController < ApplicationController
-  before_action :set_connection, only: %i[show edit update destroy]
+  before_action :set_connection, only: %i[show edit update destroy sync]
 
   def index
     @connections = BrokerConnection.all.order(:name)
@@ -38,6 +38,14 @@ class Admin::BrokerConnectionsController < ApplicationController
   def destroy
     @connection.destroy!
     redirect_to admin_broker_connections_path, notice: "Connection was successfully deleted.", status: :see_other
+  end
+
+  def sync
+    service = BrokerSyncService.for(@connection)
+    service.sync!
+    redirect_to admin_broker_connection_path(@connection), notice: "Sync completed successfully."
+  rescue => e
+    redirect_to admin_broker_connection_path(@connection), alert: "Sync failed: #{e.message}"
   end
 
   def test_connection

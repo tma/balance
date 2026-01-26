@@ -59,6 +59,9 @@ Rails.application.routes.draw do
       collection do
         post :test_connection
       end
+      member do
+        post :sync
+      end
       resources :broker_positions, path: "positions", as: :positions, only: [ :index, :show, :edit, :update ] do
         collection do
           patch :bulk_update
