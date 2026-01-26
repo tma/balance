@@ -15,13 +15,13 @@ module ApplicationHelper
 
   # Format number with Swiss-style formatting (no currency): 1'234.56
   # Used when currency is shown separately
-  def format_amount(amount)
+  def format_amount(amount, precision: 2)
     number_to_currency(
       amount,
       unit: "",
       delimiter: "'",
       separator: ".",
-      precision: 2,
+      precision: precision,
       format: "%n"
     )
   end
