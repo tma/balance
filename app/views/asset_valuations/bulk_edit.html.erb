@@ -91,6 +91,7 @@
                     <% @months.each_with_index do |month, month_idx| %>
                       <td class="px-2 py-2">
                         <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
+                        <% existing_formula = @formulas_by_asset_and_month[asset.id][month] %>
                         <% is_liability = asset.asset_type.is_liability %>
                         <% is_last = month_idx == @months.length - 1 %>
                         <% is_second_last = month_idx == @months.length - 2 %>
@@ -107,12 +108,13 @@
                           <input type="text"
                                  inputmode="decimal"
                                  name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
-                                 value="<%= existing_value&.to_f %>"
+                                 value="<%= existing_formula.presence || existing_value&.to_f %>"
                                  tabindex="<%= tab_index %>"
                                  data-controller="currency-input"
                                  data-currency-form-target="input"
                                  data-currency-input-liability-value="<%= is_liability %>"
                                  data-currency-input-original-value="<%= existing_value&.to_f %>"
+                                 data-currency-input-formula-value="<%= existing_formula %>"
                                  data-action="focus->currency-input#unformat blur->currency-input#format"
                                  <% if is_second_last %>data-copy-previous-target="source"<% end %>
                                  <% if is_last %>data-copy-previous-target="destination"<% end %>
@@ -154,16 +156,18 @@
                       <% @months.each do |month| %>
                         <td class="px-2 py-2 bg-slate-100 dark:bg-slate-700 group-hover:bg-slate-50 dark:group-hover:bg-slate-600">
                           <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
+                          <% existing_formula = @formulas_by_asset_and_month[asset.id][month] %>
                           <% is_liability = asset.asset_type.is_liability %>
                           <input type="text"
                                  inputmode="decimal"
                                  name="valuations[<%= asset.id %>][<%= month.iso8601 %>]"
-                                 value="<%= existing_value&.to_f %>"
+                                 value="<%= existing_formula.presence || existing_value&.to_f %>"
                                  tabindex="-1"
                                  data-controller="currency-input"
                                  data-currency-form-target="input"
                                  data-currency-input-liability-value="<%= is_liability %>"
                                  data-currency-input-original-value="<%= existing_value&.to_f %>"
+                                 data-currency-input-formula-value="<%= existing_formula %>"
                                  data-action="focus->currency-input#unformat blur->currency-input#format"
                                  class="<%= ui_input_sm_class %> w-32 text-right <%= ui_text_subtle_class %> <%= existing_value ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900' %>"
                                  placeholder="—">

@@ -46,9 +46,16 @@ class AssetValuationsController < ApplicationController
         asset = Asset.find(asset_id)
 
         months_data.each do |date_str, value|
+          # Skip formula keys (they're handled with their corresponding value)
+          next if date_str.end_with?("_formula")
           next if value.blank?
 
           date = Date.parse(date_str)
+
+          # Check for formula (in separate param)
+          formula_key = "#{date_str}_formula"
+          formula = months_data[formula_key]
+
           # Strip non-numeric characters (currency codes, spaces, thousand separators)
           sanitized_value = value.to_s.gsub(/[^\d.]/, "")
           next if sanitized_value.blank?
@@ -58,9 +65,14 @@ class AssetValuationsController < ApplicationController
           # Find existing valuation or build new one
           valuation = asset.asset_valuations.find_or_initialize_by(date: date)
 
-          # Only save if value changed or new record
-          if valuation.new_record? || valuation.value != new_value
+          # Track if anything changed
+          value_changed = valuation.new_record? || valuation.value != new_value
+          formula_changed = valuation.formula != formula
+
+          # Only save if value or formula changed
+          if value_changed || formula_changed
             valuation.value = new_value
+            valuation.formula = formula.presence  # nil if blank/plain number
             valuation.save!
             updated_count += 1
 
@@ -113,11 +125,14 @@ class AssetValuationsController < ApplicationController
   def build_valuations_lookup
     # Build a hash: { asset_id => { date => value } }
     lookup = Hash.new { |h, k| h[k] = {} }
+    formulas = Hash.new { |h, k| h[k] = {} }
 
     AssetValuation.all.each do |v|
       lookup[v.asset_id][v.date] = v.value
+      formulas[v.asset_id][v.date] = v.formula if v.formula.present?
     end
 
+    @formulas_by_asset_and_month = formulas
     lookup
   end
 

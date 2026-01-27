@@ -9,14 +9,20 @@ export default class extends Controller {
       const sourceInput = this.sourceTarget
       const destInput = this.destinationTarget
 
-      // Get the raw value (unformatted)
-      let value = sourceInput.dataset.rawValue || sourceInput.value
+      // Check if source has a formula
+      const sourceFormula = sourceInput.dataset.formula
 
-      // Set the value
-      destInput.value = value
-      destInput.dataset.rawValue = value
+      if (sourceFormula) {
+        // Copy the formula - set it as the value so currency-input can process it
+        destInput.value = sourceFormula
+      } else {
+        // Get the raw value (unformatted)
+        let value = sourceInput.dataset.rawValue || sourceInput.value
+        destInput.value = value
+        destInput.dataset.rawValue = value
+      }
 
-      // Trigger format
+      // Trigger blur to format and process formula
       destInput.dispatchEvent(new Event('blur'))
     }
   }

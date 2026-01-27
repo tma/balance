@@ -934,6 +934,12 @@ if Rails.env.development?
         # Crypto very volatile - can swing 30%+ either way
         base = 12500 - ((i + 1) * 200)
         v.value = (base * (0.7 + rand * 0.6)).round(2)
+        # Example formula for first few months (BTC price * quantity)
+        if i < 3
+          btc_price = (83000 + rand(5000)).round
+          v.formula = "0.15*#{btc_price}"
+          v.value = (0.15 * btc_price).round(2)
+        end
       end
     end
   end
@@ -956,6 +962,13 @@ if Rails.env.development?
       AssetValuation.find_or_create_by!(asset: swiss_fund, date: valuation_date) do |v|
         # Steady growth ~6% per year
         v.value = 25000 - ((i + 1) * 120)
+        # Example formula for recent months (units * price)
+        if i < 2
+          units = 250
+          price = (100 - i * 0.5).round(2)
+          v.formula = "#{units}*#{price}"
+          v.value = (units * price).round(2)
+        end
       end
     end
   end

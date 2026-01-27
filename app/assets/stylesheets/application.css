@@ -34,3 +34,33 @@ body.privacy-mode input.currency-input {
 body.privacy-mode input.currency-input:focus {
   filter: none;
 }
+
+/* Formula indicator badge - positioned left middle */
+.has-formula {
+  position: relative;
+}
+
+.has-formula::before {
+  content: "Σ";
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: #64748b; /* slate-500 */
+  pointer-events: none;
+  line-height: 1;
+  z-index: 1;
+}
+
+/* Offset for last column which has the copy arrow at left: 8px */
+.has-formula.has-copy-arrow::before {
+  left: 22px;
+}
+
+/* Dark mode */
+@media (prefers-color-scheme: dark) {
+  .has-formula::before {
+    color: #94a3b8; /* slate-400 */
+  }
+}
