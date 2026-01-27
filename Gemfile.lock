@@ -260,6 +260,8 @@ GEM
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
     rake (13.3.1)
+    rbs (3.10.2)
+      logger
     rdoc (7.1.0)
       erb
       psych (>= 4.0.0)
@@ -297,6 +299,10 @@ GEM
       rubocop (>= 1.72)
       rubocop-performance (>= 1.24)
       rubocop-rails (>= 2.30)
+    ruby-lsp (0.26.5)
+      language_server-protocol (~> 3.17.0)
+      prism (>= 1.2, < 2.0)
+      rbs (>= 3, < 5)
     ruby-progressbar (1.13.0)
     ruby-vips (2.3.0)
       ffi (~> 1.12)
@@ -396,6 +402,7 @@ DEPENDENCIES
   rails (~> 8.1.2)
   rtesseract
   rubocop-rails-omakase
+  ruby-lsp
   selenium-webdriver
   solid_cable
   solid_cache
