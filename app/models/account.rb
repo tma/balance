@@ -34,7 +34,8 @@ class Account < ApplicationRecord
 
   # Check if a description matches any ignore pattern (case-sensitive)
   def should_ignore_for_import?(description)
-    ignore_patterns_list.any? { |pattern| description.include?(pattern) }
+    desc = description.to_s
+    ignore_patterns_list.any? { |pattern| desc.include?(pattern) }
   end
 
   def default_currency

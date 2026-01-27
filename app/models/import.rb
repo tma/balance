@@ -76,7 +76,7 @@ class Import < ApplicationRecord
 
   def update_progress!(current, total, extracted_count: nil, message: nil)
     updates = { progress: "#{current}/#{total}" }
-    updates[:extracted_count] = extracted_count if extracted_count
+    updates[:extracted_count] = extracted_count unless extracted_count.nil?
     updates[:progress_message] = message if message
     update_columns(updates)
     # Reload attributes so broadcast uses fresh data

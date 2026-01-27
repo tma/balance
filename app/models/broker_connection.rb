@@ -1,4 +1,5 @@
 class BrokerConnection < ApplicationRecord
+  validates :account_id, format: { with: /\AU\d+\z/, message: "must start with 'U' followed by digits" }
   has_many :broker_positions, dependent: :destroy
 
   # Broker types - extendable for future brokers

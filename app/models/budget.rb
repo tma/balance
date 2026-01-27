@@ -14,6 +14,7 @@ class Budget < ApplicationRecord
     scope = Transaction.expense.where(category_id: category_id)
 
     if monthly?
+      return 0 if month.blank?
       scope.in_month(year, month).sum(:amount)
     else
       scope.in_year(year).sum(:amount)
