@@ -110,6 +110,68 @@ To enable AI-powered transaction import from bank statements:
    ```
 3. Set `OLLAMA_HOST` in your `.env` file to point to your Ollama instance
 
+## Broker Connections
+
+Balance can automatically sync positions from supported brokers to track your investment portfolio.
+
+### Interactive Brokers (IBKR)
+
+To connect your Interactive Brokers account, you need to create a Flex Query and generate an access token.
+
+#### 1. Create a Flex Query
+
+1. Log in to [IBKR Client Portal](https://www.interactivebrokers.com/portal)
+2. Navigate to **Performance & Reports** → **Flex Queries**
+3. Click **+** to create a new Activity Flex Query
+4. Configure the query:
+   - **Query Name**: e.g., "Balance Sync"
+   - **Output Format**: XML
+   - **Date Period**: Last 7 Calendar Days (or your preference)
+
+5. Add the following sections and fields:
+
+   **Account Information** (required for currency conversion):
+   - Currency
+
+   **Open Positions** (required):
+   - Symbol
+   - Description
+   - Currency
+   - FX Rate to Base
+   - Quantity
+   - Position Value
+   - Listing Exchange
+   - Level of Detail
+
+   **Cash Report** (optional, for cash balances):
+   - Currency
+   - Ending Cash
+   - FX Rate to Base
+
+6. Save the query and note the **Query ID** (shown in the Flex Queries list)
+
+#### 2. Generate a Flex Web Service Token
+
+1. In Client Portal, go to **Settings** → **Reporting** → **Flex Web Service**
+2. Generate a new token
+3. Copy and securely store the token (it's only shown once)
+
+#### 3. Add the Connection in Balance
+
+1. Go to **Assets** → **Broker Connections** → **New Connection**
+2. Select **Interactive Brokers** as the broker type
+3. Enter:
+   - **Name**: A friendly name for the connection
+   - **Account ID**: Your IBKR account ID (e.g., U1234567)
+   - **Flex Token**: The token you generated
+   - **Flex Query ID**: The query ID from step 1
+
+4. Click **Test Connection** to verify, then **Save**
+
+#### Currency Conversion
+
+When your IBKR account's base currency matches Balance's default currency, the app uses IBKR's exchange rates directly. Otherwise, it fetches historical rates from [Frankfurter API](https://www.frankfurter.app/).
+
 ### Stopping the Application
 
 ```bash
