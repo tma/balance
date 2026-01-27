@@ -3,15 +3,18 @@ class AssetValuationsController < ApplicationController
   def bulk_edit
     @asset_groups = AssetGroup.includes(assets: [ :asset_type, :asset_valuations, :broker_positions ]).order(:name)
 
-    # Parse month parameter or default to current month
-    if params[:month].present?
-      @end_month = Date.parse("#{params[:month]}-01").end_of_month
+    # Parse year parameter or default to current year
+    if params[:year].present?
+      @year = params[:year].to_i
     else
-      @end_month = Date.current.end_of_month
+      @year = Date.current.year
     end
-    @current_month = @end_month.strftime("%Y-%m")
 
-    @months = build_months_range(@end_month)
+    # Limit to current year + 1 max
+    max_year = Date.current.year + 1
+    @year = [ @year, max_year ].min
+
+    @months = build_months_range(@year)
     @valuations_by_asset_and_month = build_valuations_lookup
     @group_totals_by_month = build_group_totals_by_month
     @totals_by_month = build_totals_by_month
@@ -85,9 +88,9 @@ class AssetValuationsController < ApplicationController
       end
     end
 
-    redirect_to update_valuations_path, notice: "Saved #{updated_count} #{'valuation'.pluralize(updated_count)}."
+    redirect_to update_valuations_path(year: params[:year]), notice: "Saved #{updated_count} #{'valuation'.pluralize(updated_count)}."
   rescue ActiveRecord::RecordInvalid => e
-    redirect_to update_valuations_path, alert: "Update failed: #{e.message}"
+    redirect_to update_valuations_path(year: params[:year]), alert: "Update failed: #{e.message}"
   end
 
   # Edit individual valuation date
@@ -117,9 +120,13 @@ class AssetValuationsController < ApplicationController
 
   private
 
-  def build_months_range(end_month)
-    # Show 12 months ending at end_month
-    (0..11).map { |i| (end_month - i.months).end_of_month }.reverse
+  def build_months_range(year)
+    # 14 months: Dec of prev year, full year, Jan of next year
+    months = []
+    months << Date.new(year - 1, 12, 1).end_of_month
+    (1..12).each { |m| months << Date.new(year, m, 1).end_of_month }
+    months << Date.new(year + 1, 1, 1).end_of_month
+    months
   end
 
   def build_valuations_lookup
