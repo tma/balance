@@ -1,4 +1,4 @@
-<div class="space-y-6">
+<div class="space-y-4">
   <div class="flex justify-between items-center">
     <div>
       <h1 class="<%= ui_title_class %>">Valuations</h1>
@@ -27,7 +27,7 @@
     </div>
   </div>
 
-  <%= form_with url: update_valuations_path, method: :patch, class: "space-y-6", data: { controller: "currency-form", action: "submit->currency-form#unformatAll" } do |form| %>
+  <%= form_with url: update_valuations_path, method: :patch, data: { controller: "currency-form", action: "submit->currency-form#unformatAll" } do |form| %>
     <% has_assets = @asset_groups.joins(:assets).distinct.any? %>
 
     <% if has_assets %>
@@ -37,16 +37,16 @@
       <% asset_row_index = {} %>
       <% all_active_assets.each_with_index { |a, i| asset_row_index[a.id] = i } %>
 
-      <div class="<%= ui_card_class %> overflow-hidden">
-        <div class="overflow-x-auto" data-controller="scroll-right">
-          <table class="w-full">
+      <div class="<%= ui_card_class %> overflow-hidden rounded-b-none border-b-0">
+        <div style="height: calc(100vh - 140px); overflow: auto;" data-controller="scroll-right">
+          <table class="w-full min-w-max">
             <thead>
-              <tr class="<%= ui_table_header_class %>">
-                <th class="sticky left-0 bg-slate-50 dark:bg-slate-800 px-4 py-2 text-left text-xs font-semibold <%= ui_text_muted_class %> uppercase tracking-wider min-w-[200px]">
+              <tr>
+                <th style="position: sticky; left: 0; top: 0; z-index: 30;" class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 text-left text-xs font-semibold <%= ui_text_muted_class %> uppercase tracking-wider min-w-[200px]">
                   Asset
                 </th>
                 <% @months.each do |month| %>
-                  <th class="px-2 py-2 text-center text-xs font-semibold <%= ui_text_muted_class %> uppercase tracking-wider min-w-[100px]">
+                  <th style="position: sticky; top: 0; z-index: 20;" class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 py-2 text-center text-xs font-semibold <%= ui_text_muted_class %> uppercase tracking-wider min-w-[100px]">
                     <%= month.strftime("%b %Y") %>
                   </th>
                 <% end %>
@@ -60,7 +60,7 @@
 
                 <%# Group header row %>
                 <tr class="<%= ui_table_group_header_class %> <%= group_index > 0 ? 'border-t-4 border-slate-300 dark:border-slate-600' : 'border-t border-slate-200 dark:border-slate-700' %>">
-                  <td class="sticky left-0 bg-slate-200 dark:bg-slate-700 px-4 py-2 z-10">
+                  <td class="sticky left-0 z-10 bg-slate-200 dark:bg-slate-700 px-4 py-2">
                     <span class="inline-flex items-center">
                       <svg class="flex-shrink-0 mr-2" width="16" height="16"><rect width="16" height="16" fill="<%= group.color || '#94a3b8' %>"/></svg>
                       <span class="font-semibold <%= ui_table_group_text_class %> whitespace-nowrap"><%= group.name %></span>
@@ -75,7 +75,7 @@
                 <% active_assets.each do |asset| %>
                   <% has_broker = @broker_asset_ids.include?(asset.id) %>
                   <tr class="group hover:bg-slate-50 dark:hover:bg-slate-900 transition border-t border-slate-100 dark:border-slate-700" data-controller="copy-previous">
-                    <td class="sticky left-0 bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-4 py-2">
+                    <td class="sticky left-0 z-10 bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-4 py-2">
                       <%= link_to asset, class: "block" do %>
                         <p class="text-sm font-medium <%= ui_text_class %> hover:text-cyan-600 dark:hover:text-cyan-400 whitespace-nowrap">
                           <%= asset.name %>
@@ -202,14 +202,16 @@
                   </td>
                 <% end %>
               </tr>
+              <%# Save button row %>
+              <tr>
+                <td class="sticky left-0 bg-white dark:bg-slate-800 px-4 py-3 z-10"></td>
+                <td colspan="<%= @months.length %>" class="bg-white dark:bg-slate-800 px-2 py-3 text-right">
+                  <%= form.submit "Save", class: ui_btn_primary_class + " cursor-pointer" %>
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
-      </div>
-
-      <div class="flex justify-end space-x-4">
-        <%= link_to "Cancel", net_worth_path, class: ui_btn_secondary_class %>
-        <%= form.submit "Save All", class: ui_btn_primary_class + " cursor-pointer" %>
       </div>
     <% else %>
       <div class="<%= ui_card_class %> p-8 text-center">
