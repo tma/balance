@@ -28,12 +28,24 @@ export default class extends Controller {
   }
 
   format() {
+    // Collapse input width on blur - restore normal positioning
+    this.element.style.position = ""
+    this.element.style.right = ""
+    this.element.style.top = ""
+    this.element.style.width = ""
+    this.element.style.zIndex = ""
+    
+    // Reset parent height
+    const parent = this.element.parentElement
+    parent.style.height = ""
+    
     const rawValue = this.element.value
     if (rawValue === "" || rawValue === null) {
       // Clear formula indicator if value is empty
       this.currentFormula = null
       delete this.element.dataset.formula
       this.removeFormulaIndicator()
+      this.checkModified()
       return
     }
 
@@ -49,6 +61,7 @@ export default class extends Controller {
       } else {
         // Invalid formula - mark as error
         this.markError()
+        this.checkModified()
         return
       }
     } else {
@@ -67,6 +80,22 @@ export default class extends Controller {
   }
 
   unformat() {
+    // Expand input width on focus - use absolute positioning to expand left
+    // Capture the current position before making it absolute
+    const rect = this.element.getBoundingClientRect()
+    const parentRect = this.element.parentElement.getBoundingClientRect()
+    const topOffset = rect.top - parentRect.top
+    
+    // Lock parent height so layout doesn't shift when child becomes absolute
+    const parent = this.element.parentElement
+    parent.style.height = `${rect.height}px`
+    
+    this.element.style.position = "absolute"
+    this.element.style.top = `${topOffset}px`
+    this.element.style.right = "0"
+    this.element.style.width = "16rem"  // w-64
+    this.element.style.zIndex = "20"
+    
     // On focus, show the formula if present, otherwise show raw number
     if (this.currentFormula) {
       this.element.value = this.currentFormula
@@ -139,21 +168,20 @@ export default class extends Controller {
       // Formula changed
       isModified = true
     } else {
-      // Compare numeric values
+      // Compare numeric values - round to integers since we display as integers
       const currentRaw = this.element.value.replace(/[-']/g, "")
       const originalRaw = (this.originalValue || "").replace(/[-']/g, "")
-      const current = parseFloat(currentRaw) || 0
-      const original = parseFloat(originalRaw) || 0
-      const epsilon = 0.001
-      isModified = Math.abs(current - original) > epsilon
+      const current = Math.round(parseFloat(currentRaw) || 0)
+      const original = Math.round(parseFloat(originalRaw) || 0)
+      isModified = current !== original
     }
 
     if (isModified) {
-      this.element.classList.add("border-amber-400", "bg-amber-50")
-      this.element.classList.remove("border-slate-300")
+      this.element.classList.add("border-amber-400", "bg-amber-50", "dark:bg-amber-900/30")
+      this.element.classList.remove("border-slate-300", "dark:border-slate-600")
     } else {
-      this.element.classList.remove("border-amber-400", "bg-amber-50")
-      this.element.classList.add("border-slate-300")
+      this.element.classList.remove("border-amber-400", "bg-amber-50", "dark:bg-amber-900/30")
+      this.element.classList.add("border-slate-300", "dark:border-slate-600")
     }
   }
 }
