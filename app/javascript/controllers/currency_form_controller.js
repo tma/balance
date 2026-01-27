@@ -4,6 +4,11 @@ export default class extends Controller {
   static targets = ["input"]
 
   unformatAll(event) {
+    // Blur any focused input first to trigger format() and collapse expanded inputs
+    if (document.activeElement && document.activeElement.tagName === "INPUT") {
+      document.activeElement.blur()
+    }
+
     this.inputTargets.forEach(input => {
       // If there's a formula, store the computed value for submission
       // but keep formula in a hidden field for server to read
