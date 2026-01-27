@@ -11,22 +11,24 @@ class IbkrSyncService < BrokerSyncService
   # @param sync_date [Date, nil] The date to sync data for
   def perform_sync!(sync_date: nil)
     result = { positions: [], updated_count: 0, closed_count: 0, errors: [] }
+    valuation_date = sync_date || Date.current
 
     begin
       # Fetch positions from IBKR
       positions = fetch_positions(sync_date: sync_date)
       synced_symbols = []
 
-      # Update or create position mappings
+      # Update or create position mappings and record valuations
       positions.each do |position_data|
         position = find_or_create_position(position_data)
         update_position(position, position_data)
+        record_position_valuation!(position, position_data, date: valuation_date)
         result[:positions] << position
         synced_symbols << position_data[:symbol]
       end
 
       # Close positions that weren't in the sync (no longer held)
-      result[:closed_count] = close_missing_positions(synced_symbols)
+      result[:closed_count] = close_missing_positions(synced_symbols, date: valuation_date)
 
       # Update all assets that have mappings from this connection
       updated_assets = sync_mapped_assets
@@ -76,6 +78,11 @@ class IbkrSyncService < BrokerSyncService
   end
 
   private
+
+  # IBKR records valuations inline to pass through FX rates from the API
+  def records_valuations_inline?
+    true
+  end
 
   # Wrapper for sleep to allow stubbing in tests
   def wait(seconds)
@@ -186,6 +193,9 @@ class IbkrSyncService < BrokerSyncService
     positions = []
     doc = REXML::Document.new(xml_body)
 
+    # Extract account base currency from AccountInformation section
+    account_base_currency = doc.elements["//AccountInformation"]&.attributes&.[]("currency")
+
     # IBKR Flex returns OpenPositions with OpenPosition elements
     # Filter for SUMMARY level only (excludes individual tax lots)
     doc.elements.each("//OpenPosition") do |pos|
@@ -198,7 +208,9 @@ class IbkrSyncService < BrokerSyncService
         quantity: pos.attributes["position"]&.to_d,
         value: pos.attributes["positionValue"]&.to_d || pos.attributes["markValue"]&.to_d,
         currency: pos.attributes["currency"],
-        exchange: pos.attributes["listingExchange"]
+        exchange: pos.attributes["listingExchange"],
+        fx_rate_to_base: pos.attributes["fxRateToBase"]&.to_d,
+        ibkr_base_currency: account_base_currency
       }
     end
 
@@ -209,12 +221,18 @@ class IbkrSyncService < BrokerSyncService
       ending_cash = cash.attributes["endingCash"]&.to_d
       next if ending_cash.nil? || ending_cash.zero?
 
+      # Cash in its own currency has fx rate of 1.0 to itself
+      # Use fxRateToBase if available from cash report, otherwise it's same-currency
+      fx_rate = cash.attributes["fxRateToBase"]&.to_d || (currency == account_base_currency ? 1.0 : nil)
+
       positions << {
         symbol: currency,
         description: "Cash (#{currency})",
         quantity: ending_cash,
         value: ending_cash,
-        currency: currency
+        currency: currency,
+        fx_rate_to_base: fx_rate,
+        ibkr_base_currency: account_base_currency
       }
     end
 
@@ -245,13 +263,28 @@ class IbkrSyncService < BrokerSyncService
     )
   end
 
+  # Record a valuation for a position with IBKR-provided FX rate
+  def record_position_valuation!(position, position_data, date:)
+    return unless position_data[:value].present? && position_data[:quantity].present?
+
+    valuation = position.position_valuations.find_or_initialize_by(date: date)
+    valuation.assign_attributes(
+      quantity: position_data[:quantity],
+      value: position_data[:value],
+      currency: position_data[:currency],
+      fx_rate_to_base: position_data[:fx_rate_to_base],
+      ibkr_base_currency: position_data[:ibkr_base_currency]
+    )
+    valuation.save!
+  end
+
   # Close positions that weren't in the latest sync
   # Returns the count of positions closed
-  def close_missing_positions(synced_symbols)
+  def close_missing_positions(synced_symbols, date:)
     missing_positions = @connection.broker_positions.open.where.not(symbol: synced_symbols)
     count = missing_positions.count
 
-    missing_positions.find_each(&:close!)
+    missing_positions.find_each { |p| p.close!(date: date) }
 
     count
   end

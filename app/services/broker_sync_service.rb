@@ -27,7 +27,8 @@ class BrokerSyncService
     result = perform_sync!(sync_date: date)
 
     # Record position valuations for historical tracking
-    record_position_valuations!(date: date)
+    # (subclasses may handle this inline during perform_sync! by overriding records_valuations_inline?)
+    record_position_valuations!(date: date) unless records_valuations_inline?
 
     result
   end
@@ -39,6 +40,12 @@ class BrokerSyncService
   # @param sync_date [Date, nil] The date to sync data for
   def perform_sync!(sync_date: nil)
     raise NotImplementedError, "Subclasses must implement perform_sync!"
+  end
+
+  # Override in subclasses that record valuations inline during perform_sync!
+  # (e.g., when broker provides FX rates that need to be passed through)
+  def records_valuations_inline?
+    false
   end
 
   # Update all assets that have mappings from this connection

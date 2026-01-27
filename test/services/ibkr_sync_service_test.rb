@@ -661,4 +661,136 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     # closed_count should only count newly closed positions
     assert_equal 0, result[:closed_count]
   end
+
+  # ============================================================
+  # FX Rate Parsing Tests
+  # ============================================================
+
+  def statement_with_fx_rates_and_account_info
+    <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse queryName="Balance Positions" type="AF">
+        <FlexStatements count="1">
+          <FlexStatement accountId="U9999999" fromDate="20260101" toDate="20260119">
+            <AccountInformation accountId="U9999999" currency="USD"/>
+            <OpenPositions>
+              <OpenPosition symbol="VTI" description="Vanguard Total Stock Market ETF"
+                position="100.0" positionValue="25000.00" currency="USD" fxRateToBase="1.0" levelOfDetail="SUMMARY"/>
+              <OpenPosition symbol="VWCE" description="Vanguard FTSE All-World UCITS ETF"
+                position="50.0" positionValue="5000.00" currency="EUR" fxRateToBase="1.08" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+  end
+
+  test "parse_positions extracts fxRateToBase from OpenPosition" do
+    positions = @service.send(:parse_positions, statement_with_fx_rates_and_account_info)
+
+    vti = positions.find { |p| p[:symbol] == "VTI" }
+    assert_equal 1.0, vti[:fx_rate_to_base].to_f
+
+    vwce = positions.find { |p| p[:symbol] == "VWCE" }
+    assert_equal 1.08, vwce[:fx_rate_to_base].to_f
+  end
+
+  test "parse_positions extracts account base currency from AccountInformation" do
+    positions = @service.send(:parse_positions, statement_with_fx_rates_and_account_info)
+
+    positions.each do |pos|
+      assert_equal "USD", pos[:ibkr_base_currency]
+    end
+  end
+
+  test "parse_positions handles missing AccountInformation gracefully" do
+    xml_without_account_info = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <OpenPositions>
+              <OpenPosition symbol="VTI" position="100.0" positionValue="25000.00"
+                currency="USD" fxRateToBase="1.0" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_without_account_info)
+
+    assert_equal 1, positions.count
+    assert_nil positions.first[:ibkr_base_currency]
+  end
+
+  test "parse_positions handles missing fxRateToBase gracefully" do
+    xml_without_fx_rate = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <AccountInformation accountId="U9999999" currency="USD"/>
+            <OpenPositions>
+              <OpenPosition symbol="VTI" position="100.0" positionValue="25000.00"
+                currency="USD" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_without_fx_rate)
+
+    assert_equal 1, positions.count
+    assert_nil positions.first[:fx_rate_to_base]
+  end
+
+  test "sync uses IBKR fxRateToBase when base currencies match" do
+    # Set USD as default currency (matching IBKR account base currency)
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "USD").update!(default: true)
+
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    stub_request(:get, %r{/GetStatement})
+      .to_return(status: 200, body: statement_with_fx_rates_and_account_info)
+
+    @service.sync!
+
+    # EUR position should use IBKR's fxRateToBase (1.08) since IBKR base is USD = app default
+    vwce_position = @connection.broker_positions.find_by(symbol: "VWCE")
+    valuation = vwce_position.position_valuations.last
+
+    assert_equal 1.08, valuation.exchange_rate.to_f
+    assert_equal 5400.00, valuation.value_in_default_currency.to_f # 5000 * 1.08
+  end
+
+  test "sync falls back to ExchangeRateService when IBKR base currency differs from app default" do
+    # App default is EUR, but IBKR base is USD - currencies don't match
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "EUR").update!(default: true)
+    Currency.find_or_create_by!(code: "USD").update!(default: false)
+
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    stub_request(:get, %r{/GetStatement})
+      .to_return(status: 200, body: statement_with_fx_rates_and_account_info)
+
+    # Stub the exchange rate service to return a specific rate
+    stub_request(:get, %r{api\.frankfurter\.app})
+      .to_return(status: 200, body: { rates: { "EUR" => 0.92 } }.to_json,
+                 headers: { "Content-Type" => "application/json" })
+
+    @service.sync!
+
+    # USD position should use ExchangeRateService rate (0.92) since IBKR base (USD) != app default (EUR)
+    vti_position = @connection.broker_positions.find_by(symbol: "VTI")
+    valuation = vti_position.position_valuations.last
+
+    assert_equal 0.92, valuation.exchange_rate.to_f
+    assert_equal 23000.00, valuation.value_in_default_currency.to_f # 25000 * 0.92
+  end
 end
