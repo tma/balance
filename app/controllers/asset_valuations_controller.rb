@@ -123,13 +123,13 @@ class AssetValuationsController < ApplicationController
 
   def build_group_totals_by_month
     # Build a hash: { group_id => { date => net_value } }
-    # Only includes active (non-archived) assets
+    # Includes all assets (active and archived)
     totals = Hash.new { |h, k| h[k] = {} }
 
     @asset_groups.each do |group|
       @months.each do |month|
         net = 0
-        group.assets.active.each do |asset|
+        group.assets.each do |asset|
           value = @valuations_by_asset_and_month[asset.id][month]
           next unless value
 
