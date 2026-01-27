@@ -40,9 +40,9 @@
               <td class="<%= ui_table_td_class %>">
                 <% case connection.sync_status %>
                 <% when :ok %>
-                  <span class="<%= ui_positive_class %>">Synced <%= connection.last_sync_date&.strftime("%b %-d") %></span>
+                  <span class="<%= ui_positive_class %>">Synced</span>
                 <% when :behind %>
-                  <span class="text-amber-600 dark:text-amber-400"><%= connection.days_behind %> days behind</span>
+                  <span class="text-amber-600 dark:text-amber-400"><%= connection.missing_sync_days %> days behind</span>
                 <% when :error %>
                   <span class="<%= ui_badge_danger_class %>">Error</span>
                 <% when :never %>

@@ -157,6 +157,8 @@ docker compose up          # Docker container
 ### Database Tasks
 ```bash
 rails db:migrate           # Run migrations
+rails db:schema:dump:cable  # Refresh Solid Cable schema dump
+rails db:schema:dump:queue  # Refresh Solid Queue schema dump
 rails db:seed              # Load seed data
 rails db:reset             # Drop, create, migrate, seed
 ```

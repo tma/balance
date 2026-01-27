@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_26_183504) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_27_190112) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -83,7 +83,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_26_183504) do
     t.datetime "created_at", null: false
     t.string "flex_query_id", null: false
     t.string "flex_token", null: false
-    t.date "last_sync_date"
     t.text "last_sync_error"
     t.datetime "last_synced_at"
     t.string "name", null: false

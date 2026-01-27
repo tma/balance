@@ -41,9 +41,13 @@ class Admin::BrokerConnectionsController < ApplicationController
   end
 
   def sync
-    service = BrokerSyncService.for(@connection)
-    service.sync!
-    redirect_to admin_broker_connection_path(@connection), notice: "Sync completed successfully."
+    result = BrokerSyncBackfillService.sync_missing_dates!(@connection)
+    message = if result[:dates].empty?
+      "Sync already up to date."
+    else
+      "Sync completed for #{result[:synced]} day(s)."
+    end
+    redirect_to admin_broker_connection_path(@connection), notice: message
   rescue => e
     redirect_to admin_broker_connection_path(@connection), alert: "Sync failed: #{e.message}"
   end

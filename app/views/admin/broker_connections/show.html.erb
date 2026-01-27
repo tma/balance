@@ -26,8 +26,8 @@
     </div>
   <% elsif @connection.sync_status == :behind %>
     <div class="<%= ui_alert_warning_class %> mb-6">
-      <p class="font-medium">Sync is <%= @connection.days_behind %> days behind</p>
-      <p class="text-sm mt-1">Last synced data is from <%= @connection.last_sync_date&.strftime("%B %-d, %Y") %>. Missing days will be backfilled on the next sync.</p>
+      <p class="font-medium">Sync is <%= @connection.missing_sync_days %> days behind</p>
+      <p class="text-sm mt-1">Missing days in the last 14 days will be backfilled on the next sync.</p>
     </div>
   <% end %>
 
@@ -37,9 +37,6 @@
       <% if @connection.last_synced_at %>
         <span class="text-xs <%= ui_text_muted_class %>">
           Last synced: <%= @connection.last_synced_at.strftime("%Y-%m-%d %H:%M") %>
-          <% if @connection.last_sync_date %>
-            (data as of <%= @connection.last_sync_date.strftime("%b %-d") %>)
-          <% end %>
         </span>
       <% end %>
     </div>

@@ -16,24 +16,6 @@ class IbkrConnectionTest < ActiveSupport::TestCase
   end
 
   # ============================================================
-  # days_behind tests
-  # ============================================================
-
-  test "days_behind returns nil when last_sync_date is nil" do
-    assert_nil @connection.days_behind
-  end
-
-  test "days_behind returns 0 when synced today" do
-    @connection.update!(last_sync_date: Date.current)
-    assert_equal 0, @connection.days_behind
-  end
-
-  test "days_behind returns correct number of days" do
-    @connection.update!(last_sync_date: Date.current - 5.days)
-    assert_equal 5, @connection.days_behind
-  end
-
-  # ============================================================
   # sync_status tests
   # ============================================================
 
@@ -46,19 +28,32 @@ class IbkrConnectionTest < ActiveSupport::TestCase
     assert_equal :error, @connection.sync_status
   end
 
-  test "sync_status returns :behind when more than 1 day behind" do
-    @connection.update!(last_synced_at: 1.day.ago, last_sync_date: Date.current - 3.days)
+  test "sync_status returns :behind when missing days exist" do
+    @connection.update!(last_synced_at: 1.day.ago)
+    original_missing = BrokerSyncBackfillService.method(:missing_dates_for)
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |_connection, **_kwargs|
+      [ Date.current - 1.day ]
+    end
+
     assert_equal :behind, @connection.sync_status
+  ensure
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|
+      original_missing.call(*args, **kwargs, &block)
+    end
   end
 
-  test "sync_status returns :ok when synced and up to date" do
-    @connection.update!(last_synced_at: 1.hour.ago, last_sync_date: Date.current)
-    assert_equal :ok, @connection.sync_status
-  end
+  test "sync_status returns :ok when no missing days" do
+    @connection.update!(last_synced_at: 1.hour.ago)
+    original_missing = BrokerSyncBackfillService.method(:missing_dates_for)
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |_connection, **_kwargs|
+      []
+    end
 
-  test "sync_status returns :ok when synced yesterday (1 day behind is acceptable)" do
-    @connection.update!(last_synced_at: 1.day.ago, last_sync_date: Date.current - 1.day)
     assert_equal :ok, @connection.sync_status
+  ensure
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|
+      original_missing.call(*args, **kwargs, &block)
+    end
   end
 
   # ============================================================
@@ -82,12 +77,30 @@ class IbkrConnectionTest < ActiveSupport::TestCase
   end
 
   test "sync_status_label returns days behind when behind" do
-    @connection.update!(last_synced_at: 1.day.ago, last_sync_date: Date.current - 5.days)
-    assert_equal "5 days behind", @connection.sync_status_label
+    @connection.update!(last_synced_at: 1.day.ago)
+    original_missing = BrokerSyncBackfillService.method(:missing_dates_for)
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |_connection, **_kwargs|
+      [ Date.current - 1.day, Date.current ]
+    end
+
+    assert_equal "2 days behind", @connection.sync_status_label
+  ensure
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|
+      original_missing.call(*args, **kwargs, &block)
+    end
   end
 
   test "sync_status_label returns 'Synced' when ok" do
-    @connection.update!(last_synced_at: 1.hour.ago, last_sync_date: Date.current)
+    @connection.update!(last_synced_at: 1.hour.ago)
+    original_missing = BrokerSyncBackfillService.method(:missing_dates_for)
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |_connection, **_kwargs|
+      []
+    end
+
     assert_equal "Synced", @connection.sync_status_label
+  ensure
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|
+      original_missing.call(*args, **kwargs, &block)
+    end
   end
 end

@@ -270,7 +270,7 @@ PositionValuation
 - Broker integration uses factory pattern (BrokerSyncService) for multi-broker support
 - IBKR uses Flex Web Service API (2-step: SendRequest → GetStatement)
 - IbkrSyncService handles API calls, XML parsing, and asset value sync
-- Daily broker sync at 11:30pm via Solid Queue (BrokerSyncJob)
+- Daily broker sync at 11:30pm via Solid Queue (BrokerSyncJob) with 14-day valuation backfill
 - Position valuations track historical position values separately from asset valuations
 
 ## Agent Guidelines
