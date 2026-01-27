@@ -46,9 +46,19 @@ The app will be available at http://localhost:3000
 - Run `rails`, `ruby`, or `bundle` commands directly on the host machine
 - Use system Ruby (it's outdated and incompatible)
 
+## Planning
+
+**IMPORTANT: Always create a plan document BEFORE implementing any feature or fix.**
+
+- Create a new file in `doc/plans/` with a descriptive name (e.g., `feature-name.md`)
+- Document the problem, proposed solution, files to modify, and any considerations
+- Never modify existing `doc/plans/` files - they serve as historical records
+- The plan should be detailed enough that implementation becomes straightforward
+
 ## Development Principles
 
 ### Always
+- Create a `doc/plans/` file before starting implementation
 - Run `rails test` and `rubocop` before and after changes
 - Follow Rails conventions and best practices
 - Use RESTful routes and resourceful controllers
