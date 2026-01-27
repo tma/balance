@@ -5,6 +5,7 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
   setup do
     WebMock.disable_net_connect!
     @base_url = "https://api.frankfurter.app"
+    @test_date = Date.new(2026, 1, 20)
   end
 
   teardown do
@@ -16,7 +17,7 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
   # ========================================
 
   test "rate returns exchange rate for valid currency pair" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -24,36 +25,36 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_equal 0.92, result
   end
 
   test "rate returns 1.0 for same currency conversion" do
     # Should not make any HTTP requests
-    result = ExchangeRateService.rate("USD", "USD")
+    result = ExchangeRateService.rate("USD", "USD", date: @test_date)
     assert_equal 1.0, result
   end
 
   test "rate returns nil on HTTP error" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(status: 500, body: "Internal Server Error")
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_nil result
   end
 
   test "rate returns nil on 404 not found" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "XYZ" })
       .to_return(status: 404, body: { message: "not found" }.to_json)
 
-    result = ExchangeRateService.rate("USD", "XYZ")
+    result = ExchangeRateService.rate("USD", "XYZ", date: @test_date)
     assert_nil result
   end
 
   test "rate returns nil on malformed JSON response" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -61,12 +62,12 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_nil result
   end
 
   test "rate returns nil when rates key is missing from response" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -74,12 +75,12 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_nil result
   end
 
   test "rate returns nil when target currency is missing from rates" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -87,29 +88,29 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_nil result
   end
 
   test "rate returns nil on network timeout" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_timeout
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_nil result
   end
 
   test "rate returns nil on connection refused" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_raise(Errno::ECONNREFUSED)
 
-    result = ExchangeRateService.rate("USD", "EUR")
+    result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
     assert_nil result
   end
 
-  test "rate fetches historical rate when date is provided" do
+  test "rate fetches historical rate for specified date" do
     date = Date.new(2025, 6, 15)
 
     stub_request(:get, "#{@base_url}/2025-06-15")
@@ -124,17 +125,10 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
     assert_equal 0.89, result
   end
 
-  test "rate uses latest endpoint when date is nil" do
-    stub = stub_request(:get, "#{@base_url}/latest")
-      .with(query: { from: "GBP", to: "JPY" })
-      .to_return(
-        status: 200,
-        body: { base: "GBP", date: "2026-01-20", rates: { "JPY" => 190.5 } }.to_json,
-        headers: { "Content-Type" => "application/json" }
-      )
-
-    ExchangeRateService.rate("GBP", "JPY", date: nil)
-    assert_requested(stub)
+  test "rate requires date argument" do
+    assert_raises(ArgumentError) do
+      ExchangeRateService.rate("GBP", "JPY")
+    end
   end
 
   # ========================================
@@ -142,7 +136,7 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
   # ========================================
 
   test "convert returns converted amount" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -150,12 +144,12 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.convert(100, "USD", "EUR")
+    result = ExchangeRateService.convert(100, "USD", "EUR", date: @test_date)
     assert_equal 92.0, result
   end
 
   test "convert rounds result to 2 decimal places" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -163,27 +157,27 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.convert(100, "USD", "EUR")
+    result = ExchangeRateService.convert(100, "USD", "EUR", date: @test_date)
     assert_equal 92.35, result
   end
 
   test "convert returns original amount for same currency" do
     # Should not make any HTTP requests
-    result = ExchangeRateService.convert(150.75, "EUR", "EUR")
+    result = ExchangeRateService.convert(150.75, "EUR", "EUR", date: @test_date)
     assert_equal 150.75, result
   end
 
   test "convert returns nil when rate fetch fails" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(status: 500, body: "Server Error")
 
-    result = ExchangeRateService.convert(100, "USD", "EUR")
+    result = ExchangeRateService.convert(100, "USD", "EUR", date: @test_date)
     assert_nil result
   end
 
   test "convert returns nil when rate is nil due to missing currency in response" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -191,7 +185,7 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.convert(100, "USD", "EUR")
+    result = ExchangeRateService.convert(100, "USD", "EUR", date: @test_date)
     assert_nil result
   end
 
@@ -211,7 +205,7 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
   end
 
   test "convert handles zero amount" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -219,12 +213,12 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.convert(0, "USD", "EUR")
+    result = ExchangeRateService.convert(0, "USD", "EUR", date: @test_date)
     assert_equal 0.0, result
   end
 
   test "convert handles negative amount" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -232,12 +226,12 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.convert(-100, "USD", "EUR")
+    result = ExchangeRateService.convert(-100, "USD", "EUR", date: @test_date)
     assert_equal(-92.0, result)
   end
 
   test "convert handles large amounts without precision loss" do
-    stub_request(:get, "#{@base_url}/latest")
+    stub_request(:get, "#{@base_url}/2026-01-20")
       .with(query: { from: "USD", to: "EUR" })
       .to_return(
         status: 200,
@@ -245,7 +239,13 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
         headers: { "Content-Type" => "application/json" }
       )
 
-    result = ExchangeRateService.convert(1_000_000, "USD", "EUR")
+    result = ExchangeRateService.convert(1_000_000, "USD", "EUR", date: @test_date)
     assert_equal 920_000.0, result
+  end
+
+  test "convert requires date argument" do
+    assert_raises(ArgumentError) do
+      ExchangeRateService.convert(100, "USD", "EUR")
+    end
   end
 end

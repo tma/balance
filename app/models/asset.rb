@@ -63,7 +63,7 @@ class Asset < ApplicationRecord
       if position.currency == currency
         total += position.last_value
       else
-        converted = ExchangeRateService.convert(position.last_value, position.currency, currency)
+        converted = ExchangeRateService.convert(position.last_value, position.currency, currency, date: Date.current)
         return nil if converted.nil? # Can't calculate total without all rates
         total += converted
       end
@@ -117,7 +117,7 @@ class Asset < ApplicationRecord
       self.exchange_rate = 1.0
       self.value_in_default_currency = value
     else
-      rate = ExchangeRateService.rate(currency, default_curr)
+      rate = ExchangeRateService.rate(currency, default_curr, date: Date.current)
       if rate.nil?
         Rails.logger.warn "Exchange rate unavailable for #{currency}->#{default_curr}, skipping conversion for asset"
         return

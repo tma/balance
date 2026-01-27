@@ -74,7 +74,7 @@ class Account < ApplicationRecord
       self.exchange_rate = 1.0
       self.balance_in_default_currency = balance
     else
-      rate = ExchangeRateService.rate(currency, default_curr)
+      rate = ExchangeRateService.rate(currency, default_curr, date: Date.current)
       if rate.nil?
         Rails.logger.warn "Exchange rate unavailable for #{currency}->#{default_curr}, skipping conversion for account"
         return

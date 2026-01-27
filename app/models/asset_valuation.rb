@@ -28,7 +28,7 @@ class AssetValuation < ApplicationRecord
       self.exchange_rate = 1.0
       self.value_in_default_currency = value
     else
-      rate = ExchangeRateService.rate(asset_currency, default_curr)
+      rate = ExchangeRateService.rate(asset_currency, default_curr, date: date)
       if rate.nil?
         Rails.logger.warn "Exchange rate unavailable for #{asset_currency}->#{default_curr}, skipping conversion for asset valuation"
         return
