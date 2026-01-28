@@ -48,6 +48,30 @@ class OllamaService
       parse_json_response(response)
     end
 
+    # Generate an embedding vector for text
+    # @param text [String] The text to embed
+    # @return [Array<Float>] The embedding vector
+    def embed(text)
+      raise UnavailableError, "Ollama is not available" unless available?
+
+      response = HTTParty.post(
+        "#{config.host}/api/embeddings",
+        body: { model: config.embedding_model, prompt: text }.to_json,
+        headers: { "Content-Type" => "application/json" },
+        timeout: 30
+      )
+
+      if response.success?
+        response.parsed_response["embedding"]
+      else
+        raise Error, "Ollama embedding error: #{response.code} - #{response.body}"
+      end
+    rescue Net::OpenTimeout, Net::ReadTimeout => e
+      raise TimeoutError, "Ollama embedding request timed out: #{e.message}"
+    rescue Errno::ECONNREFUSED => e
+      raise UnavailableError, "Cannot connect to Ollama: #{e.message}"
+    end
+
     # Attempt to parse JSON, with repair for truncated responses
     # @param response [String] The JSON string to parse
     # @return [Hash, Array] The parsed JSON
@@ -138,6 +162,24 @@ class OllamaService
 
       models = response.parsed_response["models"] || []
       models.any? { |m| m["name"]&.start_with?(config.model) }
+    rescue StandardError
+      false
+    end
+
+    # Check if the configured embedding model is available
+    # @return [Boolean]
+    def embedding_model_available?
+      return false unless available?
+
+      response = HTTParty.get(
+        "#{config.host}/api/tags",
+        timeout: 5
+      )
+
+      return false unless response.success?
+
+      models = response.parsed_response["models"] || []
+      models.any? { |m| m["name"]&.start_with?(config.embedding_model) }
     rescue StandardError
       false
     end
