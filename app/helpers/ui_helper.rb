@@ -262,4 +262,43 @@ module UiHelper
   def ui_negative_class
     "text-rose-500 dark:text-rose-400"
   end
+
+  # ===========================================
+  # Breadcrumbs
+  # ===========================================
+
+  # Breadcrumb container - wraps the breadcrumb items
+  def ui_breadcrumbs(&block)
+    content_tag(:nav, aria: { label: "Breadcrumb" }, class: "mb-4") do
+      content_tag(:ol, class: "flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400", &block)
+    end
+  end
+
+  # Individual breadcrumb item
+  # Pass path: nil for current/non-linked items
+  def ui_breadcrumb_item(text, path = nil, current: false)
+    item_class = current ? "text-slate-700 dark:text-slate-200 font-medium" : ""
+    link_class = "hover:text-slate-700 dark:hover:text-slate-200"
+    separator = content_tag(:li, "/", class: "text-slate-300 dark:text-slate-600")
+
+    item = if path && !current
+             content_tag(:li) { link_to(text, path, class: link_class) }
+           else
+             content_tag(:li, text, class: item_class)
+           end
+
+    # Return item with separator, unless it's the first item (handled by caller context)
+    safe_join([ separator, item ])
+  end
+
+  # First breadcrumb item (no preceding separator)
+  def ui_breadcrumb_first(text, path = nil)
+    link_class = "hover:text-slate-700 dark:hover:text-slate-200"
+
+    if path
+      content_tag(:li) { link_to(text, path, class: link_class) }
+    else
+      content_tag(:li, text)
+    end
+  end
 end

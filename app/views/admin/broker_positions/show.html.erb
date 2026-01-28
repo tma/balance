@@ -1,5 +1,14 @@
 <% content_for :title, "#{@position.symbol} - #{@connection.name}" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Settings", "#" %>
+    <%= ui_breadcrumb_item "Brokers", admin_broker_connections_path %>
+    <%= ui_breadcrumb_item @connection.name, admin_broker_connection_path(@connection) %>
+    <%= ui_breadcrumb_item @position.symbol, nil, current: true %>
+  <% end %>
+<% end %>
+
 <div class="w-full">
   <div class="flex justify-between items-center mb-6">
     <div>
