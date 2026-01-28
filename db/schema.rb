@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_27_190113) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_28_151708) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -122,6 +122,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_190113) do
   create_table "categories", force: :cascade do |t|
     t.string "category_type"
     t.datetime "created_at", null: false
+    t.binary "embedding"
     t.text "match_patterns"
     t.string "name"
     t.datetime "updated_at", null: false
