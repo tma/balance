@@ -100,8 +100,10 @@ class IbkrSyncService < BrokerSyncService
       v: FLEX_VERSION
     }
 
-    # Add date range parameters if a specific date is requested
-    if sync_date
+    # Only add date parameters for historical dates (before today)
+    # IBKR returns current portfolio snapshot when no dates specified,
+    # but returns end-of-day historical data when dates are specified
+    if sync_date && sync_date < Date.current
       date_str = sync_date.strftime("%Y%m%d")
       params[:FromDate] = date_str
       params[:ToDate] = date_str
