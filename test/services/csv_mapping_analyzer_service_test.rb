@@ -106,10 +106,7 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
     assert_equal [ "Datum", "Buchungstext", "Betrag" ], columns
   end
 
-  # Integration test - only runs if Ollama is available
   test "analyzes simple CSV structure" do
-    skip "Ollama not available" unless OllamaService.available?
-
     content = <<~CSV
       Date,Description,Amount
       2026-01-15,Coffee Shop,-5.50
@@ -117,24 +114,45 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
       2026-01-17,Grocery Store,-45.00
     CSV
 
+    mock_response = {
+      "date_column" => "Date",
+      "description_column" => "Description",
+      "amount_type" => "single",
+      "amount_column" => "Amount",
+      "date_format" => "YYYY-MM-DD",
+      "amount_format" => "us"
+    }
+
+    stub_ollama_response(mock_response)
+
     mapping = CsvMappingAnalyzerService.analyze(content)
 
     assert_equal "Date", mapping[:date_column]
     assert_equal "Description", mapping[:description_column]
     assert_equal "single", mapping[:amount_type]
     assert_equal "Amount", mapping[:amount_column]
-    assert_includes [ "%Y-%m-%d", "%y-%m-%d" ], mapping[:date_format]
+    assert_equal "%Y-%m-%d", mapping[:date_format]
   end
 
   test "analyzes CSV with split debit/credit columns" do
-    skip "Ollama not available" unless OllamaService.available?
-
     content = <<~CSV
       Transaction Date,Merchant,Debit,Credit
       2026-01-15,Coffee Shop,5.50,
       2026-01-16,Salary,,3000.00
       2026-01-17,Grocery Store,45.00,
     CSV
+
+    mock_response = {
+      "date_column" => "Transaction Date",
+      "description_column" => "Merchant",
+      "amount_type" => "split",
+      "debit_column" => "Debit",
+      "credit_column" => "Credit",
+      "date_format" => "YYYY-MM-DD",
+      "amount_format" => "us"
+    }
+
+    stub_ollama_response(mock_response)
 
     mapping = CsvMappingAnalyzerService.analyze(content)
 
@@ -146,19 +164,40 @@ class CsvMappingAnalyzerServiceTest < ActiveSupport::TestCase
   end
 
   test "analyzes European format CSV" do
-    skip "Ollama not available" unless OllamaService.available?
-
     content = <<~CSV
       Datum,Beschreibung,Betrag
       15.01.2026,Kaffee,-5.50
       16.01.2026,Gehalt,3000.00
     CSV
 
+    mock_response = {
+      "date_column" => "Datum",
+      "description_column" => "Beschreibung",
+      "amount_type" => "single",
+      "amount_column" => "Betrag",
+      "date_format" => "DD.MM.YYYY",
+      "amount_format" => "eu"
+    }
+
+    stub_ollama_response(mock_response)
+
     mapping = CsvMappingAnalyzerService.analyze(content)
 
     assert_equal "Datum", mapping[:date_column]
     assert_equal "Beschreibung", mapping[:description_column]
     assert_equal "Betrag", mapping[:amount_column]
-    assert_includes [ "%d.%m.%Y", "%d.%m.%y" ], mapping[:date_format]
+    assert_equal "%d.%m.%Y", mapping[:date_format]
+  end
+
+  private
+
+  def stub_ollama_response(json_response)
+    # Stub the availability check
+    stub_request(:get, %r{.*/api/tags})
+      .to_return(status: 200, body: { models: [] }.to_json, headers: { "Content-Type" => "application/json" })
+
+    # Stub the generate endpoint - response value is a JSON string
+    stub_request(:post, %r{.*/api/generate})
+      .to_return(status: 200, body: { response: json_response.to_json }.to_json, headers: { "Content-Type" => "application/json" })
   end
 end
