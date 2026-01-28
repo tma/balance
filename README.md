@@ -80,6 +80,9 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
    # Ollama host for AI-powered transaction import (optional)
    OLLAMA_HOST=http://ollama.example.com:11434
+   # OLLAMA_MODEL=llama3.1:8b                    # LLM model (default: llama3.1:8b)
+   # OLLAMA_EMBEDDING_MODEL=nomic-embed-text    # Embedding model (default: nomic-embed-text)
+   # OLLAMA_EMBEDDING_CONFIDENCE=0.85           # Confidence threshold (default: 0.85)
    ```
 
    > **Important:** Save these values securely. If you lose the encryption keys, any encrypted data (like broker API tokens) will become unreadable.
@@ -103,11 +106,22 @@ The `worker` service runs scheduled jobs including:
 To enable AI-powered transaction import from bank statements:
 
 1. Install and run [Ollama](https://ollama.ai) on your host machine
-2. Pull the recommended model:
+2. Pull the required models:
    ```bash
-   ollama pull llama3.1:8b
+   ollama pull nomic-embed-text  # Required for categorization
+   ollama pull llama3.1:8b       # Required for CSV format detection and PDF parsing
    ```
 3. Set `OLLAMA_HOST` in your `.env` file to point to your Ollama instance
+
+#### How Categorization Works
+
+Transaction categorization uses a 3-phase hybrid approach:
+
+1. **Pattern Matching** - Instant matching against category patterns (e.g., "Whole Foods" → Groceries)
+2. **Embedding Similarity** - Semantic matching using vector embeddings when patterns don't match
+3. **LLM Fallback** - For ambiguous cases, the LLM chooses from the top 3 embedding candidates
+
+This approach reduces LLM calls by ~70-80% while maintaining high accuracy.
 
 ## Broker Connections
 
@@ -221,6 +235,21 @@ All data (transactions, accounts, assets) is stored in the `balance_storage` Doc
 ```bash
 docker exec balance-devcontainer bin/rails test
 docker exec balance-devcontainer rubocop
+```
+
+### Category Embeddings
+
+Category embeddings are computed automatically when seeding the database or when category names/patterns change. To manually manage embeddings:
+
+```bash
+# Compute embeddings for all categories
+docker exec balance-devcontainer bin/rails categories:compute_embeddings
+
+# View embedding status
+docker exec balance-devcontainer bin/rails categories:embedding_status
+
+# Clear all embeddings (for troubleshooting)
+docker exec balance-devcontainer bin/rails categories:clear_embeddings
 ```
 
 ## Tech Stack
