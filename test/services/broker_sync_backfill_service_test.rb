@@ -110,10 +110,12 @@ class BrokerSyncBackfillServiceTest < ActiveSupport::TestCase
     BrokerSyncBackfillService.define_singleton_method(:pause) { |_seconds| }
     BrokerSyncService.define_singleton_method(:for) { |_connection| service }
 
-    result = BrokerSyncBackfillService.sync_missing_dates!(connection)
+    travel_to Date.new(2026, 1, 19) do
+      result = BrokerSyncBackfillService.sync_missing_dates!(connection)
 
-    assert_equal missing_dates, service.dates
-    assert_equal 2, result[:synced]
+      assert_equal missing_dates, service.dates
+      assert_equal 2, result[:synced]
+    end
   ensure
     BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|
       original_missing.call(*args, **kwargs, &block)

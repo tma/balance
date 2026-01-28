@@ -7,9 +7,8 @@ class BrokerSyncBackfillService
   def self.sync_missing_dates!(connection, window_days: WINDOW_DAYS)
     dates = missing_dates_for(connection, window_days: window_days)
 
-    if dates.empty? && connection.broker_positions.open.none?
-      dates = [ Date.current ]
-    end
+    # Always include today to get latest values (markets may still be open)
+    dates << Date.current unless dates.include?(Date.current)
 
     return { dates: [], synced: 0 } if dates.empty?
 
