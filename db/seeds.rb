@@ -59,17 +59,64 @@ end
 # Categories - Income
 puts "Creating income categories..."
 income_categories = {}
-[ "Salary", "Bonus", "Freelance", "Investment", "Dividends", "Rental", "Refund", "Other Income" ].each do |name|
-  income_categories[name.downcase] = Category.find_or_create_by!(name: name, category_type: "income")
+income_category_data = {
+  "Salary" => "payroll\npaycheck\ndirect deposit\nwage",
+  "Bonus" => "bonus\nperformance\nincentive",
+  "Freelance" => "freelance\nconsulting\ncontract",
+  "Investment" => "investment\ninterest\ncapital gain",
+  "Dividends" => "dividend\ndistribution",
+  "Rental" => "rental\nrent income\nlease",
+  "Refund" => "refund\ncredit\nreimbursement\nrebate",
+  "Other Income" => nil
+}
+income_category_data.each do |name, patterns|
+  category = Category.find_or_initialize_by(name: name, category_type: "income")
+  category.match_patterns = patterns
+  category.save!
+  income_categories[name.downcase] = category
 end
 
 # Categories - Expense
 puts "Creating expense categories..."
 expense_categories = {}
-[ "Rent", "Mortgage", "Utilities", "Groceries", "Dining", "Transportation", "Gas", "Insurance", "Healthcare",
-  "Entertainment", "Subscriptions", "Clothing", "Education", "Personal", "Travel", "Gifts", "Charity", "Taxes",
-  "Fees", "Maintenance", "Savings", "Other Expense" ].each do |name|
-  expense_categories[name.downcase] = Category.find_or_create_by!(name: name, category_type: "expense")
+expense_category_data = {
+  "Rent" => "rent\nlease payment",
+  "Mortgage" => "mortgage\nhome loan",
+  "Utilities" => "electric\ngas bill\nwater bill\nsewer\ntrash\nutility",
+  "Groceries" => "whole foods\ntrader joe\nsafeway\nkroger\nwalmart\ncostco\naldi\ntarget\ngrocery\nsupermarket",
+  "Dining" => "restaurant\ncafe\ndiner\nbistro\neatery\ntakeout\ndelivery\ngrubhub\ndoordash\nubereats",
+  "Transportation" => "uber\nlyft\ntaxi\nmetro\nbus\ntrain\nsubway\nparking\ntoll",
+  "Gas" => "shell\nchevron\nmobil\nbp\narco\nexxon\ngas station\nfuel",
+  "Insurance" => "insurance\npremium\ncoverage",
+  "Healthcare" => "pharmacy\ncvs\nwalgreens\ndoctor\nmedical\nhospital\nclinic\nhealth",
+  "Entertainment" => "movie\ncinema\ntheater\nconcert\nticket\nmuseum\namusement",
+  "Subscriptions" => "netflix\nspotify\nhulu\ndisney\namazon prime\napple\nyoutube\nsubscription",
+  "Clothing" => "clothing\napparel\nshoes\nfashion\nnordstrom\nmacy\ngap\nzara",
+  "Education" => "tuition\ncourse\nclass\ntraining\nudemy\ncoursera\neducation",
+  "Personal" => "haircut\nsalon\nbarber\nspa\nbeauty",
+  "Travel" => "airline\nflight\nhotel\nairbnb\nbooking\ntravel\nvacation",
+  "Gifts" => "gift\npresent",
+  "Charity" => "donation\ncharity\nnon-profit\nfoundation",
+  "Taxes" => "tax\nirs\nstate tax",
+  "Fees" => "fee\ncharge\npenalty\natm",
+  "Maintenance" => "repair\nmaintenance\nplumber\nelectrician\nhvac\nlawn",
+  "Savings" => "transfer to savings\nsavings deposit",
+  "Other Expense" => nil
+}
+expense_category_data.each do |name, patterns|
+  category = Category.find_or_initialize_by(name: name, category_type: "expense")
+  category.match_patterns = patterns
+  category.save!
+  expense_categories[name.downcase] = category
+end
+
+# Compute category embeddings (required for AI-powered categorization)
+if OllamaService.embedding_model_available?
+  Rails.application.load_tasks
+  Rake::Task["categories:compute_embeddings"].invoke
+else
+  puts "Skipping category embeddings (embedding model not available)"
+  puts "  To enable: ollama pull nomic-embed-text"
 end
 
 # Asset Groups
