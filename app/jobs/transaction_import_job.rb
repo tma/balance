@@ -165,45 +165,18 @@ class TransactionImportJob < ApplicationJob
 
     total_txns = categorizable.size
 
-    # Step 1: Rule-based categorization using match_patterns
-    uncategorized = []
-    categorizable.each_with_index do |txn, idx|
-      category = Category.find_by_pattern(txn[:description], txn[:transaction_type])
-      if category
-        txn[:category_id] = category.id
-        txn[:category_name] = category.name
-      else
-        uncategorized << txn
-      end
-
-      # Update progress during rule matching (first 20% of categorization)
-      if import && (idx % 10 == 0 || idx == total_txns - 1)
-        rule_progress = (idx.to_f / total_txns * 0.2 * progress_range).round
-        import.update_progress!(base_progress + rule_progress, 100, message: "Applying rules... (#{idx + 1}/#{total_txns})")
+    progress_callback = lambda do |current, total, message:|
+      if import
+        percent = base_progress + ((current.to_f / total) * progress_range).round
+        import.update_progress!(percent, 100, message: "#{message} (#{current}/#{total})")
       end
     end
 
-    categorized_count = categorizable.size - uncategorized.size
-    Rails.logger.info "Rule-based categorization: #{categorized_count}/#{categorizable.size} matched"
+    service = CategoryMatchingService.new(categorizable, on_progress: progress_callback)
+    service.categorize
 
-    # Step 2: LLM categorization for remaining transactions (remaining 80% of categorization)
-    if uncategorized.any?
-      batch_size = TransactionExtractorService::CATEGORY_BATCH_SIZE
-      total_batches = (uncategorized.size.to_f / batch_size).ceil
-      llm_base = base_progress + (0.2 * progress_range).round
-      llm_range = 0.8 * progress_range
-
-      extractor = TransactionExtractorService.new([], account)
-      uncategorized.each_slice(batch_size).with_index do |batch, index|
-        batch_progress = ((index + 1).to_f / total_batches * llm_range).round
-        processed = [ ((index + 1) * batch_size), uncategorized.size ].min
-        import&.update_progress!(llm_base + batch_progress, 100, message: "Categorizing transactions... (#{processed}/#{uncategorized.size})")
-        extractor.send(:categorize_batch, batch, Category.expense, Category.income)
-      end
-    elsif import
-      # No LLM needed, jump to end of categorization
-      import.update_progress!(base_progress + progress_range, 100, message: "All transactions categorized by rules")
-    end
+    categorized_count = categorizable.count { |t| t[:category_id].present? }
+    Rails.logger.info "Categorization complete: #{categorized_count}/#{total_txns} categorized"
   end
 
   def with_temp_file(import, extension)
