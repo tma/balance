@@ -118,6 +118,13 @@ end
 
 If top embedding match ≥ 0.85, use it directly. Otherwise, pass top 3 to LLM for decision.
 
+## Final Implementation Decisions
+
+1. **Architecture**: Use dedicated `CategoryMatchingService` for 3-phase categorization logic
+2. **Scope**: CSV imports only (via `TransactionImportJob`); PDF imports unchanged
+3. **Model unavailable behavior**: When embedding model is not available, log warning and **skip ALL categorization** (transactions imported without categories)
+4. **Testing**: Full test coverage for all new code
+
 ## Implementation Plan
 
 ### Files to Create
@@ -125,19 +132,21 @@ If top embedding match ≥ 0.85, use it directly. Otherwise, pass top 3 to LLM f
 | File | Description |
 |------|-------------|
 | `db/migrate/xxx_add_embedding_to_categories.rb` | Add `embedding` binary column |
+| `app/services/category_matching_service.rb` | 3-phase categorization logic |
 | `app/jobs/category_embedding_job.rb` | Background job for embedding updates |
 | `lib/tasks/categories.rake` | `rails categories:compute_embeddings` task |
+| `test/services/category_matching_service_test.rb` | Tests for the service |
 | `test/jobs/category_embedding_job_test.rb` | Tests for the job |
 
 ### Files to Modify
 
 | File | Changes |
 |------|---------|
-| `app/models/category.rb` | Add embedding methods, callbacks, similarity search |
-| `app/services/ollama_service.rb` | Add `embed(text)` method for embeddings API |
-| `app/services/transaction_extractor_service.rb` | Implement 3-phase hybrid categorization |
+| `app/models/category.rb` | Add `embedding_text`, `embedding_vector` accessors, callback for job |
+| `app/services/ollama_service.rb` | Add `embed(text)` and `embedding_model_available?` methods |
+| `app/jobs/transaction_import_job.rb` | Replace `categorize_transactions` with `CategoryMatchingService` |
 | `config/initializers/ollama.rb` | Add embedding model config |
-| `test/models/category_test.rb` | Tests for embedding functionality |
+| `test/models/category_test.rb` | Tests for embedding methods |
 | `test/services/ollama_service_test.rb` | Tests for embed method |
 
 ### Migration
@@ -245,13 +254,67 @@ class << self
 end
 ```
 
-### TransactionExtractorService Changes
+### CategoryMatchingService
 
-Modify `categorize_batch` to implement 3-phase approach:
+New service to encapsulate the 3-phase categorization logic:
 
-1. **Phase 1**: Existing rule-based `Category.find_by_pattern`
-2. **Phase 2**: New `Category.find_by_embedding` - if high confidence, use directly
-3. **Phase 3**: LLM with reduced candidate set (3 categories instead of 30)
+```ruby
+class CategoryMatchingService
+  CONFIDENCE_THRESHOLD = 0.85
+  TOP_K_CANDIDATES = 3
+
+  def initialize(transactions)
+    @transactions = transactions
+  end
+
+  def categorize
+    return skip_categorization unless embedding_model_available?
+    
+    @transactions.each do |txn|
+      categorize_transaction(txn)
+    end
+  end
+
+  private
+
+  def embedding_model_available?
+    OllamaService.embedding_model_available?
+  end
+
+  def skip_categorization
+    Rails.logger.warn "Embedding model not available, skipping categorization"
+    # Transactions remain without categories
+  end
+
+  def categorize_transaction(txn)
+    # Phase 1: Rule-based pattern matching
+    category = Category.find_by_pattern(txn[:description], txn[:transaction_type])
+    return assign_category(txn, category) if category
+
+    # Phase 2: Embedding similarity
+    result = find_by_embedding(txn[:description], txn[:transaction_type])
+    return assign_category(txn, result[:category]) if result[:category]
+
+    # Phase 3: LLM with top candidates
+    category = llm_categorize(txn, result[:candidates])
+    assign_category(txn, category)
+  end
+end
+```
+
+### TransactionImportJob Changes
+
+Replace inline `categorize_transactions` method with `CategoryMatchingService`:
+
+```ruby
+def categorize_transactions(transactions, account, import: nil, ...)
+  return if transactions.empty?
+  
+  CategoryMatchingService.new(transactions).categorize do |progress|
+    import&.update_progress!(...)
+  end
+end
+```
 
 ### Rake Task
 
@@ -304,11 +367,15 @@ config.embedding_confidence_threshold = ENV.fetch("OLLAMA_EMBEDDING_CONFIDENCE",
 | Avg latency per txn | ~100-200ms | ~20-50ms |
 | Prompt size | 30 categories | 3 categories |
 
-## Graceful Degradation
+## Embedding Model Requirement
 
-- **Ollama unavailable**: Skip embedding phase, use full LLM prompt
-- **Category has no embedding**: Include in full LLM batch
-- **Embedding model not pulled**: Warn and fallback to LLM-only
+**IMPORTANT**: The embedding model (`nomic-embed-text`) is REQUIRED for categorization.
+
+When the embedding model is not available:
+- Log a warning: "Embedding model not available, skipping categorization"
+- Skip ALL categorization (pattern matching, embedding, LLM)
+- Transactions are imported without categories
+- Users can manually categorize or re-import after pulling the model
 
 ## Future Enhancements
 
