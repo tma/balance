@@ -7,6 +7,8 @@ class Category < ApplicationRecord
   validates :name, presence: true, uniqueness: { scope: :category_type }
   validates :category_type, presence: true
 
+  after_save :schedule_embedding_update, if: :embedding_attributes_changed?
+
   # Returns array of match patterns for categorization hints
   def match_patterns_list
     return [] if match_patterns.blank?
@@ -33,5 +35,36 @@ class Category < ApplicationRecord
   # @return [Category, nil] Matching category or nil
   def self.find_by_pattern(description, type)
     where(category_type: type).find { |cat| cat.matches_description?(description) }
+  end
+
+  # Text used for generating the embedding vector
+  # Combines name, type, and match patterns for rich semantic representation
+  def embedding_text
+    parts = [ name, "(#{category_type})" ]
+    parts << "- #{match_patterns_list.join(', ')}" if has_match_patterns?
+    parts.join(" ")
+  end
+
+  # Get embedding as array of floats (unpacked from binary)
+  # @return [Array<Float>, nil] The embedding vector or nil if not set
+  def embedding_vector
+    return nil if embedding.blank?
+    embedding.unpack("f*")
+  end
+
+  # Set embedding from array of floats (packed to binary)
+  # @param vector [Array<Float>, nil] The embedding vector
+  def embedding_vector=(vector)
+    self.embedding = vector&.pack("f*")
+  end
+
+  private
+
+  def embedding_attributes_changed?
+    saved_change_to_name? || saved_change_to_match_patterns?
+  end
+
+  def schedule_embedding_update
+    CategoryEmbeddingJob.perform_later(id)
   end
 end
