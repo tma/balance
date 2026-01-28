@@ -6,31 +6,7 @@
 <% end %>
 
 <div class="space-y-6">
-  <%
-    # Calculate totals for chart using selected month's valuations
-    # Uses net values (assets - liabilities) per group
-    # Includes both active assets and archived assets with valuations for the selected month
-    default_colors = %w[#60a5fa #4ade80 #f87171 #a78bfa #fb923c #22d3ee #e879f9 #facc15 #94a3b8 #2dd4bf]
-
-    # Build group data using net values from controller
-    group_data = []
-    @asset_groups.each_with_index do |group, idx|
-      net_value = @group_totals[group.id] || 0
-      next if net_value == 0
-      group_data << {
-        name: group.name,
-        value: net_value,
-        pct: 0, # calculated below
-        color: group.color || default_colors[idx % default_colors.length],
-      }
-    end
-
-    # Calculate percentages based on net values
-    total_net = group_data.sum { |g| g[:value] }
-    group_data.each do |g|
-      g[:pct] = total_net > 0 ? (g[:value].to_f / total_net * 100).round : 0
-    end
-  %>
+  <% group_data = build_chart_group_data(@asset_groups, @group_totals) %>
 
   <div class="flex justify-between items-start">
     <div>
@@ -239,7 +215,7 @@
               <% 
                 asset_value = valuation ? (valuation.value_in_default_currency || 0) : 0
                 asset_value = -asset_value if asset.asset_type.is_liability
-                asset_pct = @totals[:net] > 0 ? (asset_value.to_f / @totals[:net] * 100).round : 0
+                asset_pct = @totals[:net_worth] > 0 ? (asset_value.to_f / @totals[:net_worth] * 100).round : 0
               %>
               <tr class="<%= ui_table_row_class %>">
                 <td class="<%= ui_table_td_class %>">
@@ -281,7 +257,7 @@
               <% 
                 asset_value = valuation ? (valuation.value_in_default_currency || 0) : 0
                 asset_value = -asset_value if asset.asset_type.is_liability
-                asset_pct = @totals[:net] > 0 ? (asset_value.to_f / @totals[:net] * 100).round : 0
+                asset_pct = @totals[:net_worth] > 0 ? (asset_value.to_f / @totals[:net_worth] * 100).round : 0
               %>
               <tr class="<%= ui_table_row_class %>">
                 <td class="<%= ui_table_td_class %>">
@@ -312,7 +288,7 @@
             <% end %>
 
             <% 
-              group_pct = @totals[:net] > 0 && @group_totals[group.id] ? (@group_totals[group.id].to_f / @totals[:net] * 100).round : 0
+              group_pct = @totals[:net_worth] > 0 && @group_totals[group.id] ? (@group_totals[group.id].to_f / @totals[:net_worth] * 100).round : 0
             %>
             <tr class="<%= ui_table_subtotal_class %>">
               <td class="px-4 py-2"></td>
@@ -338,7 +314,7 @@
               <span class="font-bold text-sm text-slate-400 dark:text-slate-500 tabular-nums">100%</span>
             </td>
             <td class="px-4 py-3 text-right">
-              <span class="font-bold text-sm whitespace-nowrap <%= ui_table_group_text_class %>"><%= format_currency(@totals[:net], precision: 0) %></span>
+              <span class="font-bold text-sm whitespace-nowrap <%= ui_table_group_text_class %>"><%= format_currency(@totals[:net_worth], precision: 0) %></span>
             </td>
           </tr>
         </tbody>
