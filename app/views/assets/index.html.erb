@@ -1,7 +1,13 @@
 <% content_for :title, "Assets & Liabilities" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+  <% end %>
+<% end %>
+
 <div class="w-full">
-  <div class="flex justify-between items-center mb-6">
+  <div class="flex justify-between items-center h-10 mb-6">
     <h1 class="<%= ui_title_class %>">Assets & Liabilities</h1>
     <div class="flex space-x-2">
       <%= link_to "New Group", new_asset_group_path, class: ui_btn_secondary_class %>
@@ -27,22 +33,22 @@
           <% archived_assets = group.assets.archived.includes(:asset_type, :broker_positions) %>
           <tbody data-sortable-target="item" data-id="<%= group.id %>" class="group-container">
             <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600 cursor-move group-header">
-              <td class="px-4 py-1.5 <%= ui_text_subtle_class %> text-xs leading-none">⋮⋮</td>
-              <td colspan="3" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
+              <td class="px-4 py-2 <%= ui_text_subtle_class %> text-xs leading-none">⋮⋮</td>
+              <td colspan="3" class="px-4 py-2 text-sm font-medium <%= ui_table_group_text_class %>">
                 <span class="inline-flex items-center">
                   <svg class="flex-shrink-0 mr-2" width="12" height="12"><rect width="12" height="12" fill="<%= group.color || '#94a3b8' %>"/></svg>
                   <span class="whitespace-nowrap"><%= group.name %></span>
                 </span>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= active_assets.size %> asset<%= active_assets.size == 1 ? '' : 's' %></span>
               </td>
-              <td class="px-4 py-1.5 text-right">
+              <td class="px-4 py-2 text-right">
                 <% net_value = group.assets.active.sum { |a| (a.asset_type.is_liability? ? -1 : 1) * (a.value_in_default_currency || 0) } %>
-                <span class="text-xs font-bold <%= ui_text_class %>">
+                <span class="text-sm font-bold <%= ui_text_class %>">
                   <%= format_currency(net_value) %>
                 </span>
               </td>
-              <td class="px-4 py-1.5 text-right">
-                <%= link_to "Edit", edit_asset_group_path(group), class: "text-xs #{ui_link_class}" %>
+              <td class="px-4 py-2 text-right">
+                <%= link_to "Edit", edit_asset_group_path(group), class: "text-sm #{ui_link_class}" %>
               </td>
             </tr>
           </tbody>

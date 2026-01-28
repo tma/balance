@@ -1,7 +1,16 @@
 <% content_for :title, "Currency - Admin" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Settings" %>
+    <%= ui_breadcrumb_item "Currencies", admin_currencies_path %>
+  <% end %>
+<% end %>
+
 <div class="max-w-md">
-  <h1 class="<%= ui_title_class %> mb-6">Currency: <%= @currency.code %></h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">Currency: <%= @currency.code %></h1>
+  </div>
 
   <div class="<%= ui_card_class %> p-6 mb-6">
     <p class="<%= ui_text_class %>"><strong>Code:</strong> <%= @currency.code %></p>
@@ -9,7 +18,6 @@
 
   <div class="flex space-x-4">
     <%= link_to "Edit", edit_admin_currency_path(@currency), class: ui_btn_primary_class %>
-    <%= link_to "Back", admin_currencies_path, class: ui_btn_secondary_class %>
     <%= button_to "Delete", admin_currency_path(@currency), method: :delete, class: ui_btn_danger_class + " cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

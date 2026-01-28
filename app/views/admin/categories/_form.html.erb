@@ -30,7 +30,7 @@
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: ui_btn_primary_class + " cursor-pointer" %>
+    <%= form.submit category.persisted? ? "Update Category" : "Create Category", class: ui_btn_primary_class + " cursor-pointer" %>
     <%= link_to "Cancel", admin_categories_path, class: ui_btn_secondary_class %>
   </div>
 <% end %>

@@ -1,7 +1,16 @@
 <% content_for :title, "Budget" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+    <%= ui_breadcrumb_item "Budgets", budgets_path %>
+  <% end %>
+<% end %>
+
 <div class="max-w-md">
-  <h1 class="<%= ui_title_class %> mb-6">Budget: <%= @budget.category.name %></h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">Budget: <%= @budget.category.name %></h1>
+  </div>
 
   <div class="<%= ui_card_class %> p-6 mb-6">
     <div class="flex justify-between items-center mb-4">
@@ -38,7 +47,6 @@
 
   <div class="flex space-x-4">
     <%= link_to "Edit", edit_budget_path(@budget), class: ui_btn_primary_class %>
-    <%= link_to "Back", budgets_path, class: ui_btn_secondary_class %>
     <%= button_to "Delete", @budget, method: :delete, class: "#{ui_btn_danger_class} cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

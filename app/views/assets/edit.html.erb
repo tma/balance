@@ -1,6 +1,16 @@
 <% content_for :title, "Edit Asset" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+    <%= ui_breadcrumb_item "Assets", assets_path %>
+    <%= ui_breadcrumb_item @asset.name, asset_path(@asset) %>
+  <% end %>
+<% end %>
+
 <div>
-  <h1 class="<%= ui_title_class %> mb-6">Edit Asset</h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">Edit Asset</h1>
+  </div>
   <%= render "form", asset: @asset %>
 </div>

@@ -21,7 +21,7 @@
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: ui_btn_primary_class + " cursor-pointer" %>
+    <%= form.submit asset_type.persisted? ? "Update Asset Type" : "Create Asset Type", class: ui_btn_primary_class + " cursor-pointer" %>
     <%= link_to "Cancel", admin_asset_types_path, class: ui_btn_secondary_class %>
   </div>
 <% end %>

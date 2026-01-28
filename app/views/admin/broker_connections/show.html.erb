@@ -2,14 +2,13 @@
 
 <% content_for :breadcrumbs do %>
   <%= ui_breadcrumbs do %>
-    <%= ui_breadcrumb_first "Settings", "#" %>
+    <%= ui_breadcrumb_first "Settings" %>
     <%= ui_breadcrumb_item "Brokers", admin_broker_connections_path %>
-    <%= ui_breadcrumb_item @connection.name, nil, current: true %>
   <% end %>
 <% end %>
 
 <div class="w-full">
-  <div class="flex justify-between items-center mb-6">
+  <div class="flex justify-between items-center h-10 mb-6">
     <div>
       <h1 class="<%= ui_title_class %>"><%= @connection.name %></h1>
       <div class="flex items-center gap-2 text-sm">

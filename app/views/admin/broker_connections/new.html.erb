@@ -1,7 +1,16 @@
 <% content_for :title, "New Broker Connection" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Settings" %>
+    <%= ui_breadcrumb_item "Brokers", admin_broker_connections_path %>
+  <% end %>
+<% end %>
+
 <div>
-  <h1 class="<%= ui_title_class %> mb-6">New <%= @connection.broker_type_name %> Connection</h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">New <%= @connection.broker_type_name %> Connection</h1>
+  </div>
 
   <div class="flex gap-6 items-start">
     <div class="flex-1">

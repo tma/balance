@@ -1,6 +1,15 @@
 <% content_for :title, "New Currency - Admin" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Settings" %>
+    <%= ui_breadcrumb_item "Currencies", admin_currencies_path %>
+  <% end %>
+<% end %>
+
 <div>
-  <h1 class="<%= ui_title_class %> mb-6">New Currency</h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">New Currency</h1>
+  </div>
   <%= render "form", currency: @currency %>
 </div>

@@ -1,3 +1,10 @@
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+    <%= ui_breadcrumb_item "Assets", assets_path %>
+  <% end %>
+<% end %>
+
 <%= form_with url: update_valuations_path, method: :patch, data: { controller: "currency-form", action: "submit->currency-form#unformatAll" } do |form| %>
   <%= hidden_field_tag :year, @year %>
 <div class="space-y-4">
@@ -7,24 +14,24 @@
       <p class="text-sm <%= ui_text_muted_class %> mt-1">Enter values for each month (end of month)</p>
     </div>
     <div class="flex items-center space-x-4">
-      <% if @has_broker_connections %>
-        <%= button_to "Apply Broker Values", apply_broker_values_path, method: :post, class: ui_btn_secondary_class + " text-sm", title: "Copy latest broker position values to assets" %>
-      <% end %>
-      <div class="flex items-center space-x-2">
-        <%= link_to update_valuations_path(year: @year - 1), class: ui_btn_secondary_class + " text-sm" do %>
+      <div class="flex items-center space-x-4">
+        <%= link_to update_valuations_path(year: @year - 1), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
           ← <%= @year - 1 %>
         <% end %>
-        <span class="px-3 py-1.5 font-semibold text-sm <%= ui_text_class %>"><%= @year %></span>
+        <span class="font-semibold <%= ui_text_class %>"><%= @year %></span>
         <% max_year = Date.current.year + 1 %>
         <% if @year < max_year %>
-          <%= link_to update_valuations_path(year: @year + 1), class: ui_btn_secondary_class + " text-sm" do %>
+          <%= link_to update_valuations_path(year: @year + 1), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
             <%= @year + 1 %> →
           <% end %>
         <% else %>
-          <span class="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 text-sm font-medium"><%= max_year + 1 %> →</span>
+          <span class="text-slate-300 dark:text-slate-600"><%= max_year + 1 %> →</span>
         <% end %>
       </div>
-      <%= form.submit "Save", class: ui_btn_primary_class + " cursor-pointer" %>
+      <% if @has_broker_connections %>
+        <%= button_to "Apply Broker Values", apply_broker_values_path, method: :post, class: ui_btn_secondary_class + " text-sm", title: "Copy latest broker position values to assets" %>
+      <% end %>
+      <%= form.submit "Save", class: ui_btn_primary_class + " cursor-pointer text-sm" %>
     </div>
   </div>
 
@@ -42,7 +49,7 @@
         <% ideal_scroll_month = (Date.current - 2.months).end_of_month %>
         <%# Find best scroll target: ideal month if in range, otherwise current month, otherwise nil %>
         <% scroll_target_month = @months.include?(ideal_scroll_month) ? ideal_scroll_month : (@months.include?(current_month) ? current_month : nil) %>
-        <div style="height: calc(100vh - 140px); overflow: auto;" data-controller="scroll-right" data-scroll-right-target-value="<%= scroll_target_month ? '.scroll-target' : '' %>">
+        <div style="height: calc(100vh - 180px); overflow: auto;" data-controller="scroll-right" data-scroll-right-target-value="<%= scroll_target_month ? '.scroll-target' : '' %>">
           <table class="w-full min-w-max">
             <thead>
               <tr>

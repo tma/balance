@@ -1,3 +1,10 @@
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Reports" %>
+    <%= ui_breadcrumb_item "Net Worth", net_worth_path %>
+  <% end %>
+<% end %>
+
 <div class="space-y-6">
   <%
     # Calculate totals for chart using selected month's valuations
@@ -21,25 +28,12 @@
     # Calculate percentages based on net values
     total_net = group_data.sum { |g| g[:value] }
     group_data.each do |g|
-      g[:pct] = total_net > 0 ? (g[:value].to_f / total_net * 100).round(1) : 0
+      g[:pct] = total_net > 0 ? (g[:value].to_f / total_net * 100).round : 0
     end
   %>
 
-  <div class="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+  <div class="flex justify-between items-start">
     <div>
-      <div class="flex items-center space-x-4 mb-2">
-        <%= link_to net_worth_path(month: (@valuation_date - 1.month).strftime("%Y-%m")), class: ui_link_muted_class do %>
-          ← <%= (@valuation_date - 1.month).strftime("%b %Y") %>
-        <% end %>
-        <h1 class="text-lg font-semibold <%= ui_text_class %>"><%= @valuation_date.strftime("%B %Y") %></h1>
-        <% if @valuation_date.end_of_month < Date.current.end_of_month %>
-          <%= link_to net_worth_path(month: (@valuation_date + 1.month).strftime("%Y-%m")), class: ui_link_muted_class do %>
-            <%= (@valuation_date + 1.month).strftime("%b %Y") %> →
-          <% end %>
-        <% else %>
-          <span class="<%= ui_text_subtle_class %>">Now →</span>
-        <% end %>
-      </div>
       <p class="<%= ui_display_number_class %>"><%= format_currency(@net_worth[:net_worth], precision: 0) %></p>
       <% if @net_worth_change != 0 %>
         <p class="text-sm mt-1 <%= @net_worth_change >= 0 ? ui_positive_class : ui_negative_class %>">
@@ -47,36 +41,49 @@
         </p>
       <% end %>
     </div>
-    
-    <% if group_data.any? %>
-      <div class="flex flex-col sm:flex-row items-center gap-4">
-        <svg class="w-24 h-24 sm:w-[100px] sm:h-[100px] flex-shrink-0" viewBox="0 0 160 160">
-          <% offset = 0 %>
-          <% group_data.each do |group| %>
-            <% arc_length = (group[:pct] * 3.77).round(2) %>
-            <circle cx="80" cy="80" r="60" fill="none" 
-                    stroke="<%= group[:color] %>" stroke-width="35"
-                    stroke-dasharray="<%= arc_length %> 377"
-                    stroke-dashoffset="<%= -offset %>"
-                    transform="rotate(-90 80 80)" />
-            <% offset += arc_length %>
+    <div class="flex flex-col items-end gap-4">
+      <div class="flex items-center space-x-4">
+        <%= link_to net_worth_path(month: (@valuation_date - 1.month).strftime("%Y-%m")), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
+          ← <%= (@valuation_date - 1.month).strftime("%B %Y") %>
+        <% end %>
+        <span class="font-semibold <%= ui_text_class %>"><%= @valuation_date.strftime("%B %Y") %></span>
+        <% if @valuation_date.end_of_month < Date.current.end_of_month %>
+          <%= link_to net_worth_path(month: (@valuation_date + 1.month).strftime("%Y-%m")), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
+            <%= (@valuation_date + 1.month).strftime("%B %Y") %> →
           <% end %>
-        </svg>
-        
-        <div class="space-y-1 sm:space-y-2">
-          <% group_data.each do |group| %>
-            <div class="flex items-center gap-2 sm:gap-3">
-              <svg class="flex-shrink-0" width="12" height="12"><rect width="12" height="12" fill="<%= group[:color] %>"/></svg>
-              <span class="text-xs sm:text-sm <%= ui_text_muted_class %> truncate max-w-[80px] sm:max-w-[128px]"><%= group[:name] %></span>
-              <span class="text-xs sm:text-sm <%= ui_text_class %> whitespace-nowrap ml-auto"><%= format_currency(group[:value], precision: 0) %></span>
-              <span class="text-xs sm:text-sm <%= ui_text_subtle_class %> whitespace-nowrap w-10 sm:w-12 text-right"><%= group[:pct] %>%</span>
-            </div>
-          <% end %>
-        </div>
+        <% else %>
+          <span class="text-slate-300 dark:text-slate-600">Now →</span>
+        <% end %>
       </div>
-    <% else %>
-      <%= link_to "Cash Flow", cash_flow_path, class: ui_link_class %>
-    <% end %>
+      <% if group_data.any? %>
+        <% chart_size = group_data.size * 22 %>
+        <div class="flex items-center gap-6">
+          <svg width="<%= chart_size %>" height="<%= chart_size %>" class="flex-shrink-0" viewBox="0 0 160 160">
+            <% offset = 0 %>
+            <% group_data.each do |group| %>
+              <% arc_length = (group[:pct] * 3.77).round(2) %>
+              <circle cx="80" cy="80" r="60" fill="none" 
+                      stroke="<%= group[:color] %>" stroke-width="35"
+                      stroke-dasharray="<%= arc_length %> 377"
+                      stroke-dashoffset="<%= -offset %>"
+                      transform="rotate(-90 80 80)" />
+              <% offset += arc_length %>
+            <% end %>
+          </svg>
+          
+          <table class="text-sm ml-auto">
+            <% group_data.each do |group| %>
+              <tr>
+                <td class="py-0.5 pr-2 align-middle"><svg width="12" height="12"><rect width="12" height="12" fill="<%= group[:color] %>"/></svg></td>
+                <td class="py-0.5 pr-12 <%= ui_text_muted_class %> text-left"><%= group[:name] %></td>
+                <td class="py-0.5 pr-3 <%= ui_text_class %> text-right tabular-nums"><%= format_currency(group[:value], precision: 0) %></td>
+                <td class="py-0.5 <%= ui_text_subtle_class %> text-right tabular-nums w-10"><%= group[:pct] %>%</td>
+              </tr>
+            <% end %>
+          </table>
+        </div>
+      <% end %>
+    </div>
   </div>
 
   <!-- Net Worth Summary -->
@@ -188,11 +195,6 @@
 
   <!-- Asset Groups Breakdown -->
   <div class="<%= ui_card_table_class %>">
-    <div class="<%= ui_card_header_class %> flex justify-between items-center">
-      <h2 class="<%= ui_heading_class %>">Assets</h2>
-      <%= link_to "Update Values", update_valuations_path, class: "#{ui_btn_secondary_class} text-sm" %>
-    </div>
-
     <% 
       # Check if any group has assets to show (active or archived with valuations)
       has_assets_to_show = @asset_groups.any? do |group|
@@ -206,11 +208,19 @@
       </div>
     <% else %>
       <table class="w-full">
+        <thead class="<%= ui_table_header_class %>">
+          <tr>
+            <th class="<%= ui_table_th_class %>">Assets</th>
+            <th class="<%= ui_table_th_class %>"></th>
+            <th class="<%= ui_table_th_class %> w-16"></th>
+          </tr>
+        </thead>
         <tbody>
           <% @asset_groups.each_with_index do |group, group_index| %>
             <% active_assets = group.assets.active.includes(:asset_type).order(:position, :name) %>
             <% archived_with_valuations = group.assets.archived.includes(:asset_type).order(:position, :name).select { |a| @valuations_by_asset[a.id].present? } %>
             <% next if active_assets.empty? && archived_with_valuations.empty? %>
+            <% group_has_liabilities = active_assets.any? { |a| a.asset_type.is_liability } || archived_with_valuations.any? { |a| a.asset_type.is_liability } %>
 
             <tr class="<%= ui_table_group_header_class %> <%= group_index > 0 ? 'border-t-4 border-slate-300 dark:border-slate-500' : '' %>">
               <td class="px-4 py-2">
@@ -220,11 +230,17 @@
                 </span>
               </td>
               <td></td>
+              <td></td>
             </tr>
 
             <%# Active assets %>
             <% active_assets.each do |asset| %>
               <% valuation = @valuations_by_asset[asset.id] %>
+              <% 
+                asset_value = valuation ? (valuation.value_in_default_currency || 0) : 0
+                asset_value = -asset_value if asset.asset_type.is_liability
+                asset_pct = @totals[:net] > 0 ? (asset_value.to_f / @totals[:net] * 100).round : 0
+              %>
               <tr class="<%= ui_table_row_class %>">
                 <td class="<%= ui_table_td_class %>">
                   <%= link_to asset, class: "block" do %>
@@ -237,6 +253,11 @@
                     <p class="text-xs <%= ui_text_subtle_class %> whitespace-nowrap">
                       <%= asset.asset_type.name %> · <%= asset.currency %><% if asset.asset_type.is_liability %> <span class="ml-1 <%= ui_badge_danger_class %>">Liability</span><% end %>
                     </p>
+                  <% end %>
+                </td>
+                <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                  <% unless group_has_liabilities %>
+                    <span class="text-sm text-slate-400 dark:text-slate-500 tabular-nums"><%= asset_pct %>%</span>
                   <% end %>
                 </td>
                 <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
@@ -257,6 +278,11 @@
             <%# Archived assets with valuations - shown inline with label %>
             <% archived_with_valuations.each do |asset| %>
               <% valuation = @valuations_by_asset[asset.id] %>
+              <% 
+                asset_value = valuation ? (valuation.value_in_default_currency || 0) : 0
+                asset_value = -asset_value if asset.asset_type.is_liability
+                asset_pct = @totals[:net] > 0 ? (asset_value.to_f / @totals[:net] * 100).round : 0
+              %>
               <tr class="<%= ui_table_row_class %>">
                 <td class="<%= ui_table_td_class %>">
                   <%= link_to asset, class: "block" do %>
@@ -270,6 +296,11 @@
                   <% end %>
                 </td>
                 <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
+                  <% unless group_has_liabilities %>
+                    <span class="text-sm text-slate-400 dark:text-slate-500 tabular-nums"><%= asset_pct %>%</span>
+                  <% end %>
+                </td>
+                <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
                   <span class="text-sm <%= ui_text_subtle_class %>">
                     <%= asset.asset_type.is_liability ? '-' : '' %><%= format_currency(valuation.value_in_default_currency || 0, precision: 0) %>
                   </span>
@@ -280,8 +311,16 @@
               </tr>
             <% end %>
 
+            <% 
+              group_pct = @totals[:net] > 0 && @group_totals[group.id] ? (@group_totals[group.id].to_f / @totals[:net] * 100).round : 0
+            %>
             <tr class="<%= ui_table_subtotal_class %>">
               <td class="px-4 py-2"></td>
+              <td class="px-4 py-2 text-right">
+                <% if @group_totals[group.id] && @group_totals[group.id] != 0 %>
+                  <span class="font-semibold text-sm text-slate-400 dark:text-slate-500 tabular-nums"><%= group_pct %>%</span>
+                <% end %>
+              </td>
               <td class="px-4 py-2 text-right">
                 <% net_value = @group_totals[group.id] %>
                 <% if net_value && net_value != 0 %>
@@ -294,6 +333,9 @@
           <tr class="<%= ui_table_total_class %>">
             <td class="px-4 py-3">
               <span class="font-bold <%= ui_table_group_text_class %> whitespace-nowrap">Total Net Worth</span>
+            </td>
+            <td class="px-4 py-3 text-right">
+              <span class="font-bold text-sm text-slate-400 dark:text-slate-500 tabular-nums">100%</span>
             </td>
             <td class="px-4 py-3 text-right">
               <span class="font-bold text-sm whitespace-nowrap <%= ui_table_group_text_class %>"><%= format_currency(@totals[:net], precision: 0) %></span>

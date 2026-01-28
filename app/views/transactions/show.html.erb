@@ -1,7 +1,16 @@
 <% content_for :title, "Transaction" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+    <%= ui_breadcrumb_item "Transactions", transactions_path %>
+  <% end %>
+<% end %>
+
 <div class="max-w-md">
-  <h1 class="<%= ui_title_class %> mb-6">Transaction Details</h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">Transaction Details</h1>
+  </div>
 
   <div class="<%= ui_card_class %> p-6 mb-6">
     <div class="flex items-center justify-between mb-4">
@@ -26,7 +35,6 @@
 
   <div class="flex space-x-4">
     <%= link_to "Edit", edit_transaction_path(@transaction), class: ui_btn_primary_class %>
-    <%= link_to "Back", transactions_path, class: ui_btn_secondary_class %>
     <%= button_to "Delete", @transaction, method: :delete, class: "#{ui_btn_danger_class} cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

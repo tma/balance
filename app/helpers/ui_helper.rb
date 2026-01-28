@@ -269,7 +269,7 @@ module UiHelper
 
   # Breadcrumb container - wraps the breadcrumb items
   def ui_breadcrumbs(&block)
-    content_tag(:nav, aria: { label: "Breadcrumb" }, class: "mb-4") do
+    content_tag(:nav, aria: { label: "Breadcrumb" }) do
       content_tag(:ol, class: "flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400", &block)
     end
   end
@@ -283,9 +283,9 @@ module UiHelper
 
     item = if path && !current
              content_tag(:li) { link_to(text, path, class: link_class) }
-           else
+    else
              content_tag(:li, text, class: item_class)
-           end
+    end
 
     # Return item with separator, unless it's the first item (handled by caller context)
     safe_join([ separator, item ])

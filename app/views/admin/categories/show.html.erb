@@ -1,7 +1,16 @@
 <% content_for :title, "Category - Admin" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Settings" %>
+    <%= ui_breadcrumb_item "Categories", admin_categories_path %>
+  <% end %>
+<% end %>
+
 <div class="max-w-md">
-  <h1 class="<%= ui_title_class %> mb-6">Category: <%= @category.name %></h1>
+  <div class="flex items-center h-10 mb-6">
+    <h1 class="<%= ui_title_class %>">Category: <%= @category.name %></h1>
+  </div>
 
   <div class="<%= ui_card_class %> p-6 mb-6">
     <p class="<%= ui_text_class %> mb-2"><strong>Name:</strong> <%= @category.name %></p>
@@ -17,7 +26,6 @@
 
   <div class="flex space-x-4">
     <%= link_to "Edit", edit_admin_category_path(@category), class: ui_btn_primary_class %>
-    <%= link_to "Back", admin_categories_path, class: ui_btn_secondary_class %>
     <%= button_to "Delete", admin_category_path(@category), method: :delete, class: ui_btn_danger_class + " cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
   </div>
 </div>

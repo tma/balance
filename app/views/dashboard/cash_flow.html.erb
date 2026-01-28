@@ -1,11 +1,11 @@
-<div class="space-y-6">
-  <div class="flex justify-between items-center">
-    <div>
-      <h1 class="<%= ui_title_class %>">Cash Flow</h1>
-      <p class="text-sm <%= ui_text_muted_class %>">All values in <%= @default_currency %></p>
-    </div>
-  </div>
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Reports" %>
+    <%= ui_breadcrumb_item "Cash Flow", cash_flow_path %>
+  <% end %>
+<% end %>
 
+<div class="space-y-6">
   <!-- 12-Month Summary -->
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
     <div class="<%= ui_card_class %> p-4">
@@ -127,8 +127,7 @@
   <% current_month = Date.current.month %>
   <div class="<%= ui_card_table_class %>">
     <div class="flex justify-between items-center <%= ui_card_header_class %>">
-      <h2 class="<%= ui_heading_class %>">Budgets</h2>
-      <%= link_to "Manage", budgets_path, class: ui_link_class + " text-sm" %>
+      <%= link_to "Budgets", budgets_path, class: "#{ui_heading_class} hover:text-cyan-600 dark:hover:text-cyan-400" %>
     </div>
     <% if @monthly_budgets.empty? && @yearly_budgets.empty? %>
       <div class="p-8 text-center">

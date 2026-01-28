@@ -1,11 +1,17 @@
 <% content_for :title, "Transactions" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+  <% end %>
+<% end %>
+
 <div class="w-full">
-  <div class="flex justify-between items-center mb-6">
+  <div class="flex justify-between items-center h-10 mb-6">
     <h1 class="<%= ui_title_class %>">Transactions</h1>
     <div class="flex items-center space-x-2">
       <%= link_to "Import", new_import_path, class: ui_btn_secondary_class %>
-      <%= link_to "New Transaction", new_transaction_path, class: ui_btn_primary_class %>
+      <%= link_to "New", new_transaction_path, class: ui_btn_primary_class %>
     </div>
   </div>
 

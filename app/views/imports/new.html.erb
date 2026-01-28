@@ -1,9 +1,15 @@
 <% content_for :title, "Import" %>
 
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Records" %>
+    <%= ui_breadcrumb_item "Transactions", transactions_path %>
+  <% end %>
+<% end %>
+
 <div class="w-full">
   <div class="flex items-center justify-between mb-6">
     <h1 class="<%= ui_title_class %>">Import</h1>
-    <%= link_to "Imports", imports_path, class: ui_btn_secondary_class %>
   </div>
 
   <% if @pending_imports.any? %>

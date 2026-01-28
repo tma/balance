@@ -24,7 +24,7 @@
   </div>
 
   <div class="flex space-x-4">
-    <%= form.submit class: ui_btn_primary_class + " cursor-pointer" %>
+    <%= form.submit account_type.persisted? ? "Update Account Type" : "Create Account Type", class: ui_btn_primary_class + " cursor-pointer" %>
     <%= link_to "Cancel", admin_account_types_path, class: ui_btn_secondary_class %>
   </div>
 <% end %>
