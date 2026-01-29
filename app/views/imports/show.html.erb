@@ -19,7 +19,7 @@
         <span class="text-sm <%= ui_text_muted_class %>"><%= time_ago_in_words(@import.created_at) %> ago</span>
         <span class="<%= ui_text_subtle_class %>">&middot;</span>
         <span class="text-sm <%= ui_text_muted_class %>">
-          <%= link_to @import.account.name, edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" %>
+          <%= link_to edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" do %><%= @import.account.name %><% end %> <span class="px-1.5 py-0.5 text-xs rounded bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= @import.account.currency %></span>
         </span>
       </div>
     </div>

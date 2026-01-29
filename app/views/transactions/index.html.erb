@@ -120,8 +120,8 @@
         <% end %>
 
         <%= f.select :account_id,
-              options_from_collection_for_select(@accounts, :id, :name, params[:account_id]),
-              { include_blank: "All Accounts" },
+              grouped_account_options(@accounts, params[:account_id]),
+              { include_blank: "Accounts" },
               class: ui_input_sm_class,
               onchange: "this.form.requestSubmit()" %>
 
@@ -133,7 +133,7 @@
                 ],
                 params[:category_id]
               ),
-              { include_blank: "All Categories" },
+              { include_blank: "Categories" },
               class: ui_input_sm_class,
               onchange: "this.form.requestSubmit()" %>
 
@@ -201,14 +201,14 @@
             <th class="<%= ui_table_th_class %>">Description</th>
             <th class="<%= ui_table_th_class %>">Category</th>
             <th class="<%= ui_table_th_class %>">Account</th>
-            <th class="<%= ui_table_th_class %> text-right">Amount</th>
+            <th class="<%= ui_table_th_class %> text-right" colspan="2">Amount</th>
             <th class="<%= ui_table_th_class %> text-right w-24"></th>
           </tr>
         </thead>
         <tbody>
           <% @transactions.order(date: :desc, created_at: :desc).group_by(&:date).each do |date, day_transactions| %>
             <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
-              <td colspan="6" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
+              <td colspan="7" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= date.strftime("%A, %B %d") %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= day_transactions.size %> transaction<%= day_transactions.size == 1 ? '' : 's' %></span>
               </td>
@@ -225,10 +225,15 @@
                   <%= transaction.category.name %>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_muted_class %>">
-                  <%= transaction.account.name %>
+                  <%= transaction.account.name %> <span class="px-1.5 py-0.5 text-xs rounded bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= transaction.account.currency %></span>
                 </td>
-                <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm text-right font-medium <%= transaction.income? ? ui_positive_class : ui_negative_class %>">
-                  <%= transaction.income? ? '+' : '-' %><%= format_currency(transaction.amount) %>
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-xs text-right pr-1 <%= ui_text_subtle_class %>">
+                  <% if transaction.currency != transaction.default_currency %>
+                    <%= transaction.currency %> <%= format_amount(transaction.amount) %>
+                  <% end %>
+                </td>
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm text-right pl-1 font-medium <%= transaction.income? ? ui_positive_class : ui_negative_class %>">
+                  <%= transaction.income? ? '+' : '-' %><%= format_currency(transaction.amount_in_default_currency) %>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-right text-sm">
                   <div class="flex items-center justify-end gap-2">

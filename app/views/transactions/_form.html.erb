@@ -17,7 +17,7 @@
 
   <div class="mb-4">
     <%= form.label :account_id, "Account", class: ui_label_class %>
-    <%= form.collection_select :account_id, Account.includes(:account_type).order(:name), :id, :name, { prompt: "Select account" }, class: ui_input_class %>
+    <%= form.select :account_id, grouped_account_options(Account.includes(:account_type).order(:name), transaction.account_id), { prompt: "Select account" }, class: ui_input_class %>
   </div>
 
   <div class="mb-4">

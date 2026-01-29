@@ -9,7 +9,12 @@
   </div>
   <div>
     <strong class="block font-medium mb-1 <%= ui_text_class %>">Amount:</strong>
-    <span class="<%= ui_text_muted_class %>"><%= format_amount(transaction.amount) %></span>
+    <span class="<%= ui_text_muted_class %>">
+      <% if transaction.currency != transaction.default_currency %>
+        <span class="text-xs <%= ui_text_subtle_class %> mr-3"><%= transaction.currency %> <%= format_amount(transaction.amount) %></span>
+      <% end %>
+      <%= format_currency(transaction.amount_in_default_currency) %>
+    </span>
   </div>
   <div>
     <strong class="block font-medium mb-1 <%= ui_text_class %>">Transaction type:</strong>

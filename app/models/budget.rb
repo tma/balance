@@ -15,9 +15,9 @@ class Budget < ApplicationRecord
 
     if monthly?
       return 0 if month.blank?
-      scope.in_month(year, month).sum(:amount)
+      scope.in_month(year, month).sum(:amount_in_default_currency)
     else
-      scope.in_year(year).sum(:amount)
+      scope.in_year(year).sum(:amount_in_default_currency)
     end
   end
 

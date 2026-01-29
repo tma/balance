@@ -2,6 +2,8 @@
 
 usd:
   code: USD
+  default: true
 
 eur:
   code: EUR
+  default: false

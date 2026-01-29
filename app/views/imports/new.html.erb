@@ -37,7 +37,7 @@
                   </div>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_muted_class %>">
-                  <%= import.account.name %>
+                  <%= import.account.name %> <span class="px-1.5 py-0.5 text-xs rounded bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= import.account.currency %></span>
                 </td>
                 <td class="<%= ui_table_td_class %>">
                   <% case import.status %>
@@ -90,7 +90,8 @@
           <div>
             <%= form.label :account_id, "Target Account", class: ui_label_class %>
             <p class="text-sm <%= ui_text_muted_class %> mb-2">Transactions will be added to this account.</p>
-            <%= form.collection_select :account_id, @accounts, :id, :name, 
+            <%= form.select :account_id,
+                grouped_account_options(@accounts),
                 { prompt: "Select account" }, 
                 class: ui_input_class,
                 required: true %>
@@ -116,16 +117,16 @@
   </div>
 
   <!-- How it works -->
-  <div class="<%= ui_card_class %> bg-slate-50 dark:bg-slate-800/50 p-6">
-    <h2 class="font-semibold <%= ui_text_class %> mb-2">How it works</h2>
-    <ol class="list-decimal ml-5 text-sm <%= ui_text_muted_class %> space-y-1">
+  <div class="p-6 bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700 border-l-4 border-l-amber-300 dark:border-l-amber-400 rounded-lg">
+    <h2 class="font-semibold text-amber-800 dark:text-slate-200 mb-2">How it works</h2>
+    <ol class="list-decimal ml-5 text-sm text-amber-700 dark:text-slate-300 space-y-1">
       <li>Upload a statement (PDF or CSV format)</li>
       <li>AI extracts transactions and matches them to categories</li>
       <li>Review the extracted transactions and make any adjustments</li>
       <li>Select which transactions to import and click Import</li>
     </ol>
-    <p class="mt-4 text-sm <%= ui_text_muted_class %>">
-      <strong class="<%= ui_text_class %>">Note:</strong> Duplicate transactions (same date, amount, and description) will be detected and marked.
+    <p class="mt-4 text-sm text-amber-700 dark:text-slate-300">
+      <strong class="text-amber-800 dark:text-slate-200">Note:</strong> Duplicate transactions (same date, amount, and description) will be detected and marked.
     </p>
   </div>
 </div>

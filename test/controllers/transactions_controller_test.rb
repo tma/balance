@@ -30,12 +30,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
       post transactions_url, params: { transaction: { account_id: @transaction.account_id, amount: 100.00, category_id: @transaction.category_id, date: Date.current, description: "Test transaction", transaction_type: "income" } }
     end
 
-    assert_redirected_to transaction_url(Transaction.last)
-  end
-
-  test "should show transaction" do
-    get transaction_url(@transaction)
-    assert_response :success
+    assert_redirected_to transactions_url
   end
 
   test "should get edit" do
@@ -45,7 +40,7 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
 
   test "should update transaction" do
     patch transaction_url(@transaction), params: { transaction: { account_id: @transaction.account_id, amount: @transaction.amount, category_id: @transaction.category_id, date: @transaction.date, description: @transaction.description, transaction_type: @transaction.transaction_type } }
-    assert_redirected_to transaction_url(@transaction)
+    assert_redirected_to transactions_url
   end
 
   test "should destroy transaction" do

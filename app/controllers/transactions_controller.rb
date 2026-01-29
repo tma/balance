@@ -1,5 +1,5 @@
 class TransactionsController < ApplicationController
-  before_action :set_transaction, only: %i[ show edit update destroy ]
+  before_action :set_transaction, only: %i[ edit update destroy ]
 
   def index
     @transactions = Transaction.includes(:account, :category).order(date: :desc, created_at: :desc)
@@ -48,11 +48,8 @@ class TransactionsController < ApplicationController
     @transactions_by_date = @transactions.group_by(&:date)
 
     # Calculate totals
-    @total_income = @transactions.income.sum(:amount)
-    @total_expenses = @transactions.expense.sum(:amount)
-  end
-
-  def show
+    @total_income = @transactions.income.sum(:amount_in_default_currency)
+    @total_expenses = @transactions.expense.sum(:amount_in_default_currency)
   end
 
   def new
@@ -66,7 +63,7 @@ class TransactionsController < ApplicationController
     @transaction = Transaction.new(transaction_params)
 
     if @transaction.save
-      redirect_to @transaction, notice: "Transaction was successfully created."
+      redirect_to transactions_path, notice: "Transaction was successfully created."
     else
       render :new, status: :unprocessable_entity
     end
@@ -74,7 +71,7 @@ class TransactionsController < ApplicationController
 
   def update
     if @transaction.update(transaction_params)
-      redirect_to @transaction, notice: "Transaction was successfully updated.", status: :see_other
+      redirect_to transactions_path, notice: "Transaction was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end
