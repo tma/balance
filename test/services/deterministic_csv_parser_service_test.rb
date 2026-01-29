@@ -183,7 +183,7 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     assert_equal "Lunch", transactions[1][:description]
   end
 
-  test "skips rows matching ignore patterns" do
+  test "marks rows matching ignore patterns as ignored" do
     # Set up account with ignore patterns
     @account.update!(import_ignore_patterns: "Total\nBalance")
 
@@ -206,8 +206,18 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     parser = DeterministicCsvParserService.new(content, mapping, @account)
     transactions = parser.parse
 
-    assert_equal 1, transactions.size
+    assert_equal 3, transactions.size
+
+    # First transaction is not ignored
     assert_equal "Coffee", transactions[0][:description]
+    assert_equal false, transactions[0][:is_ignored]
+
+    # Second and third transactions match ignore patterns
+    assert_equal "Total", transactions[1][:description]
+    assert_equal true, transactions[1][:is_ignored]
+
+    assert_equal "Account Balance", transactions[2][:description]
+    assert_equal true, transactions[2][:is_ignored]
   end
 
   test "handles fallback date formats" do

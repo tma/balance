@@ -185,10 +185,10 @@ export default class extends Controller {
   }
 
   selectAll() {
-    const checked = !this.allNonDuplicatesSelected()
+    const checked = !this.allSelectableSelected()
     
     this.rowTargets.forEach(row => {
-      if (!row.classList.contains("duplicate-row")) {
+      if (!row.classList.contains("duplicate-row") && !row.classList.contains("ignored-row")) {
         const checkbox = row.querySelector(".transaction-checkbox")
         if (checkbox) {
           checkbox.checked = checked
@@ -203,9 +203,9 @@ export default class extends Controller {
     this.updateSelectedCount()
   }
 
-  allNonDuplicatesSelected() {
+  allSelectableSelected() {
     return this.rowTargets
-      .filter(row => !row.classList.contains("duplicate-row"))
+      .filter(row => !row.classList.contains("duplicate-row") && !row.classList.contains("ignored-row"))
       .every(row => {
         const checkbox = row.querySelector(".transaction-checkbox")
         return checkbox?.checked
@@ -221,7 +221,7 @@ export default class extends Controller {
     const checked = event.target.checked
     
     this.rowTargets.forEach(row => {
-      if (!row.classList.contains("duplicate-row")) {
+      if (!row.classList.contains("duplicate-row") && !row.classList.contains("ignored-row")) {
         const checkbox = row.querySelector(".transaction-checkbox")
         if (checkbox) {
           checkbox.checked = checked
@@ -238,7 +238,7 @@ export default class extends Controller {
     
     // Update select all checkbox state
     if (this.hasSelectAllTarget) {
-      this.selectAllTarget.checked = this.allNonDuplicatesSelected()
+      this.selectAllTarget.checked = this.allSelectableSelected()
     }
   }
 

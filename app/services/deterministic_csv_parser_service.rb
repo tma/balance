@@ -251,7 +251,6 @@ class DeterministicCsvParserService
   def parse_row(row, date)
     description = build_description(row)
     return nil if description.blank?
-    return nil if account.should_ignore_for_import?(description)
 
     amount, transaction_type = parse_amount_and_type(row)
     return nil unless amount && amount > 0
@@ -263,7 +262,8 @@ class DeterministicCsvParserService
       transaction_type: transaction_type,
       category_id: nil,
       category_name: nil,
-      account_id: account.id
+      account_id: account.id,
+      is_ignored: account.should_ignore_for_import?(description)
     }
   end
 
@@ -271,7 +271,6 @@ class DeterministicCsvParserService
   def parse_detail_row(row, date)
     description = build_description(row)
     return nil if description.blank?
-    return nil if account.should_ignore_for_import?(description)
 
     raw_amount = row[detail_amount_column].to_s.strip
     return nil if raw_amount.blank?
@@ -289,7 +288,8 @@ class DeterministicCsvParserService
       transaction_type: transaction_type,
       category_id: nil,
       category_name: nil,
-      account_id: account.id
+      account_id: account.id,
+      is_ignored: account.should_ignore_for_import?(description)
     }
   end
 

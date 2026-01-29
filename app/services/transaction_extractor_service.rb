@@ -246,7 +246,6 @@ class TransactionExtractorService
   def valid_transaction_content?(txn)
     description = txn["description"].to_s.strip
     return false if description.blank?
-    return false if account.should_ignore_for_import?(description)
     true
   end
 
@@ -255,15 +254,17 @@ class TransactionExtractorService
     return nil unless date
 
     type = txn["type"].to_s.downcase == "income" ? "income" : "expense"
+    description = txn["description"].to_s.strip
 
     {
       date: date,
-      description: txn["description"].to_s.strip,
+      description: description,
       amount: txn["amount"].to_f.abs.round(2),
       transaction_type: type,
       category_id: nil,
       category_name: nil,
-      account_id: account.id
+      account_id: account.id,
+      is_ignored: account.should_ignore_for_import?(description)
     }
   end
 

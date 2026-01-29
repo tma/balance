@@ -1103,6 +1103,10 @@ if Rails.env.development?
     # Re-import us_standard to a different account, but don't auto-confirm
     import_csv.call(csv_samples_dir.join("us_standard.csv"), accounts[:vacation_savings], mark_done: false)
 
+    # Import a CSV with rows that match ignore patterns (to demo ignored transactions feature)
+    # This will show ignored transactions dimmed in the import review UI
+    import_csv.call(csv_samples_dir.join("with_ignored_rows.csv"), accounts[:brokerage], mark_done: false)
+
   else
     puts "\nSkipping CSV import (Ollama not available)"
     puts "  To enable: start Ollama in devcontainer or install locally"

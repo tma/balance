@@ -111,9 +111,10 @@
   <% elsif @import.completed? && @transactions.any? %>
     <!-- Summary Stats -->
     <% 
-      income_txns = @transactions.select { |t| t[:transaction_type] == 'income' }
-      expense_txns = @transactions.select { |t| t[:transaction_type] == 'expense' }
-      duplicate_count = @transactions.count { |t| t[:is_duplicate] }
+      selectable_transactions = @transactions.reject { |t| t[:is_ignored] }
+      income_txns = selectable_transactions.select { |t| t[:transaction_type] == 'income' }
+      expense_txns = selectable_transactions.select { |t| t[:transaction_type] == 'expense' }
+      duplicate_count = selectable_transactions.count { |t| t[:is_duplicate] }
       total_income = income_txns.sum { |t| t[:amount].to_f }
       total_expense = expense_txns.sum { |t| t[:amount].to_f }
     %>
@@ -180,14 +181,23 @@
             </thead>
             <tbody class="<%= ui_card_body_class %>">
               <% @transactions.each_with_index do |txn, index| %>
-                <tr class="<%= txn[:is_duplicate] ? 'bg-amber-50/50 dark:bg-amber-900/20 duplicate-row' : ui_table_row_class %> cursor-pointer"
+                <% 
+                  row_class = if txn[:is_ignored]
+                    'bg-slate-100/50 dark:bg-slate-800/50 opacity-60 ignored-row'
+                  elsif txn[:is_duplicate]
+                    'bg-amber-50/50 dark:bg-amber-900/20 duplicate-row'
+                  else
+                    ui_table_row_class
+                  end
+                %>
+                <tr class="<%= row_class %> cursor-pointer"
                     data-import-table-target="row"
                     data-action="click->import-table#rowClicked">
                   <td class="px-4 py-3">
                     <input type="checkbox" 
                            name="transactions[<%= index %>][selected]" 
                            value="1"
-                           <%= txn[:is_duplicate] ? '' : 'checked' %>
+                           <%= (txn[:is_duplicate] || txn[:is_ignored]) ? '' : 'checked' %>
                            class="transaction-checkbox <%= ui_checkbox_class %>"
                            data-action="change->import-table#checkboxChanged">
                     <%= hidden_field_tag "transactions[#{index}][description]", txn[:description] %>
@@ -202,7 +212,10 @@
                   </td>
                   <td class="px-4 py-3 text-sm <%= ui_text_class %>">
                     <div class="flex items-center gap-2">
-                      <span class="<%= txn[:is_duplicate] ? ui_text_muted_class : '' %>"><%= txn[:description] %></span>
+                      <span class="<%= (txn[:is_duplicate] || txn[:is_ignored]) ? ui_text_muted_class : '' %>"><%= txn[:description] %></span>
+                      <% if txn[:is_ignored] %>
+                        <span class="<%= ui_badge_class %>">Ignored</span>
+                      <% end %>
                       <% if txn[:is_duplicate] %>
                         <span class="<%= ui_badge_warning_class %>">Duplicate</span>
                       <% end %>
@@ -245,7 +258,7 @@
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 <%= ui_card_class %> p-4">
         <div class="flex items-center gap-4">
           <p class="text-sm <%= ui_text_muted_class %>">
-            <span class="font-medium <%= ui_text_class %>" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] } %></span> transactions selected
+            <span class="font-medium <%= ui_text_class %>" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] && !t[:is_ignored] } %></span> transactions selected
           </p>
           <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:<%= ui_text_class %>">
             <input type="checkbox" 
