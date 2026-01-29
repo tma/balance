@@ -20,7 +20,7 @@ development:
   cable:
     <<: *default
     database: storage/development_cable.sqlite3
-    schema_dump: false
+    migrations_paths: db/cable_migrate
 
 # Warning: The database defined as "test" will be erased and
 # re-generated from your development database when you run "rake".
@@ -46,4 +46,4 @@ production:
   cable:
     <<: *default
     database: storage/production_cable.sqlite3
-    schema_dump: false
+    migrations_paths: db/cable_migrate
