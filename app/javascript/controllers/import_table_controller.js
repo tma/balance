@@ -262,6 +262,14 @@ export default class extends Controller {
   }
 
   updateCategoryHighlight(select) {
+    // Don't highlight ignored or duplicate rows
+    const row = select.closest('tr')
+    if (row?.classList.contains('ignored-row') || row?.classList.contains('duplicate-row')) {
+      select.classList.remove('border-amber-400', 'bg-amber-50', 'dark:bg-amber-900/30')
+      select.classList.add('border-slate-300', 'dark:border-slate-600')
+      return
+    }
+
     if (!select.value) {
       select.classList.add('border-amber-400', 'bg-amber-50', 'dark:bg-amber-900/30')
       select.classList.remove('border-slate-300', 'dark:border-slate-600')
