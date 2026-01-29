@@ -62,14 +62,9 @@
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-right">
                   <div class="flex items-center justify-end gap-2">
-                    <% if import.completed? %>
-                      <%= link_to "Review", import_path(import), class: "#{ui_btn_primary_class} text-xs px-3 py-1.5" %>
-                      <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 text-xs", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
-                    <% elsif import.failed? %>
-                      <%= link_to "View", import_path(import), class: ui_link_class %>
-                      <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300 text-xs", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
-                    <% else %>
-                      <%= link_to "View", import_path(import), class: ui_link_class %>
+                    <%= link_to "View", import_path(import), class: ui_link_class %>
+                    <% if import.completed? || import.failed? %>
+                      <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
                     <% end %>
                   </div>
                 </td>
