@@ -233,7 +233,7 @@
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-right text-sm">
                   <div class="flex items-center justify-end gap-2">
                     <%= link_to "Edit", edit_transaction_path(transaction), class: ui_link_class %>
-                    <%= button_to "Delete", transaction, method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure?" } } %>
+                    <%= button_to "Delete", transaction, method: :delete, params: request.query_parameters.slice("month", "start_date", "end_date", "account_id", "category_id", "search"), class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure?" } } %>
                   </div>
                 </td>
               </tr>

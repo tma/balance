@@ -82,7 +82,7 @@ class TransactionsController < ApplicationController
 
   def destroy
     @transaction.destroy!
-    redirect_to transactions_path(month: params[:month]), notice: "Transaction was successfully destroyed.", status: :see_other
+    redirect_to transactions_path(filter_params), notice: "Transaction was successfully destroyed.", status: :see_other
   end
 
   private
@@ -93,5 +93,9 @@ class TransactionsController < ApplicationController
 
   def transaction_params
     params.expect(transaction: [ :account_id, :category_id, :amount, :transaction_type, :date, :description ])
+  end
+
+  def filter_params
+    params.permit(:month, :start_date, :end_date, :account_id, :category_id, :search).to_h.compact_blank
   end
 end
