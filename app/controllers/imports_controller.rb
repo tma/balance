@@ -72,8 +72,7 @@ class ImportsController < ApplicationController
 
     transactions_data = params[:transactions]&.values || []
 
-    updated_transactions = transactions_data.map.with_index do |txn_params, index|
-      original = @import.extracted_transactions[index] || {}
+    updated_transactions = transactions_data.map do |txn_params|
       {
         date: txn_params[:date],
         description: txn_params[:description],
@@ -81,8 +80,8 @@ class ImportsController < ApplicationController
         transaction_type: txn_params[:transaction_type],
         category_id: txn_params[:category_id].present? ? txn_params[:category_id].to_i : nil,
         duplicate_hash: txn_params[:duplicate_hash],
-        is_duplicate: original[:is_duplicate],
-        is_ignored: original[:is_ignored],
+        is_duplicate: txn_params[:is_duplicate] == "1",
+        is_ignored: txn_params[:is_ignored] == "1",
         selected: txn_params[:selected] == "1"
       }
     end

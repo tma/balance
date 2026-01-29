@@ -203,6 +203,8 @@
                     <%= hidden_field_tag "transactions[#{index}][description]", txn[:description] %>
                     <%= hidden_field_tag "transactions[#{index}][amount]", txn[:amount] %>
                     <%= hidden_field_tag "transactions[#{index}][duplicate_hash]", txn[:duplicate_hash] %>
+                    <%= hidden_field_tag "transactions[#{index}][is_duplicate]", txn[:is_duplicate] ? "1" : "0" %>
+                    <%= hidden_field_tag "transactions[#{index}][is_ignored]", txn[:is_ignored] ? "1" : "0" %>
                   </td>
                   <td class="px-4 py-3">
                     <input type="date" 
