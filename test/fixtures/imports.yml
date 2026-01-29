@@ -8,7 +8,6 @@ one:
   file_data: "date,description,amount\n2026-01-01,Test,100.00"
   extracted_data: "[]"
   error_message: 
-  transactions_count: 0
   started_at: 2026-01-16 00:25:38
   completed_at: 2026-01-16 00:25:38
 
@@ -20,7 +19,6 @@ two:
   file_data: "fake pdf data"
   extracted_data: 
   error_message: 
-  transactions_count: 0
   started_at: 
   completed_at: 
 
@@ -32,7 +30,6 @@ three:
   file_data: "corrupt data"
   extracted_data: 
   error_message: "Unable to parse file"
-  transactions_count: 0
   started_at: 2026-01-16 00:25:38
   completed_at: 2026-01-16 00:25:40
 
@@ -44,6 +41,5 @@ four:
   file_data: "date,description,amount\n2026-01-01,Test,100.00"
   extracted_data: "[]"
   error_message: 
-  transactions_count: 5
   started_at: 2026-01-16 00:25:38
   completed_at: 2026-01-16 00:25:38

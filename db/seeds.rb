@@ -1061,7 +1061,7 @@ if Rails.env.development?
               end
             end
 
-            import.update!(status: "done", transactions_count: imported_count)
+            import.update!(status: "done")
             puts "    ✓ Imported #{imported_count} transactions"
           else
             puts "    → Ready for review (#{import.extracted_transactions.size} transactions)"

@@ -11,7 +11,7 @@ class ImportsController < ApplicationController
 
     # Only show "finalized" imports: done (reviewed and imported) or failed
     # Pending, processing, and completed (ready-for-review) imports are shown on the Import (new) page
-    all_imports = Import.recent.includes(:account).select do |import|
+    all_imports = Import.recent.includes(:account, :transactions).select do |import|
       import.failed? || import.done?
     end
 
@@ -123,11 +123,9 @@ class ImportsController < ApplicationController
       end
     end
 
-    # Update import with count, optionally mark as done
+    # Mark import as done if requested
     if params[:mark_as_done] == "1"
-      @import.update!(transactions_count: imported_count, status: "done")
-    else
-      @import.update!(transactions_count: @import.transactions_count + imported_count)
+      @import.update!(status: "done")
     end
 
     if errors.any?

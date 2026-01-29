@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_27_190113) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_29_093136) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -122,6 +122,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_190113) do
   create_table "categories", force: :cascade do |t|
     t.string "category_type"
     t.datetime "created_at", null: false
+    t.binary "embedding"
     t.text "match_patterns"
     t.string "name"
     t.datetime "updated_at", null: false
@@ -149,7 +150,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_27_190113) do
     t.string "progress_message"
     t.datetime "started_at"
     t.string "status", default: "pending", null: false
-    t.integer "transactions_count", default: 0
     t.datetime "updated_at", null: false
     t.index ["account_id"], name: "index_imports_on_account_id"
     t.index ["status"], name: "index_imports_on_status"

@@ -37,7 +37,7 @@
     <% end %>
   </td>
   <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_muted_class %>">
-    <%= import.transactions_count %>
+    <%= import.transactions.size %>
   </td>
   <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_subtle_class %>">
     <%= time_ago_in_words(import.created_at) %> ago
