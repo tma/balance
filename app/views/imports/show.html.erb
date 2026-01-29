@@ -183,9 +183,9 @@
               <% @transactions.each_with_index do |txn, index| %>
                 <% 
                   row_class = if txn[:is_ignored]
-                    'bg-slate-100/50 dark:bg-slate-800/50 opacity-60 ignored-row'
+                    'bg-slate-100/50 dark:bg-slate-800/50 opacity-60 ignored-row border-b border-slate-100 dark:border-slate-700/50'
                   elsif txn[:is_duplicate]
-                    'bg-amber-50/50 dark:bg-amber-900/20 duplicate-row'
+                    'bg-amber-50/50 dark:bg-amber-900/20 duplicate-row border-b border-slate-100 dark:border-slate-700/50'
                   else
                     ui_table_row_class
                   end
@@ -232,7 +232,7 @@
                     <select name="transactions[<%= index %>][category_id]" 
                             class="transaction-category w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5"
                             data-action="change->import-table#categoryChanged">
-                      <option value="" disabled <%= txn[:category_id].present? ? '' : 'selected' %>></option>
+                      <option value="" <%= txn[:category_id].present? ? '' : 'selected' %>></option>
                       <optgroup label="Expense">
                         <% @expense_categories.each do |cat| %>
                           <option value="<%= cat.id %>" <%= txn[:category_id] == cat.id ? 'selected' : '' %>><%= cat.name %></option>
