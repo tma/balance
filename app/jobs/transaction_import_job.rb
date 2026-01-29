@@ -143,11 +143,15 @@ class TransactionImportJob < ApplicationJob
   def categorize_transactions(transactions, account, import: nil, base_progress: 0, progress_range: 100)
     return if transactions.empty?
 
-    total_txns = transactions.size
+    # Filter out ignored transactions - they don't need categorization
+    categorizable = transactions.reject { |t| t[:is_ignored] }
+    return if categorizable.empty?
+
+    total_txns = categorizable.size
 
     # Step 1: Rule-based categorization using match_patterns
     uncategorized = []
-    transactions.each_with_index do |txn, idx|
+    categorizable.each_with_index do |txn, idx|
       category = Category.find_by_pattern(txn[:description], txn[:transaction_type])
       if category
         txn[:category_id] = category.id
@@ -163,8 +167,8 @@ class TransactionImportJob < ApplicationJob
       end
     end
 
-    categorized_count = transactions.size - uncategorized.size
-    Rails.logger.info "Rule-based categorization: #{categorized_count}/#{transactions.size} matched"
+    categorized_count = categorizable.size - uncategorized.size
+    Rails.logger.info "Rule-based categorization: #{categorized_count}/#{categorizable.size} matched"
 
     # Step 2: LLM categorization for remaining transactions (remaining 80% of categorization)
     if uncategorized.any?

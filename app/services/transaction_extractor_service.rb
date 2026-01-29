@@ -37,15 +37,17 @@ class TransactionExtractorService
   # Categorize transactions using LLM (public so CSV imports can use it)
   # @param transactions [Array<Hash>] Array of transaction hashes with :description, :transaction_type
   def categorize_transactions(transactions)
-    return if transactions.empty?
+    # Filter out ignored transactions - they don't need categorization
+    categorizable = transactions.reject { |t| t[:is_ignored] }
+    return if categorizable.empty?
 
     @on_progress&.call(@chunks.size + 1, @chunks.size + 1, extracted_count: transactions.size, message: "Categorizing transactions")
-    Rails.logger.info "Categorizing #{transactions.size} transactions"
+    Rails.logger.info "Categorizing #{categorizable.size} transactions (#{transactions.size - categorizable.size} ignored)"
 
     expense_categories = Category.expense
     income_categories = Category.income
 
-    transactions.each_slice(CATEGORY_BATCH_SIZE) do |batch|
+    categorizable.each_slice(CATEGORY_BATCH_SIZE) do |batch|
       categorize_batch(batch, expense_categories, income_categories)
     end
   end
