@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   resources :imports, only: [ :index, :new, :create, :show, :destroy ] do
     member do
       post :confirm
+      patch :save
       post :reprocess
       get :status
     end

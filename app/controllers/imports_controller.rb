@@ -1,5 +1,5 @@
 class ImportsController < ApplicationController
-  before_action :set_import, only: %i[show confirm reprocess status destroy]
+  before_action :set_import, only: %i[show save confirm reprocess status destroy]
 
   def index
     # Determine current year from params or default to current year
@@ -61,6 +61,39 @@ class ImportsController < ApplicationController
   # Returns just the progress/status partial for Turbo Frame updates
   def status
     render partial: "imports/status", locals: { import: @import }, formats: [ :html ], layout: false
+  end
+
+  # Save the current form state without importing
+  def save
+    unless @import.completed?
+      redirect_to import_path(@import), alert: "Import is not ready for editing."
+      return
+    end
+
+    transactions_data = params[:transactions]&.values || []
+
+    updated_transactions = transactions_data.map.with_index do |txn_params, index|
+      original = @import.extracted_transactions[index] || {}
+      {
+        date: txn_params[:date],
+        description: txn_params[:description],
+        amount: txn_params[:amount],
+        transaction_type: txn_params[:transaction_type],
+        category_id: txn_params[:category_id].present? ? txn_params[:category_id].to_i : nil,
+        duplicate_hash: txn_params[:duplicate_hash],
+        is_duplicate: original[:is_duplicate],
+        is_ignored: original[:is_ignored],
+        selected: txn_params[:selected] == "1"
+      }
+    end
+
+    @import.extracted_transactions = updated_transactions
+
+    if @import.save
+      redirect_to import_path(@import), notice: "Changes saved."
+    else
+      redirect_to import_path(@import), alert: "Failed to save changes."
+    end
   end
 
   # Create the import record and enqueue the job

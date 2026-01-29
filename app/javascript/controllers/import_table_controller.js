@@ -13,6 +13,7 @@ export default class extends Controller {
   connect() {
     this.currentIndex = -1
     this.bindKeyboardEvents()
+    this.highlightEmptyCategories()
   }
 
   disconnect() {
@@ -251,5 +252,26 @@ export default class extends Controller {
       
       this.selectedCountTarget.textContent = count
     }
+  }
+
+  // Category highlighting for empty selections
+  highlightEmptyCategories() {
+    this.element.querySelectorAll('.transaction-category').forEach(select => {
+      this.updateCategoryHighlight(select)
+    })
+  }
+
+  updateCategoryHighlight(select) {
+    if (!select.value) {
+      select.classList.add('border-amber-400', 'bg-amber-50', 'dark:bg-amber-900/30')
+      select.classList.remove('border-slate-300', 'dark:border-slate-600')
+    } else {
+      select.classList.remove('border-amber-400', 'bg-amber-50', 'dark:bg-amber-900/30')
+      select.classList.add('border-slate-300', 'dark:border-slate-600')
+    }
+  }
+
+  categoryChanged(event) {
+    this.updateCategoryHighlight(event.target)
   }
 }

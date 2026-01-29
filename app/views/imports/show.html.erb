@@ -155,7 +155,7 @@
               <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">t</kbd> type
               <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">c</kbd> category
             </span>
-            <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:<%= ui_text_class %>">
+          <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:text-slate-700 dark:hover:text-slate-300">
               <input type="checkbox" 
                      checked 
                      class="<%= ui_checkbox_class %>"
@@ -197,7 +197,7 @@
                     <input type="checkbox" 
                            name="transactions[<%= index %>][selected]" 
                            value="1"
-                           <%= (txn[:is_duplicate] || txn[:is_ignored]) ? '' : 'checked' %>
+                           <%= (txn.key?(:selected) ? txn[:selected] : !(txn[:is_duplicate] || txn[:is_ignored])) ? 'checked' : '' %>
                            class="transaction-checkbox <%= ui_checkbox_class %>"
                            data-action="change->import-table#checkboxChanged">
                     <%= hidden_field_tag "transactions[#{index}][description]", txn[:description] %>
@@ -230,7 +230,8 @@
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][category_id]" 
-                            class="transaction-category w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5">
+                            class="transaction-category w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5"
+                            data-action="change->import-table#categoryChanged">
                       <option value="" disabled <%= txn[:category_id].present? ? '' : 'selected' %>></option>
                       <optgroup label="Expense">
                         <% @expense_categories.each do |cat| %>
@@ -256,21 +257,20 @@
 
       <!-- Actions -->
       <div class="flex flex-col sm:flex-row items-center justify-between gap-4 <%= ui_card_class %> p-4">
-        <div class="flex items-center gap-4">
-          <p class="text-sm <%= ui_text_muted_class %>">
-            <span class="font-medium <%= ui_text_class %>" data-import-table-target="selectedCount"><%= @transactions.count { |t| !t[:is_duplicate] && !t[:is_ignored] } %></span> transactions selected
-          </p>
-          <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:<%= ui_text_class %>">
+        <p class="text-sm <%= ui_text_muted_class %>">
+          <span class="font-medium <%= ui_text_class %>" data-import-table-target="selectedCount"><%= @transactions.count { |t| t.key?(:selected) ? t[:selected] : (!t[:is_duplicate] && !t[:is_ignored]) } %></span> transactions selected
+        </p>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:text-slate-700 dark:hover:text-slate-300">
             <input type="checkbox" 
                    name="mark_as_done" 
                    value="1"
                    class="<%= ui_checkbox_class %>">
             <span>Mark as done</span>
           </label>
-        </div>
-        <div class="flex items-center gap-3">
-          <%= link_to "Cancel", new_import_path, class: "px-4 py-2 #{ui_text_muted_class} hover:#{ui_text_class} font-medium transition text-sm" %>
           <%= form.submit "Import", class: "#{ui_btn_primary_class} cursor-pointer text-sm" %>
+          <div class="w-4"></div>
+          <%= form.button "Save", formaction: save_import_path(@import), formmethod: "patch", class: "#{ui_btn_secondary_class} cursor-pointer text-sm" %>
         </div>
       </div>
     <% end %>
