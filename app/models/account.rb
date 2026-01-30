@@ -39,7 +39,7 @@ class Account < ApplicationRecord
   end
 
   def default_currency
-    Currency.default&.code || "USD"
+    Currency.default_code
   end
 
   # Returns cached CSV column mapping as a hash, or nil if not set

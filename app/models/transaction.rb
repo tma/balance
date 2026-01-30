@@ -27,7 +27,7 @@ class Transaction < ApplicationRecord
   end
 
   def default_currency
-    Currency.default&.code || "USD"
+    Currency.default_code
   end
 
   private

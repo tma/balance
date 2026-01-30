@@ -9,6 +9,11 @@ class Currency < ApplicationRecord
     find_by(default: true) || first
   end
 
+  # Returns the default currency code, with ENV fallback
+  def self.default_code
+    default&.code || ENV.fetch("DEFAULT_CURRENCY", "USD")
+  end
+
   private
 
   def clear_other_defaults

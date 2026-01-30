@@ -63,10 +63,6 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
 2. Create a `.env` file with your configuration:
    ```bash
-   # Rails environment
-   RAILS_ENV=production
-   RAILS_LOG_TO_STDOUT=1
-
    # Generate with: openssl rand -hex 64
    SECRET_KEY_BASE=<your-secret-key>
 
@@ -78,6 +74,9 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
    # Timezone (e.g., America/New_York, Asia/Tokyo, Europe/Berlin)
    TZ=Europe/Berlin
+
+   # Fallback currency if no default is set in the database (optional)
+   DEFAULT_CURRENCY=CHF
 
    # Ollama host for AI-powered transaction import (optional)
    OLLAMA_HOST=http://ollama.example.com:11434
@@ -181,6 +180,22 @@ docker compose down
 ### Persistent Data
 
 All data (transactions, accounts, assets) is stored in the `balance_storage` Docker volume and persists between restarts.
+
+## Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SECRET_KEY_BASE` | Yes | — | Rails secret key for session encryption. Generate with `openssl rand -hex 64` |
+| `TZ` | No | `UTC` | Timezone for the application (e.g., `Europe/Zurich`, `America/New_York`) |
+| `DEFAULT_CURRENCY` | No | `USD` | Fallback currency code (ISO 4217) if no default is set in the database |
+| `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY` | Yes* | — | Primary key for Active Record encryption. Generate with `openssl rand -hex 16` |
+| `ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY` | Yes* | — | Deterministic key for Active Record encryption. Generate with `openssl rand -hex 16` |
+| `ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT` | Yes* | — | Salt for key derivation. Generate with `openssl rand -hex 16` |
+| `OLLAMA_HOST` | No | — | Ollama API URL for AI-powered transaction import (e.g., `http://localhost:11434`) |
+| `SOLID_QUEUE_IN_PUMA` | No | — | Set to `1` to run Solid Queue within Puma (single-process mode) |
+| `JOB_CONCURRENCY` | No | `1` | Number of Solid Queue worker processes |
+
+\* Required for broker integration (stores encrypted API tokens)
 
 ## Development
 

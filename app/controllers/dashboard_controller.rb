@@ -1,6 +1,6 @@
 class DashboardController < ApplicationController
   def home
-    @default_currency = Currency.default&.code || "USD"
+    @default_currency = Currency.default_code
     @valuation_date = default_valuation_date
 
     load_asset_groups_with_valuations
@@ -14,7 +14,7 @@ class DashboardController < ApplicationController
   end
 
   def cash_flow
-    @default_currency = Currency.default&.code || "USD"
+    @default_currency = Currency.default_code
 
     # Last 12 months data (including current month) - all in default currency
     @monthly_data = calculate_monthly_data(12)
@@ -29,7 +29,7 @@ class DashboardController < ApplicationController
   end
 
   def net_worth
-    @default_currency = Currency.default&.code || "USD"
+    @default_currency = Currency.default_code
     @valuation_date = params[:month].present? ? Date.parse("#{params[:month]}-01").end_of_month : default_valuation_date
     @current_month = @valuation_date.strftime("%Y-%m")
 

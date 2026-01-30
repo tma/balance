@@ -6,8 +6,9 @@ class Admin::BrokerConnectionsController < ApplicationController
   end
 
   def show
-    @positions = @connection.broker_positions.includes(:asset).order(:symbol)
+    @positions = @connection.broker_positions.includes(:asset, :position_valuations).order(:symbol)
     @asset_groups = AssetGroup.includes(assets: :asset_type).order(:position, :name)
+    @default_currency = Currency.default_code
   end
 
   def new

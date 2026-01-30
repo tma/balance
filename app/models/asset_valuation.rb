@@ -11,7 +11,7 @@ class AssetValuation < ApplicationRecord
   before_save :calculate_default_currency_value, if: :should_recalculate_default_currency_value?
 
   def default_currency
-    Currency.default&.code || "USD"
+    Currency.default_code
   end
 
   private

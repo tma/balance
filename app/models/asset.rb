@@ -30,7 +30,7 @@ class Asset < ApplicationRecord
   after_save :create_valuation_if_value_changed
 
   def default_currency
-    Currency.default&.code || "USD"
+    Currency.default_code
   end
 
   def has_broker?

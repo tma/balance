@@ -23,6 +23,15 @@ class BrokerPosition < ApplicationRecord
     !closed?
   end
 
+  def default_currency
+    Currency.default_code
+  end
+
+  # Get the last value converted to default currency from the most recent valuation
+  def last_value_in_default_currency
+    position_valuations.order(date: :desc).first&.value_in_default_currency
+  end
+
   # Syncs the position value to the mapped asset
   def sync_to_asset!
     return unless mapped? && last_value.present?

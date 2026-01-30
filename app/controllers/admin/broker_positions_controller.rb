@@ -9,6 +9,7 @@ class Admin::BrokerPositionsController < ApplicationController
 
   def show
     @valuations = @position.position_valuations.order(date: :desc).limit(90)
+    @default_currency = Currency.default_code
   end
 
   def edit

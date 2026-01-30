@@ -17,7 +17,7 @@ module ApplicationHelper
   # Uses apostrophe as thousand separator and the default currency code
   # Wraps output in span for privacy mode blur support
   def format_currency(amount, currency: nil, precision: 2)
-    currency ||= Currency.default&.code || "USD"
+    currency ||= Currency.default_code
     formatted = number_to_currency(
       amount,
       unit: "#{currency} ",
