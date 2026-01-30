@@ -1,7 +1,7 @@
 # Dev Container for Balance Rails App
-# Ruby 3.2.3 with SQLite and development tools
+# Ruby 3.4.8 with SQLite and development tools
 
-FROM ruby:3.2.3-slim
+FROM ruby:3.4.8-slim
 
 # Install system dependencies
 RUN apt-get update -qq && \
@@ -14,7 +14,6 @@ RUN apt-get update -qq && \
     libvips \
     curl \
     pkg-config \
-    watchman \
     libffi-dev \
     # OCR dependencies for PDF text extraction
     tesseract-ocr \
