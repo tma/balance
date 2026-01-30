@@ -14,13 +14,13 @@ production:
     command: "SolidQueue::Job.clear_finished_in_batches(sleep_between_batches: 0.3)"
     schedule: every hour at minute 12
 
-  # Sync broker connections and record position valuations daily after NYSE close
-  # Runs at 5pm ET (1 hour after market close) to ensure end-of-day data is available
+  # Sync broker connections and record position valuations daily
+  # Runs at 6am UTC to ensure previous day's end-of-day data is available globally
   # Includes gap detection to backfill any missed days
   daily_broker_sync:
     class: BrokerSyncJob
     queue: default
-    schedule: every day at 5pm America/New_York
+    schedule: every day at 6am UTC
 
   # Retry exchange rate fetches for records that failed due to API issues
   # Runs every 6 hours to minimize API calls while ensuring timely updates
