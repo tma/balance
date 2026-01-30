@@ -75,11 +75,14 @@
                   <span class="<%= ui_text_muted_class %>"><%= number_with_delimiter(position.last_quantity) if position.last_quantity %></span>
                 </td>
                 <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
-                  <span class="font-medium <%= ui_text_class %>">
-                    <% if position.last_value %>
-                      <%= format_currency(position.last_value, currency: position.currency) %>
+                  <% if position.last_value %>
+                    <span class="font-medium <%= ui_text_class %>">
+                      <%= format_currency(position.last_value_in_default_currency || position.last_value, currency: @default_currency) %>
+                    </span>
+                    <% if position.currency != @default_currency %>
+                      <p class="text-xs <%= ui_text_subtle_class %>"><%= format_currency(position.last_value, currency: position.currency) %></p>
                     <% end %>
-                  </span>
+                  <% end %>
                 </td>
                 <td class="<%= ui_table_td_class %>">
                   <select name="positions[<%= position.id %>]" class="<%= ui_input_sm_class %> w-full">
@@ -117,7 +120,7 @@
                   </td>
                   <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
                     <span class="<%= ui_text_subtle_class %>">
-                      <%= format_currency(0, currency: position.currency) %>
+                      <%= format_currency(0, currency: @default_currency) %>
                     </span>
                   </td>
                   <td class="<%= ui_table_td_class %>">

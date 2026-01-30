@@ -46,9 +46,14 @@
     </div>
     <div class="<%= ui_card_class %> p-4">
       <p class="text-xs font-medium <%= ui_text_muted_class %> uppercase">Value</p>
-      <p class="text-2xl font-bold <%= ui_text_class %> mt-1">
-        <%= format_currency(@position.last_value, currency: @position.currency) if @position.last_value %>
-      </p>
+      <% if @position.last_value %>
+        <p class="text-2xl font-bold <%= ui_text_class %> mt-1">
+          <%= format_currency(@position.last_value_in_default_currency || @position.last_value, currency: @default_currency) %>
+        </p>
+        <% if @position.currency != @default_currency %>
+          <p class="text-sm <%= ui_text_subtle_class %>"><%= format_currency(@position.last_value, currency: @position.currency) %></p>
+        <% end %>
+      <% end %>
     </div>
     <div class="<%= ui_card_class %> p-4">
       <p class="text-xs font-medium <%= ui_text_muted_class %> uppercase">Last Synced</p>
@@ -63,8 +68,7 @@
   </div>
 
   <!-- Valuation History -->
-  <% default_currency = Currency.default&.code || "USD" %>
-  <% show_default_currency = @position.currency != default_currency %>
+  <% show_default_currency = @position.currency != @default_currency %>
   
   <div class="<%= ui_card_class %> overflow-hidden">
     <div class="<%= ui_table_header_class %> px-4 py-2">
@@ -80,7 +84,7 @@
             <th class="<%= ui_table_th_class %> text-right">Quantity</th>
             <th class="<%= ui_table_th_class %> text-right">Value (<%= @position.currency %>)</th>
             <% if show_default_currency %>
-              <th class="<%= ui_table_th_class %> text-right">Value (<%= default_currency %>)</th>
+              <th class="<%= ui_table_th_class %> text-right">Value (<%= @default_currency %>)</th>
             <% end %>
             <th class="<%= ui_table_th_class %> text-right">Change</th>
             <th class="<%= ui_table_th_class %> text-right w-20"></th>
@@ -104,7 +108,7 @@
                 <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
                   <span class="<%= ui_text_muted_class %>">
                     <% if valuation.value_in_default_currency %>
-                      <%= format_currency(valuation.value_in_default_currency, currency: default_currency) %>
+                      <%= format_currency(valuation.value_in_default_currency, currency: @default_currency) %>
                       <% if valuation.exchange_rate && valuation.exchange_rate != 1.0 %>
                         <span class="text-xs <%= ui_text_subtle_class %> block">@ <%= number_with_precision(valuation.exchange_rate, precision: 4) %></span>
                       <% end %>
