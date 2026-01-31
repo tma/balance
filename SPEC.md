@@ -266,7 +266,7 @@ PositionValuation
 - ExchangeRateService returns nil on API failure; records retry via ExchangeRateRetryJob (every 6 hours)
 - Transaction exchange rates captured at transaction date for accurate historical reporting
 - Transaction import uses Ollama LLM for extraction and categorization
-- Import services: OllamaService, PdfParserService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
+- Import services: OllamaService, PdfTextExtractorService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
 - Broker integration uses factory pattern (BrokerSyncService) for multi-broker support
 - IBKR uses Flex Web Service API (2-step: SendRequest → GetStatement)
 - IbkrSyncService handles API calls, XML parsing, and asset value sync
