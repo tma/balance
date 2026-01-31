@@ -33,6 +33,9 @@
           Unmapped
         </span>
       <% end %>
+      <% if @connection.manual? %>
+        <%= link_to "Edit", edit_admin_broker_connection_position_path(@connection, @position), class: ui_btn_secondary_class %>
+      <% end %>
     </div>
   </div>
 

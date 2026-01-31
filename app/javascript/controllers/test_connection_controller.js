@@ -1,8 +1,27 @@
 import { Controller } from "@hotwired/stimulus"
 
 export default class extends Controller {
-  static targets = ["result", "testButton", "brokerType", "name", "accountId", "flexToken", "flexQueryId"]
+  static targets = ["result", "testButton", "brokerType", "name", "flexToken", "flexQueryId", "ibkrFields", "instructions"]
   static values = { url: String }
+
+  connect() {
+    this.toggleFields()
+  }
+
+  toggleFields() {
+    const brokerType = this.brokerTypeTarget.value
+    const isIbkr = brokerType === "ibkr"
+    
+    // Toggle all IBKR-specific fields
+    this.ibkrFieldsTargets.forEach(el => {
+      el.classList.toggle("hidden", !isIbkr)
+    })
+    
+    // Toggle instructions box
+    if (this.hasInstructionsTarget) {
+      this.instructionsTarget.classList.toggle("hidden", !isIbkr)
+    }
+  }
 
   async test() {
     const button = this.testButtonTarget
@@ -15,7 +34,6 @@ export default class extends Controller {
       const formData = new FormData()
       formData.append("broker_connection[broker_type]", this.brokerTypeTarget.value)
       formData.append("broker_connection[name]", this.nameTarget.value)
-      formData.append("broker_connection[account_id]", this.accountIdTarget.value)
       
       if (this.hasFlexTokenTarget) {
         formData.append("broker_connection[flex_token]", this.flexTokenTarget.value)
@@ -48,10 +66,18 @@ export default class extends Controller {
     result.classList.remove("hidden")
 
     if (data.success) {
-      const symbolList = data.symbols.join(", ")
-      const moreText = data.count > 5 ? ` and ${data.count - 5} more` : ""
       result.className = "bg-emerald-50 text-emerald-700 px-4 py-3 rounded-lg border border-emerald-200 mb-4"
-      result.textContent = `Connection successful! Found ${data.count} positions: ${symbolList}${moreText}`
+      
+      // Handle different response formats (IBKR vs Manual)
+      if (data.symbols) {
+        const symbolList = data.symbols.join(", ")
+        const moreText = data.count > 5 ? ` and ${data.count - 5} more` : ""
+        result.textContent = `Connection successful! Found ${data.count} positions: ${symbolList}${moreText}`
+      } else if (data.btc_price) {
+        result.textContent = `${data.message} (BTC: $${data.btc_price.toLocaleString()})`
+      } else {
+        result.textContent = data.message || "Connection successful!"
+      }
     } else {
       result.className = "bg-rose-50 text-rose-600 px-4 py-3 rounded-lg border border-rose-200 mb-4"
       result.textContent = `Connection failed: ${data.error}`

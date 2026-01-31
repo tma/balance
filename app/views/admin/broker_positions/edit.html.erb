@@ -1,0 +1,58 @@
+<% content_for :title, "Edit Position - #{@position.symbol}" %>
+
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Settings" %>
+    <%= ui_breadcrumb_item "Brokers", admin_broker_connections_path %>
+    <%= ui_breadcrumb_item @connection.name, admin_broker_connection_path(@connection) %>
+  <% end %>
+<% end %>
+
+<div class="w-full">
+  <h1 class="<%= ui_title_class %> mb-6">Edit <%= @position.symbol %></h1>
+
+  <%= form_with model: @position, url: admin_broker_connection_position_path(@connection, @position), method: :patch, class: "contents" do |form| %>
+    <% if @position.errors.any? %>
+      <div class="<%= ui_alert_error_class %> mb-4">
+        <h2 class="font-medium"><%= pluralize(@position.errors.count, "error") %> prohibited this position from being saved:</h2>
+        <ul class="list-disc ml-6 mt-2">
+          <% @position.errors.each do |error| %>
+            <li><%= error.full_message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <% if @connection.manual? %>
+      <div class="mb-4">
+        <%= form.label :symbol, "Symbol", class: ui_label_class %>
+        <%= form.text_field :symbol, class: ui_input_class %>
+      </div>
+
+      <div class="mb-4">
+        <%= form.label :description, class: ui_label_class %>
+        <%= form.text_field :description, class: ui_input_class %>
+      </div>
+
+      <div class="mb-4">
+        <%= form.label :last_quantity, "Quantity", class: ui_label_class %>
+        <%= form.number_field :last_quantity, step: "any", class: ui_input_class %>
+      </div>
+    <% end %>
+
+    <div class="mb-4">
+      <%= form.label :asset_id, "Mapped Asset", class: ui_label_class %>
+      <%= form.select :asset_id, 
+          @assets.group_by(&:asset_group).map { |group, assets| 
+            [group&.name || "Ungrouped", assets.map { |a| [a.name, a.id] }] 
+          },
+          { include_blank: "- Not mapped -" },
+          class: ui_input_class %>
+    </div>
+
+    <div class="flex space-x-4">
+      <%= form.submit "Save Position", class: ui_btn_primary_class + " cursor-pointer" %>
+      <%= link_to "Cancel", admin_broker_connection_path(@connection), class: ui_btn_secondary_class %>
+    </div>
+  <% end %>
+</div>

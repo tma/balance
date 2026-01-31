@@ -12,19 +12,19 @@
 
   <div id="test-result" data-test-connection-target="result" class="hidden mb-4"></div>
 
-  <%= form.hidden_field :broker_type, data: { test_connection_target: "brokerType" } %>
+  <div class="mb-4">
+    <%= form.label :broker_type, class: ui_label_class %>
+    <%= form.select :broker_type, BrokerConnection.broker_types.keys.map { |k| [BrokerConnection.new(broker_type: k).broker_type_name, k] },
+        {}, class: ui_input_class, data: { test_connection_target: "brokerType", action: "change->test-connection#toggleFields" } %>
+  </div>
 
   <div class="mb-4">
     <%= form.label :name, class: ui_label_class %>
     <%= form.text_field :name, class: ui_input_class, placeholder: "Main Brokerage", data: { test_connection_target: "name" } %>
   </div>
 
-  <div class="mb-4">
-    <%= form.label :account_id, "Account ID", class: ui_label_class %>
-    <%= form.text_field :account_id, class: ui_input_class, placeholder: "U1234567", data: { test_connection_target: "accountId" } %>
-  </div>
-
-  <% if connection.ibkr? %>
+  <%# IBKR-specific fields %>
+  <div data-test-connection-target="ibkrFields" class="<%= 'hidden' unless connection.ibkr? || connection.new_record? %>">
     <div class="mb-4">
       <%= form.label :flex_token, "Flex Token", class: ui_label_class %>
       <%= form.text_field :flex_token, class: ui_input_class, placeholder: "Your Flex Web Service token", data: { test_connection_target: "flexToken" } %>
@@ -34,13 +34,16 @@
       <%= form.label :flex_query_id, "Flex Query ID", class: ui_label_class %>
       <%= form.text_field :flex_query_id, class: ui_input_class, placeholder: "123456", data: { test_connection_target: "flexQueryId" } %>
     </div>
-  <% end %>
+  </div>
 
   <div class="flex space-x-4">
     <%= form.submit connection.persisted? ? "Update Connection" : "Create Connection", class: ui_btn_primary_class + " cursor-pointer" %>
-    <button type="button" data-action="click->test-connection#test" data-test-connection-target="testButton" class="<%= ui_btn_secondary_class %>">
-      Test Connection
-    </button>
+    <%# Test Connection only shown for IBKR - manual has no connection to test %>
+    <div data-test-connection-target="ibkrFields" class="<%= 'hidden' unless connection.ibkr? || connection.new_record? %>">
+      <button type="button" data-action="click->test-connection#test" data-test-connection-target="testButton" class="<%= ui_btn_secondary_class %>">
+        Test Connection
+      </button>
+    </div>
     <%= link_to "Cancel", admin_broker_connections_path, class: ui_btn_secondary_class %>
   </div>
 <% end %>
