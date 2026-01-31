@@ -21,7 +21,7 @@ class TransactionImportJob < ApplicationJob
       transactions = DuplicateDetectionService.mark_duplicates(transactions)
       import.mark_completed!(transactions)
 
-    rescue PdfParserService::Error, CsvParserService::Error => e
+    rescue PdfTextExtractorService::Error, CsvParserService::Error => e
       import.mark_failed!("File parsing error: #{e.message}")
     rescue CsvMappingAnalyzerService::AnalysisError => e
       import.mark_failed!("CSV analysis error: #{e.message}")
@@ -113,28 +113,44 @@ class TransactionImportJob < ApplicationJob
   end
 
   def process_pdf(import)
-    Rails.logger.info "Import #{import.id}: Processing PDF"
+    Rails.logger.info "Import #{import.id}: Processing PDF with pdftotext + LLM"
 
-    # Stage 1: Reading PDF (5%)
-    import.update_progress!(5, 100, message: "Reading PDF...")
-    chunks = with_temp_file(import, ".pdf") do |temp_file|
-      PdfParserService.extract_pages(temp_file)
+    # Stage 1: Extract text and convert to CSV (5-20%)
+    import.update_progress!(5, 100, message: "Extracting text from PDF...")
+    csv_content = with_temp_file(import, ".pdf") do |temp_file|
+      PdfTextExtractorService.extract_csv(temp_file)
     end
 
-    Rails.logger.info "Import #{import.id}: Extracted #{chunks.size} page(s)"
-    import.update_progress!(10, 100, message: "Extracted #{chunks.size} page(s)")
+    Rails.logger.info "Import #{import.id}: Extracted CSV from PDF, processing through CSV pipeline"
+    import.update_progress!(20, 100, message: "Analyzing table format...")
 
-    # Stage 2-4: Extracting transactions (10-90%)
-    progress_callback = lambda do |current, total, extracted_count: nil, message: nil|
-      # Map page progress to 10-90% range
-      percent = 10 + ((current.to_f / total) * 80).round
-      import.update_progress!(percent, 100, extracted_count: extracted_count, message: message)
+    begin
+      # Process through CSV pipeline (don't use cached mappings for PDFs)
+      process_pdf_csv_content(import, csv_content)
+    rescue CsvMappingAnalyzerService::AnalysisError, DeterministicCsvParserService::ParseError => e
+      # PDF extracted but couldn't be parsed as valid transaction data
+      Rails.logger.error "Import #{import.id}: PDF extraction produced invalid CSV: #{e.message}"
+      raise PdfTextExtractorService::Error,
+        "Could not extract transactions from PDF. The table structure may not be supported. " \
+        "Try uploading a CSV export from your bank instead."
     end
+  end
 
-    extractor = TransactionExtractorService.new(chunks, import.account, on_progress: progress_callback)
-    transactions = extractor.extract
+  def process_pdf_csv_content(import, content)
+    # Always analyze PDF-extracted CSV fresh - table structure differs from CSV exports
+    mapping = CsvMappingAnalyzerService.analyze(content)
+    import.update_progress!(30, 100, message: "Format detected")
 
-    # Stage 5: Detecting duplicates (95%)
+    # Parse transactions
+    import.update_progress!(35, 100, message: "Parsing transactions...")
+    parser = DeterministicCsvParserService.new(content, mapping, import.account)
+    transactions = parser.parse
+    Rails.logger.info "Import #{import.id}: Parsed #{transactions.size} transactions from PDF"
+
+    # Categorize (40-95%)
+    categorize_transactions(transactions, import.account, import: import, base_progress: 40, progress_range: 55)
+
+    # Detecting duplicates (95%)
     import.update_progress!(95, 100, message: "Checking for duplicates...")
 
     transactions
