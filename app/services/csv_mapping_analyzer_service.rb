@@ -129,13 +129,15 @@ class CsvMappingAnalyzerService
            - If you see both "Date" and "ValutaDate", always choose "Date"
 
         2. DESCRIPTION COLUMNS (CRITICAL - ALWAYS CHECK FOR SECONDARY):#{' '}
-           - Primary: The main transaction type or merchant name (e.g., "Buchungstext", "Description", "Beschreibung")
+           - Primary: The main transaction type or merchant name. Common names:
+             * German: "Buchungstext", "Beschreibung", "Text", "Verwendungszweck"
+             * English: "Description", "MerchantName", "Merchant", "Payee", "Name", "Narrative"
            - Secondary: ALWAYS look for a secondary column with additional details! Common names:
              * German: "Zahlungszweck", "Verwendungszweck", "Details", "Bemerkung", "Mitteilung"
              * English: "Memo", "Details", "Notes", "Reference", "Purpose", "Narrative"
            - If you see columns like "Zahlungszweck" or "Details" that contain meaningful text, ALWAYS include as secondary
            - IGNORE currency columns like "Whg", "Currency", "Währung" - these contain currency codes (CHF, EUR, USD), not descriptions
-           - IGNORE pure reference/ID columns like "Referenz", "Referenznummer" that only contain IDs
+           - IGNORE pure reference/ID columns like "Referenz", "Referenznummer", "TransactionId", "CardId" that only contain IDs
 
         3. AMOUNT COLUMNS - Look at the data carefully:
            - If ONE column has both positive and negative numbers → "single" (amount_column)
