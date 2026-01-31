@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_29_093136) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_31_115914) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -79,16 +79,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_29_093136) do
   end
 
   create_table "broker_connections", force: :cascade do |t|
-    t.string "account_id", null: false
     t.integer "broker_type", default: 0, null: false
     t.datetime "created_at", null: false
-    t.string "flex_query_id", null: false
-    t.string "flex_token", null: false
+    t.text "credentials"
     t.text "last_sync_error"
     t.datetime "last_synced_at"
     t.string "name", null: false
     t.datetime "updated_at", null: false
-    t.index ["broker_type", "account_id"], name: "index_broker_connections_on_broker_type_and_account_id", unique: true
   end
 
   create_table "broker_positions", force: :cascade do |t|
