@@ -15,10 +15,7 @@ RUN apt-get update -qq && \
     curl \
     pkg-config \
     libffi-dev \
-    # OCR dependencies for PDF text extraction
-    tesseract-ocr \
-    tesseract-ocr-deu \
-    tesseract-ocr-fra \
+    # PDF text extraction (pdftotext)
     poppler-utils \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
 
