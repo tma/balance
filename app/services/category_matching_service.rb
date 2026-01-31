@@ -8,7 +8,6 @@
 # If the model is not available, ALL categorization is skipped.
 class CategoryMatchingService
   TOP_K_CANDIDATES = 3
-  LLM_BATCH_SIZE = 10
 
   attr_reader :transactions, :on_progress
 
@@ -114,6 +113,13 @@ class CategoryMatchingService
   def cosine_similarity(a, b)
     return 0.0 if a.nil? || b.nil? || a.empty? || b.empty?
 
+    # Warn if dimensions don't match (likely model mismatch)
+    if a.size != b.size
+      Rails.logger.warn "CategoryMatchingService: Embedding dimension mismatch (#{a.size} vs #{b.size}). " \
+                        "Run 'rails categories:compute_embeddings' to recompute with current model."
+      return 0.0
+    end
+
     dot = a.zip(b).sum { |x, y| x * y }
     mag_a = Math.sqrt(a.sum { |x| x**2 })
     mag_b = Math.sqrt(b.sum { |x| x**2 })
@@ -177,11 +183,7 @@ class CategoryMatchingService
     return category if category
 
     # Case-insensitive match
-    category = categories.find { |c| c.name.downcase == name_str.downcase }
-    return category if category
-
-    # Partial match
-    categories.find { |c| c.name.downcase.include?(name_str.downcase) }
+    categories.find { |c| c.name.downcase == name_str.downcase }
   end
 
   def confidence_threshold
