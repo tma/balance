@@ -14,7 +14,6 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     # Create a fresh connection with known credentials for each test
     @connection = BrokerConnection.create!(
       broker_type: :ibkr,
-      account_id: "U9999999",
       name: "Test IBKR Account",
       flex_token: "test_token_abc123",
       flex_query_id: "999999"

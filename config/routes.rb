@@ -63,7 +63,7 @@ Rails.application.routes.draw do
       member do
         post :sync
       end
-      resources :broker_positions, path: "positions", as: :positions, only: [ :index, :show, :edit, :update ] do
+      resources :broker_positions, path: "positions", as: :positions, only: [ :index, :show, :new, :create, :edit, :update, :destroy ] do
         collection do
           patch :bulk_update
         end

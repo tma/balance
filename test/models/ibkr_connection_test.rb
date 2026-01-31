@@ -2,13 +2,13 @@ require "test_helper"
 
 class IbkrConnectionTest < ActiveSupport::TestCase
   setup do
-    @connection = BrokerConnection.create!(
+    @connection = BrokerConnection.new(
       broker_type: :ibkr,
-      account_id: "U9999999",
-      name: "Test IBKR Account",
-      flex_token: "test_token_abc123",
-      flex_query_id: "999999"
+      name: "Test IBKR Account"
     )
+    @connection.flex_token = "test_token_abc123"
+    @connection.flex_query_id = "999999"
+    @connection.save!
   end
 
   teardown do

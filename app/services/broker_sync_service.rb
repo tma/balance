@@ -10,6 +10,8 @@ class BrokerSyncService
     case connection.broker_type
     when "ibkr"
       IbkrSyncService.new(connection)
+    when "manual"
+      ManualSyncService.new(connection)
     else
       raise SyncError, "Unknown broker type: #{connection.broker_type}"
     end

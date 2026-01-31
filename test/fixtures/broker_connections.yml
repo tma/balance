@@ -2,18 +2,21 @@
 
 one:
   broker_type: ibkr
-  account_id: U1234567
   name: Main IBKR Account
-  flex_token: token123abc
-  flex_query_id: "123456"
+  credentials: '{"flex_token":"token123abc","flex_query_id":"123456"}'
   last_synced_at: 2026-01-19 19:46:01
   last_sync_error:
 
 two:
   broker_type: ibkr
-  account_id: U7654321
   name: Secondary IBKR Account
-  flex_token: token789xyz
-  flex_query_id: "654321"
+  credentials: '{"flex_token":"token789xyz","flex_query_id":"654321"}'
   last_synced_at: 2026-01-18 10:00:00
+  last_sync_error:
+
+manual_crypto:
+  broker_type: manual
+  name: Paxos Crypto
+  credentials: '{}'
+  last_synced_at: 2026-01-19 12:00:00
   last_sync_error:

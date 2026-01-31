@@ -4,7 +4,6 @@ class BrokerSyncBackfillServiceTest < ActiveSupport::TestCase
   test "missing_dates_for returns empty when no open positions" do
     connection = BrokerConnection.create!(
       broker_type: :ibkr,
-      account_id: "U0000001",
       name: "Empty Connection",
       flex_token: "token",
       flex_query_id: "111111"
@@ -20,7 +19,6 @@ class BrokerSyncBackfillServiceTest < ActiveSupport::TestCase
   test "sync_missing_dates syncs today when no open positions" do
     connection = BrokerConnection.create!(
       broker_type: :ibkr,
-      account_id: "U0000002",
       name: "Empty Sync",
       flex_token: "token",
       flex_query_id: "222222"

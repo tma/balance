@@ -4,7 +4,6 @@ class BrokerSyncJobTest < ActiveJob::TestCase
   setup do
     @connection = BrokerConnection.create!(
       broker_type: :ibkr,
-      account_id: "U9999999",
       name: "Test IBKR Account",
       flex_token: "test_token_abc123",
       flex_query_id: "999999"
@@ -40,7 +39,6 @@ class BrokerSyncJobTest < ActiveJob::TestCase
     # Create a second connection
     connection2 = BrokerConnection.create!(
       broker_type: :ibkr,
-      account_id: "U8888888",
       name: "Second Account",
       flex_token: "test_token_2",
       flex_query_id: "888888"
@@ -56,7 +54,7 @@ class BrokerSyncJobTest < ActiveJob::TestCase
 
     original_sync_missing = BrokerSyncBackfillService.method(:sync_missing_dates!)
     BrokerSyncBackfillService.define_singleton_method(:sync_missing_dates!) do |connection|
-      if connection.account_id == "U9999999"
+      if connection.name == "Test IBKR Account"
         connection.update!(last_sync_error: "Authentication failed")
         raise BrokerSyncService::AuthenticationError, "Authentication failed"
       else

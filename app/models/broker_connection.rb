@@ -1,18 +1,42 @@
 class BrokerConnection < ApplicationRecord
-  validates :account_id, format: { with: /\AU\d+\z/, message: "must start with 'U' followed by digits" }
   has_many :broker_positions, dependent: :destroy
 
   # Broker types - extendable for future brokers
-  enum :broker_type, { ibkr: 0 }
+  enum :broker_type, { ibkr: 0, manual: 1 }
 
-  # Encrypt sensitive credentials
-  encrypts :flex_token
+  # Encrypt credentials JSON
+  encrypts :credentials
 
-  validates :account_id, presence: true
-  validates :account_id, uniqueness: { scope: :broker_type }
   validates :name, presence: true
-  validates :flex_token, presence: true, if: :ibkr?
-  validates :flex_query_id, presence: true, if: :ibkr?
+
+  # IBKR-specific validations
+  validate :validate_ibkr_credentials, if: :ibkr?
+
+  # Accessor methods for credentials stored in JSON
+  def flex_token
+    credentials_hash["flex_token"]
+  end
+
+  def flex_token=(value)
+    self.credentials = credentials_hash.merge("flex_token" => value).to_json
+  end
+
+  def flex_query_id
+    credentials_hash["flex_query_id"]
+  end
+
+  def flex_query_id=(value)
+    self.credentials = credentials_hash.merge("flex_query_id" => value).to_json
+  end
+
+  # Display name for the broker type
+  def broker_type_name
+    case broker_type
+    when "ibkr" then "Interactive Brokers"
+    when "manual" then "Manual"
+    else broker_type.titleize
+    end
+  end
 
   def mapped_positions
     broker_positions.where.not(asset_id: nil)
@@ -50,11 +74,17 @@ class BrokerConnection < ApplicationRecord
     end
   end
 
-  # Display name for the broker type
-  def broker_type_name
-    case broker_type
-    when "ibkr" then "Interactive Brokers"
-    else broker_type.titleize
-    end
+  private
+
+  def credentials_hash
+    return {} if credentials.blank?
+    JSON.parse(credentials)
+  rescue JSON::ParserError
+    {}
+  end
+
+  def validate_ibkr_credentials
+    errors.add(:flex_token, "can't be blank") if flex_token.blank?
+    errors.add(:flex_query_id, "can't be blank") if flex_query_id.blank?
   end
 end

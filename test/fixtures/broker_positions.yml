@@ -29,3 +29,23 @@ msft_position:
   last_value: 10000.00
   currency: USD
   last_synced_at: 2026-01-18 10:00:00
+
+btc_position:
+  broker_connection: manual_crypto
+  symbol: BTC
+  description: Bitcoin
+  asset:
+  last_quantity: 0.15
+  last_value: 12567.60
+  currency: USD
+  last_synced_at: 2026-01-19 12:00:00
+
+eth_position:
+  broker_connection: manual_crypto
+  symbol: ETH
+  description: Ethereum
+  asset:
+  last_quantity: 2.5
+  last_value: 6968.18
+  currency: USD
+  last_synced_at: 2026-01-19 12:00:00

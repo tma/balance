@@ -60,7 +60,6 @@ class Admin::BrokerConnectionsController < ApplicationController
     # Only validate presence of required fields, not uniqueness
     errors = []
     errors << "Name can't be blank" if @connection.name.blank?
-    errors << "Account ID can't be blank" if @connection.account_id.blank?
     if @connection.ibkr?
       errors << "Flex Token can't be blank" if @connection.flex_token.blank?
       errors << "Flex Query ID can't be blank" if @connection.flex_query_id.blank?
@@ -84,6 +83,6 @@ class Admin::BrokerConnectionsController < ApplicationController
   end
 
   def connection_params
-    params.expect(broker_connection: [ :account_id, :name, :flex_token, :flex_query_id, :broker_type ])
+    params.expect(broker_connection: [ :name, :flex_token, :flex_query_id, :broker_type ])
   end
 end

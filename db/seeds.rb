@@ -1118,28 +1118,36 @@ if Rails.env.development?
   puts "Creating broker connections..."
 
   # Create an IBKR connection (with fake token - won't actually sync)
-  ibkr_connection = BrokerConnection.find_or_create_by!(account_id: "U1234567") do |c|
+  ibkr_connection = BrokerConnection.find_or_create_by!(name: "Main Brokerage") do |c|
     c.broker_type = :ibkr
-    c.name = "Main Brokerage"
     c.flex_token = "demo_token_not_real"
     c.flex_query_id = "123456"
     c.last_synced_at = 1.day.ago
   end
 
+  # Create a Manual connection for crypto (demonstrates CoinGecko integration)
+  manual_connection = BrokerConnection.find_or_create_by!(name: "Paxos Crypto") do |c|
+    c.broker_type = :manual
+    c.last_synced_at = 1.day.ago
+  end
+
   # Create broker positions mapped to assets
   stock_portfolio = Asset.find_by(name: "Stock Portfolio")
+  bitcoin_asset = Asset.find_by(name: "Bitcoin Holdings")
 
   positions_data = [
-    { symbol: "VTI", description: "Vanguard Total Stock Market ETF", quantity: 150, value: 35000, currency: "USD", asset: stock_portfolio },
-    { symbol: "VXUS", description: "Vanguard Total International Stock ETF", quantity: 100, value: 5500, currency: "USD", asset: stock_portfolio },
-    { symbol: "BND", description: "Vanguard Total Bond Market ETF", quantity: 50, value: 4500, currency: "USD", asset: stock_portfolio },
-    { symbol: "AAPL", description: "Apple Inc", quantity: 25, value: 4500, currency: "USD", asset: nil },
-    { symbol: "MSFT", description: "Microsoft Corp", quantity: 15, value: 6000, currency: "USD", asset: nil }
+    { connection: ibkr_connection, symbol: "VTI", description: "Vanguard Total Stock Market ETF", quantity: 150, value: 35000, currency: "USD", asset: stock_portfolio },
+    { connection: ibkr_connection, symbol: "VXUS", description: "Vanguard Total International Stock ETF", quantity: 100, value: 5500, currency: "USD", asset: stock_portfolio },
+    { connection: ibkr_connection, symbol: "BND", description: "Vanguard Total Bond Market ETF", quantity: 50, value: 4500, currency: "USD", asset: stock_portfolio },
+    { connection: ibkr_connection, symbol: "AAPL", description: "Apple Inc", quantity: 25, value: 4500, currency: "USD", asset: nil },
+    { connection: ibkr_connection, symbol: "MSFT", description: "Microsoft Corp", quantity: 15, value: 6000, currency: "USD", asset: nil },
+    { connection: manual_connection, symbol: "BTC", description: "Bitcoin", quantity: 0.15, value: 12567.60, currency: "USD", asset: bitcoin_asset },
+    { connection: manual_connection, symbol: "ETH", description: "Ethereum", quantity: 2.5, value: 6968.18, currency: "USD", asset: nil }
   ]
 
   positions_data.each do |data|
     position = BrokerPosition.find_or_create_by!(
-      broker_connection: ibkr_connection,
+      broker_connection: data[:connection],
       symbol: data[:symbol]
     ) do |p|
       p.description = data[:description]

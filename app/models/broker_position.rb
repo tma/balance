@@ -3,6 +3,21 @@ class BrokerPosition < ApplicationRecord
   belongs_to :asset, optional: true
   has_many :position_valuations, dependent: :destroy
 
+  # Map common crypto symbols to CoinGecko IDs
+  COINGECKO_SYMBOL_MAP = {
+    "BTC" => "bitcoin",
+    "ETH" => "ethereum",
+    "SOL" => "solana",
+    "BCH" => "bitcoin-cash",
+    "LTC" => "litecoin",
+    "ADA" => "cardano",
+    "LINK" => "chainlink",
+    "DOGE" => "dogecoin",
+    "XRP" => "ripple",
+    "AVAX" => "avalanche-2",
+    "SUI" => "sui"
+  }.freeze
+
   validates :symbol, presence: true
   validates :symbol, uniqueness: { scope: :broker_connection_id }
 
@@ -25,6 +40,16 @@ class BrokerPosition < ApplicationRecord
 
   def default_currency
     Currency.default_code
+  end
+
+  # Get the CoinGecko ID for this symbol (if it's a supported crypto)
+  def coingecko_id
+    COINGECKO_SYMBOL_MAP[symbol&.upcase]
+  end
+
+  # Check if this position is a supported crypto
+  def crypto_position?
+    coingecko_id.present?
   end
 
   # Get the last value converted to default currency from the most recent valuation

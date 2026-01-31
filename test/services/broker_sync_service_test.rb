@@ -18,6 +18,13 @@ class BrokerSyncServiceTest < ActiveSupport::TestCase
     assert_kind_of IbkrSyncService, service
   end
 
+  test "factory returns ManualSyncService for manual broker type" do
+    connection = broker_connections(:manual_crypto)
+    service = BrokerSyncService.for(connection)
+
+    assert_kind_of ManualSyncService, service
+  end
+
   test "factory raises SyncError for unknown broker type" do
     # Test the factory logic directly by simulating unknown broker type
     error = assert_raises BrokerSyncService::SyncError do
