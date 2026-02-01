@@ -158,7 +158,7 @@ module UiHelper
 
   # Danger button (rose)
   def ui_btn_danger_class
-    "px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-medium transition"
+    "px-4 py-2 bg-rose-400 hover:bg-rose-500 dark:bg-rose-500/80 dark:hover:bg-rose-500 text-white font-medium transition"
   end
 
   # Ghost/link button
