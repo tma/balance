@@ -22,7 +22,7 @@
       <table class="min-w-full">
         <tbody class="<%= ui_card_body_class %>">
           <% @needs_attention.each do |import| %>
-            <%= render partial: "imports/import_row", locals: { import: import } %>
+            <%= render partial: "imports/import_row", locals: { import: import, compact: true } %>
           <% end %>
         </tbody>
       </table>

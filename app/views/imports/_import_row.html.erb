@@ -1,3 +1,4 @@
+<% compact = local_assigns.fetch(:compact, false) %>
 <tr class="<%= ui_table_row_class %>">
   <td class="<%= ui_table_td_class %> <%= ui_text_class %>">
     <div class="flex items-center">
@@ -36,12 +37,14 @@
       <span class="<%= ui_badge_class %>">Done</span>
     <% end %>
   </td>
-  <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_muted_class %>">
-    <%= import.done? ? import.transactions.size : import.extracted_transactions.size %>
-  </td>
-  <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_subtle_class %>">
-    <%= time_ago_in_words(import.created_at) %> ago
-  </td>
+  <% unless compact %>
+    <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_muted_class %>">
+      <%= import.done? ? import.transactions.size : import.extracted_transactions.size %>
+    </td>
+    <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_subtle_class %>">
+      <%= time_ago_in_words(import.created_at) %> ago
+    </td>
+  <% end %>
   <td class="<%= ui_table_td_class %> whitespace-nowrap text-right">
     <div class="flex items-center justify-end gap-2">
       <%= link_to "View", import_path(import), class: ui_link_class %>
