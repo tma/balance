@@ -18,6 +18,7 @@ class Import < ApplicationRecord
   scope :completed, -> { where(status: "completed") }
   scope :failed, -> { where(status: "failed") }
   scope :done, -> { where(status: "done") }
+  scope :needs_attention, -> { where(status: %w[completed failed]) }
 
   def pending?
     status == "pending"

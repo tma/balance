@@ -59,11 +59,16 @@
           <span class="px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Records</span>
           <div class="flex items-center">
             <%= link_to "Assets", assets_path, class: "flex items-center px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path.start_with?('/financial-assets', '/asset-groups') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
-            <%= link_to "Valuations", update_valuations_path, class: "py-1 px-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path == update_valuations_path ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+            <%= link_to "Valuations", update_valuations_path, class: "ml-2 py-1 px-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path == update_valuations_path ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
           </div>
           <div class="flex items-center">
             <%= link_to "Transactions", transactions_path, class: "flex items-center px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path == transactions_path ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
-            <%= link_to "Imports", imports_path, class: "py-1 px-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/imports') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
+            <%= link_to imports_path, class: "ml-2 flex items-center gap-1.5 py-1 px-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 text-sm #{request.path.start_with?('/imports') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" do %>
+              Imports
+              <% if imports_needing_attention_count > 0 %>
+                <span class="px-1.5 py-0.5 text-xs bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300"><%= imports_needing_attention_count %></span>
+              <% end %>
+            <% end %>
           </div>
           <%= link_to "Accounts", accounts_path, class: "flex items-center px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path.start_with?('/accounts') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>
           <%= link_to "Budgets", budgets_path, class: "flex items-center px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 #{request.path.start_with?('/budgets') ? 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 font-medium' : ''}" %>

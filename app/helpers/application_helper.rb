@@ -13,6 +13,12 @@ module ApplicationHelper
     grouped_options_for_select(sorted_groups, selected)
   end
 
+  # Count of imports needing attention (completed or failed)
+  # Cached per request via memoization
+  def imports_needing_attention_count
+    @imports_needing_attention_count ||= Import.needs_attention.count
+  end
+
   # Format currency with Swiss-style formatting: CHF 1'234.56
   # Uses apostrophe as thousand separator and the default currency code
   # Wraps output in span for privacy mode blur support
