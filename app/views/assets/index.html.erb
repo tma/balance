@@ -32,7 +32,7 @@
           <% active_assets = group.assets.active.includes(:asset_type, :broker_positions) %>
           <% archived_assets = group.assets.archived.includes(:asset_type, :broker_positions) %>
           <tbody data-sortable-target="item" data-id="<%= group.id %>" class="group-container">
-            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900 cursor-move group-header">
+            <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %> cursor-move group-header">
               <td class="px-4 py-2 <%= ui_text_subtle_class %> text-xs leading-none">⋮⋮</td>
               <td colspan="3" class="px-4 py-2 text-sm font-medium <%= ui_table_group_text_class %>">
                 <span class="inline-flex items-center">

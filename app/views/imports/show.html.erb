@@ -19,7 +19,7 @@
         <span class="text-sm <%= ui_text_muted_class %>"><%= time_ago_in_words(@import.created_at) %> ago</span>
         <span class="<%= ui_text_subtle_class %>">&middot;</span>
         <span class="text-sm <%= ui_text_muted_class %>">
-          <%= link_to edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" do %><%= @import.account.name %><% end %> <span class="px-1.5 py-0.5 text-xs bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= @import.account.currency %></span>
+          <%= link_to edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" do %><%= @import.account.name %><% end %> <span class="<%= ui_currency_badge_class %>"><%= @import.account.currency %></span>
         </span>
       </div>
     </div>
@@ -150,10 +150,10 @@
           </div>
           <div class="flex items-center gap-4">
             <span class="text-xs <%= ui_text_subtle_class %> hidden sm:inline">
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %>">j</kbd>/<kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %>">k</kbd> navigate
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %> ml-2">space</kbd> toggle
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %> ml-2">t</kbd> type
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %> ml-2">c</kbd> category
+              <kbd class="<%= ui_kbd_class %>">j</kbd>/<kbd class="<%= ui_kbd_class %>">k</kbd> navigate
+              <kbd class="<%= ui_kbd_class %> ml-2">space</kbd> toggle
+              <kbd class="<%= ui_kbd_class %> ml-2">t</kbd> type
+              <kbd class="<%= ui_kbd_class %> ml-2">c</kbd> category
             </span>
           <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:text-slate-700 dark:hover:text-slate-300">
               <input type="checkbox" 

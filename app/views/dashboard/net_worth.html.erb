@@ -237,7 +237,7 @@
             <% next if active_assets.empty? && archived_with_valuations.empty? %>
             <% group_has_liabilities = active_assets.any? { |a| a.asset_type.is_liability } || archived_with_valuations.any? { |a| a.asset_type.is_liability } %>
 
-            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
+            <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %>">
               <td class="px-4 py-2">
                 <span class="inline-flex items-center">
                   <svg class="flex-shrink-0 mr-2" width="16" height="16"><rect width="16" height="16" fill="<%= group.color || '#94a3b8' %>"/></svg>
@@ -345,7 +345,7 @@
             </tr>
           <% end %>
 
-          <tr class="bg-slate-200 dark:bg-slate-700 border-t-[6px] border-slate-100 dark:border-slate-900">
+          <tr class="bg-slate-200 dark:bg-slate-700 <%= ui_table_group_separator_class %>">
             <td class="px-4 py-3">
               <span class="font-bold <%= ui_table_group_text_class %> whitespace-nowrap">Total Net Worth</span>
             </td>

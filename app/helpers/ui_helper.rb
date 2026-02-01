@@ -293,11 +293,39 @@ module UiHelper
   end
 
   # ===========================================
-  # Dividers
+  # Dividers & Separators
   # ===========================================
 
   def ui_divider_class
     "border-t border-slate-200 dark:border-slate-700"
+  end
+
+  # Group separator for tables (creates visual separation between groups)
+  def ui_table_group_separator_class
+    "border-t-[6px] border-slate-100 dark:border-slate-900"
+  end
+
+  # ===========================================
+  # Inline Elements
+  # ===========================================
+
+  # Currency badge (small inline currency indicator)
+  def ui_currency_badge_class
+    "px-1.5 py-0.5 text-xs bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"
+  end
+
+  # Keyboard hint (for keyboard shortcuts display)
+  def ui_kbd_class
+    "px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+  end
+
+  # ===========================================
+  # Form States
+  # ===========================================
+
+  # Disabled input styling
+  def ui_input_disabled_class
+    "bg-slate-100 dark:bg-slate-600 text-slate-500 dark:text-slate-400 cursor-not-allowed"
   end
 
   # ===========================================
@@ -328,7 +356,7 @@ module UiHelper
   def ui_breadcrumb_item(text, path = nil, current: false)
     item_class = current ? "text-slate-700 dark:text-slate-200 font-medium" : ""
     link_class = "hover:text-slate-700 dark:hover:text-slate-200"
-    separator = content_tag(:li, "/", class: "text-slate-300 dark:text-slate-600")
+    separator = content_tag(:li, "›", class: "text-slate-300 dark:text-slate-600")
 
     item = if path && !current
              content_tag(:li) { link_to(text, path, class: link_class) }

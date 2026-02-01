@@ -207,7 +207,7 @@
         </thead>
         <tbody>
           <% @transactions.order(date: :desc, created_at: :desc).group_by(&:date).each do |date, day_transactions| %>
-            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
+            <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %>">
               <td colspan="7" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= date.strftime("%A, %B %d") %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= day_transactions.size %> transaction<%= day_transactions.size == 1 ? '' : 's' %></span>
@@ -225,7 +225,7 @@
                   <%= transaction.category.name %>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_muted_class %>">
-                  <%= transaction.account.name %> <span class="px-1.5 py-0.5 text-xs bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= transaction.account.currency %></span>
+                  <%= transaction.account.name %> <span class="<%= ui_currency_badge_class %>"><%= transaction.account.currency %></span>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-xs text-right pr-1 <%= ui_text_subtle_class %>">
                   <% if transaction.currency != transaction.default_currency %>

@@ -55,7 +55,7 @@
           <%# Render each month group %>
           <% @sorted_months.each do |month| %>
             <% month_imports = @imports_by_month[month] %>
-            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
+            <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %>">
               <td colspan="6" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= month.strftime("%B") %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= month_imports.size %> import<%= month_imports.size == 1 ? '' : 's' %></span>
@@ -69,7 +69,7 @@
           <%# Render ungrouped imports (pending, failed, or no transactions) %>
           <% if @has_ungrouped %>
             <% ungrouped_imports = @imports_by_month[nil] %>
-            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
+            <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %>">
               <td colspan="6" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <% if @sorted_months.any? %>
                   Other
