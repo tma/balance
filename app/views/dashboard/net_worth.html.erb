@@ -81,46 +81,68 @@
       max_value_q = @history_quarters.map { |q| 
         @asset_groups.sum { |g| [@history_by_group_quarterly[g.id][q] || 0, 0].max }
       }.max || 1
+      
+      # Use the same Y-axis scale for both charts (based on the larger max)
+      combined_max = [max_value, max_value_q].max
+      y_ticks = chart_y_ticks(combined_max, 4)
+      y_tick_max = y_ticks.last || combined_max
     %>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Monthly Chart -->
       <div class="<%= ui_card_class %> p-4">
         <h2 class="<%= ui_subheading_class %> mb-3">Monthly</h2>
-        <div class="w-full px-2">
-          <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
-            <% bar_pct = 7 %>
-            <% gap_pct = 1.33 %>
-            <% start_offset = (gap_pct / 2) %>
-            <% @history_months.each_with_index do |month, month_idx| %>
-              <% x_pct = start_offset + month_idx * (bar_pct + gap_pct) %>
-              <% y_offset = 0 %>
-              <% month_total = @asset_groups.sum { |g| @history_by_group[g.id][month] || 0 } %>
-              
-              <% @asset_groups.to_a.reverse.each do |group| %>
-                <% value = @history_by_group[group.id][month] || 0 %>
-                <% next if value <= 0 %>
-                <% bar_height = (value.to_f / max_value * chart_height).round %>
-                <% y = chart_height - y_offset - bar_height %>
-                <% pct = month_total > 0 ? (value.to_f / month_total * 100).round(1) : 0 %>
-                
-                <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
-                      fill="<%= group.color || '#94a3b8' %>">
-                  <title><%= group.name %>: <%= format_currency(value, precision: 0) %> (<%= pct %>%)</title>
-                </rect>
-                
-                <% y_offset += bar_height %>
+        <div class="flex w-full">
+          <!-- Y-axis labels -->
+          <div class="flex flex-col justify-between text-right pr-2 flex-shrink-0" style="height: <%= chart_height %>px; font-size: 9px;">
+            <% y_ticks.reverse.each do |tick| %>
+              <span class="<%= ui_text_subtle_class %> leading-none"><%= format_y_axis_value(tick) %></span>
+            <% end %>
+          </div>
+          <!-- Chart area -->
+          <div class="flex-1 min-w-0">
+            <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <% y_ticks.each do |tick| %>
+                <% grid_y = chart_height - (tick.to_f / y_tick_max * chart_height) %>
+                <% is_baseline = tick == 0 %>
+                <line x1="0" y1="<%= grid_y %>" x2="100" y2="<%= grid_y %>" 
+                      stroke="currentColor" class="<%= is_baseline ? 'text-slate-300 dark:text-slate-600' : 'text-slate-200 dark:text-slate-700' %>" stroke-width="<%= is_baseline ? 2 : 1 %>" vector-effect="non-scaling-stroke" />
               <% end %>
-            <% end %>
-          </svg>
-          <div class="flex" style="font-size: 9px;">
-            <% @history_months.each_with_index do |month, month_idx| %>
-              <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
-                <div class="<%= ui_text_muted_class %>"><%= month.strftime("%b")[0] %></div>
-                <% if month.month == 1 || month_idx == 0 %>
-                  <div class="<%= ui_text_subtle_class %>"><%= month.strftime("%y") %></div>
+              <!-- Bars -->
+              <% bar_pct = 7 %>
+              <% gap_pct = 1.33 %>
+              <% start_offset = (gap_pct / 2) %>
+              <% @history_months.each_with_index do |month, month_idx| %>
+                <% x_pct = start_offset + month_idx * (bar_pct + gap_pct) %>
+                <% y_offset = 0 %>
+                <% month_total = @asset_groups.sum { |g| @history_by_group[g.id][month] || 0 } %>
+                
+                <% @asset_groups.to_a.reverse.each do |group| %>
+                  <% value = @history_by_group[group.id][month] || 0 %>
+                  <% next if value <= 0 %>
+                  <% bar_height = (value.to_f / y_tick_max * chart_height).round %>
+                  <% y = chart_height - y_offset - bar_height %>
+                  <% pct = month_total > 0 ? (value.to_f / month_total * 100).round(1) : 0 %>
+                  
+                  <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
+                        fill="<%= group.color || '#94a3b8' %>">
+                    <title><%= group.name %>: <%= format_currency(value, precision: 0) %> (<%= pct %>%)</title>
+                  </rect>
+                  
+                  <% y_offset += bar_height %>
                 <% end %>
-              </div>
-            <% end %>
+              <% end %>
+            </svg>
+            <div class="flex" style="font-size: 9px;">
+              <% @history_months.each_with_index do |month, month_idx| %>
+                <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
+                  <div class="<%= ui_text_muted_class %>"><%= month.strftime("%b")[0] %></div>
+                  <% if month.month == 1 || month_idx == 0 %>
+                    <div class="<%= ui_text_subtle_class %>"><%= month.strftime("%Y") %></div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
           </div>
         </div>
       </div>
@@ -128,41 +150,58 @@
       <!-- Quarterly Chart -->
       <div class="<%= ui_card_class %> p-4">
         <h2 class="<%= ui_subheading_class %> mb-3">Quarterly</h2>
-        <div class="w-full px-2">
-          <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
-            <% bar_pct = 7 %>
-            <% gap_pct = 1.33 %>
-            <% start_offset = (gap_pct / 2) %>
-            <% @history_quarters.each_with_index do |quarter, q_idx| %>
-              <% x_pct = start_offset + q_idx * (bar_pct + gap_pct) %>
-              <% y_offset = 0 %>
-              <% quarter_total = @asset_groups.sum { |g| @history_by_group_quarterly[g.id][quarter] || 0 } %>
-              
-              <% @asset_groups.to_a.reverse.each do |group| %>
-                <% value = @history_by_group_quarterly[group.id][quarter] || 0 %>
-                <% next if value <= 0 %>
-                <% bar_height = (value.to_f / max_value_q * chart_height).round %>
-                <% y = chart_height - y_offset - bar_height %>
-                <% pct = quarter_total > 0 ? (value.to_f / quarter_total * 100).round(1) : 0 %>
-                
-                <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
-                      fill="<%= group.color || '#94a3b8' %>">
-                  <title><%= group.name %>: <%= format_currency(value, precision: 0) %> (<%= pct %>%)</title>
-                </rect>
-                
-                <% y_offset += bar_height %>
+        <div class="flex w-full">
+          <!-- Y-axis labels -->
+          <div class="flex flex-col justify-between text-right pr-2 flex-shrink-0" style="height: <%= chart_height %>px; font-size: 9px;">
+            <% y_ticks.reverse.each do |tick| %>
+              <span class="<%= ui_text_subtle_class %> leading-none"><%= format_y_axis_value(tick) %></span>
+            <% end %>
+          </div>
+          <!-- Chart area -->
+          <div class="flex-1 min-w-0">
+            <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
+              <!-- Grid lines -->
+              <% y_ticks.each do |tick| %>
+                <% grid_y = chart_height - (tick.to_f / y_tick_max * chart_height) %>
+                <% is_baseline = tick == 0 %>
+                <line x1="0" y1="<%= grid_y %>" x2="100" y2="<%= grid_y %>" 
+                      stroke="currentColor" class="<%= is_baseline ? 'text-slate-300 dark:text-slate-600' : 'text-slate-200 dark:text-slate-700' %>" stroke-width="<%= is_baseline ? 2 : 1 %>" vector-effect="non-scaling-stroke" />
               <% end %>
-            <% end %>
-          </svg>
-          <div class="flex" style="font-size: 9px;">
-            <% @history_quarters.each_with_index do |quarter, q_idx| %>
-              <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
-                <div class="<%= ui_text_muted_class %>">Q<%= ((quarter.month - 1) / 3) + 1 %></div>
-                <% if quarter.month <= 3 || q_idx == 0 %>
-                  <div class="<%= ui_text_subtle_class %>"><%= quarter.strftime("%y") %></div>
+              <!-- Bars -->
+              <% bar_pct = 7 %>
+              <% gap_pct = 1.33 %>
+              <% start_offset = (gap_pct / 2) %>
+              <% @history_quarters.each_with_index do |quarter, q_idx| %>
+                <% x_pct = start_offset + q_idx * (bar_pct + gap_pct) %>
+                <% y_offset = 0 %>
+                <% quarter_total = @asset_groups.sum { |g| @history_by_group_quarterly[g.id][quarter] || 0 } %>
+                
+                <% @asset_groups.to_a.reverse.each do |group| %>
+                  <% value = @history_by_group_quarterly[group.id][quarter] || 0 %>
+                  <% next if value <= 0 %>
+                  <% bar_height = (value.to_f / y_tick_max * chart_height).round %>
+                  <% y = chart_height - y_offset - bar_height %>
+                  <% pct = quarter_total > 0 ? (value.to_f / quarter_total * 100).round(1) : 0 %>
+                  
+                  <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
+                        fill="<%= group.color || '#94a3b8' %>">
+                    <title><%= group.name %>: <%= format_currency(value, precision: 0) %> (<%= pct %>%)</title>
+                  </rect>
+                  
+                  <% y_offset += bar_height %>
                 <% end %>
-              </div>
-            <% end %>
+              <% end %>
+            </svg>
+            <div class="flex" style="font-size: 9px;">
+              <% @history_quarters.each_with_index do |quarter, q_idx| %>
+                <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
+                  <div class="<%= ui_text_muted_class %>">Q<%= ((quarter.month - 1) / 3) + 1 %></div>
+                  <% if quarter.month <= 3 || q_idx == 0 %>
+                    <div class="<%= ui_text_subtle_class %>"><%= quarter.strftime("%Y") %></div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
           </div>
         </div>
       </div>
