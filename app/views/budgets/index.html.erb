@@ -19,11 +19,11 @@
         prev_month = @current_date.prev_month
         next_month = @current_date.next_month
       %>
-      <%= link_to budgets_path(year: prev_month.year, month: prev_month.month), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition #{ui_text_muted_class} text-sm" do %>
+      <%= link_to budgets_path(year: prev_month.year, month: prev_month.month), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
         &larr; <%= prev_month.strftime("%b") %>
       <% end %>
       <span class="font-semibold <%= ui_text_class %>"><%= Date::MONTHNAMES[@month] %> <%= @year %></span>
-      <%= link_to budgets_path(year: next_month.year, month: next_month.month), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition #{ui_text_muted_class} text-sm" do %>
+      <%= link_to budgets_path(year: next_month.year, month: next_month.month), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
         <%= next_month.strftime("%b") %> &rarr;
       <% end %>
     </div>
@@ -50,10 +50,8 @@
                 <%= budget.category.name %>
               </td>
               <td class="px-4 py-2 w-full">
-                <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
-                  <% bar_pct = [percentage, 100].min %>
-                  <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
-                  <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= bar_pct %>%"></div>
+                <div class="<%= ui_progress_track_class %>">
+                  <div class="<%= ui_progress_bar_class(percentage) %>" style="width: <%= [percentage, 100].min %>%"></div>
                 </div>
               </td>
               <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
@@ -106,10 +104,8 @@
                 <%= budget.category.name %>
               </td>
               <td class="px-4 py-2 w-full">
-                <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
-                  <% bar_pct = [percentage, 100].min %>
-                  <% bar_color = percentage >= 100 ? 'bg-rose-400' : percentage >= 80 ? 'bg-amber-400' : 'bg-emerald-400' %>
-                  <div class="<%= bar_color %> h-2 rounded-full transition-all" style="width: <%= bar_pct %>%"></div>
+                <div class="<%= ui_progress_track_class %>">
+                  <div class="<%= ui_progress_bar_class(percentage) %>" style="width: <%= [percentage, 100].min %>%"></div>
                 </div>
               </td>
               <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">

@@ -25,7 +25,7 @@
         </thead>
         <tbody>
           <% @accounts.includes(:account_type).order("account_types.name", :name).group_by(&:account_type).each do |account_type, type_accounts| %>
-            <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
+            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
               <td colspan="4" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= account_type.name %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= type_accounts.size %> account<%= type_accounts.size == 1 ? '' : 's' %></span>
@@ -34,7 +34,7 @@
             <% type_accounts.each do |account| %>
               <tr class="<%= ui_table_row_class %> last:border-b-0">
                 <td class="<%= ui_table_td_class %> text-sm <%= ui_text_class %> font-medium">
-                  <%= link_to account.name, transactions_path(account_id: account.id), class: "hover:text-cyan-600 dark:hover:text-cyan-400" %>
+                  <%= link_to account.name, transactions_path(account_id: account.id) %>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_muted_class %>">
                   <%= account.currency %>

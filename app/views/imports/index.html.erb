@@ -18,7 +18,7 @@
     <div class="flex items-center justify-between">
       <% prev_year = @current_year - 1 %>
       <% if @available_years.include?(prev_year) %>
-        <%= link_to imports_path(year: prev_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition #{ui_text_muted_class} text-sm" do %>
+        <%= link_to imports_path(year: prev_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
           &larr; <%= prev_year %>
         <% end %>
       <% else %>
@@ -29,7 +29,7 @@
 
       <% next_year = @current_year + 1 %>
       <% if @available_years.include?(next_year) %>
-        <%= link_to imports_path(year: next_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition #{ui_text_muted_class} text-sm" do %>
+        <%= link_to imports_path(year: next_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
           <%= next_year %> &rarr;
         <% end %>
       <% else %>
@@ -55,7 +55,7 @@
           <%# Render each month group %>
           <% @sorted_months.each do |month| %>
             <% month_imports = @imports_by_month[month] %>
-            <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
+            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
               <td colspan="6" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= month.strftime("%B") %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= month_imports.size %> import<%= month_imports.size == 1 ? '' : 's' %></span>
@@ -69,7 +69,7 @@
           <%# Render ungrouped imports (pending, failed, or no transactions) %>
           <% if @has_ungrouped %>
             <% ungrouped_imports = @imports_by_month[nil] %>
-            <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
+            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
               <td colspan="6" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <% if @sorted_months.any? %>
                   Other

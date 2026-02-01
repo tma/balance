@@ -7,7 +7,7 @@
 <div class="space-y-6">
   <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Net Worth Section -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+    <div class="bg-white dark:bg-slate-800 p-6">
       <div class="mb-4">
         <%= link_to net_worth_path, class: "hover:text-cyan-600 dark:hover:text-cyan-400" do %>
           <h2 class="<%= ui_heading_class %> hover:text-cyan-600 dark:hover:text-cyan-400">Net Worth →</h2>
@@ -65,7 +65,7 @@
     </div>
 
     <!-- Cash Flow Section -->
-    <div class="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-6">
+    <div class="bg-white dark:bg-slate-800 p-6">
       <div class="mb-4">
         <%= link_to cash_flow_path, class: "hover:text-cyan-600 dark:hover:text-cyan-400" do %>
           <h2 class="<%= ui_heading_class %> hover:text-cyan-600 dark:hover:text-cyan-400">Cash Flow →</h2>
@@ -83,7 +83,7 @@
                 <% expense_pct = (month[:expenses].to_f / [month[:income], 1].max * 100).round(1) %>
                 <% expense_pct = [expense_pct, 100].min %>
                 <% saved_pct = [100 - expense_pct, 0].max %>
-                <div style="height: 24px; display: flex;" class="overflow-hidden text-xs rounded">
+                <div style="height: 24px; display: flex;" class="overflow-hidden text-xs">
                   <div style="width: <%= expense_pct %>%;" class="bg-rose-200 dark:bg-rose-900/60 h-full flex items-center justify-start pl-2">
                     <% if expense_pct > 20 %><span class="text-rose-700 dark:text-rose-300">Expenses <%= expense_pct.round(0) %>%</span><% end %>
                   </div>

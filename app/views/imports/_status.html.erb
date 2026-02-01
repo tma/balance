@@ -28,8 +28,8 @@
         <span>Progress</span>
         <span><%= progress[:percent] %>%</span>
       </div>
-      <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-        <div class="bg-cyan-500 h-2 rounded-full transition-all duration-500" style="width: <%= progress[:percent] %>%"></div>
+      <div class="<%= ui_progress_track_class %>">
+        <div class="<%= ui_progress_bar_class(:success) %>" style="width: <%= progress[:percent] %>%"></div>
       </div>
     </div>
   <% end %>
@@ -37,17 +37,17 @@
   <!-- Progress indicators -->
   <div class="flex items-center justify-center gap-6 text-sm">
     <div class="flex items-center gap-2 <%= import.pending? || import.processing? ? 'text-cyan-600 dark:text-cyan-400' : ui_text_subtle_class %>">
-      <div class="w-2 h-2 rounded-full <%= import.pending? ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500' %>"></div>
+      <div class="w-2 h-2 <%= import.pending? ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500' %>"></div>
       <span>Upload</span>
     </div>
     <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
     <div class="flex items-center gap-2 <%= import.processing? ? 'text-cyan-600 dark:text-cyan-400' : ui_text_subtle_class %>">
-      <div class="w-2 h-2 rounded-full <%= import.processing? ? 'bg-cyan-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600' %>"></div>
+      <div class="w-2 h-2 <%= import.processing? ? 'bg-cyan-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600' %>"></div>
       <span>Extract</span>
     </div>
     <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
     <div class="flex items-center gap-2 <%= ui_text_subtle_class %>">
-      <div class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></div>
+      <div class="w-2 h-2 bg-slate-300 dark:bg-slate-600"></div>
       <span>Review</span>
     </div>
   </div>

@@ -82,7 +82,7 @@
                 <% next if active_assets.empty? && archived_assets.empty? %>
 
                 <%# Group header row %>
-                <tr class="<%= ui_table_group_header_class %> <%= group_index > 0 ? 'border-t-4 border-slate-300 dark:border-slate-600' : 'border-t border-slate-200 dark:border-slate-700' %>">
+                <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
                   <td class="sticky left-0 z-10 bg-slate-200 dark:bg-slate-700 px-4 py-2">
                     <span class="inline-flex items-center">
                       <svg class="flex-shrink-0 mr-2" width="16" height="16"><rect width="16" height="16" fill="<%= group.color || '#94a3b8' %>"/></svg>
@@ -101,7 +101,7 @@
                   <tr class="group hover:bg-slate-50 dark:hover:bg-slate-900 transition border-t border-slate-100 dark:border-slate-700" data-controller="copy-previous">
                     <td class="sticky left-0 z-10 bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-4 py-2">
                       <%= link_to asset, class: "block" do %>
-                        <p class="text-sm font-medium <%= ui_text_class %> hover:text-cyan-600 dark:hover:text-cyan-400 whitespace-nowrap">
+                        <p class="text-sm font-medium <%= ui_text_class %> whitespace-nowrap">
                           <%= asset.name %>
                           <% if has_broker %>
                             <span class="<%= ui_badge_info_class %> ml-1" title="Linked to broker">Broker</span>
@@ -125,7 +125,7 @@
                           <% if is_last %>
                             <button type="button" 
                                     data-action="click->copy-previous#copy"
-                                    class="absolute inset-y-0 flex items-center <%= ui_text_subtle_class %> hover:text-cyan-600 dark:hover:text-cyan-400 text-xs" 
+                                    class="absolute inset-y-0 flex items-center <%= ui_text_subtle_class %> text-xs" 
                                     style="left: 8px;"
                                     tabindex="-1"
                                     title="Copy from previous month">→</button>
@@ -170,7 +170,7 @@
                     <tr class="group transition border-t border-slate-100 dark:border-slate-700 hidden" data-collapsible-target="content">
                       <td class="sticky left-0 bg-slate-100 dark:bg-slate-900 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 px-4 py-2 z-10">
                         <%= link_to asset, class: "block" do %>
-                          <p class="text-sm font-medium <%= ui_text_subtle_class %> hover:text-cyan-600 dark:hover:text-cyan-400 whitespace-nowrap">
+                          <p class="text-sm font-medium <%= ui_text_subtle_class %> whitespace-nowrap">
                             <%= asset.name %>
                             <span class="<%= ui_badge_class %> ml-1">Archived</span>
                           </p>

@@ -14,7 +14,7 @@
 
   <div class="<%= ui_card_class %> p-6 mb-6">
     <div class="flex justify-between items-center mb-4">
-      <span class="text-sm font-medium px-2 py-1 rounded-full <%= @budget.monthly? ? ui_badge_info_class : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' %>">
+      <span class="text-sm font-medium px-2 py-1 <%= @budget.monthly? ? ui_badge_info_class : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' %>">
         <%= @budget.monthly? ? "Monthly" : "Yearly" %>
       </span>
       <% if @budget.start_date %>
@@ -32,10 +32,9 @@
       <p class="text-2xl font-bold <%= ui_negative_class %>"><%= format_currency(@budget.spent(@year, @month)) %></p>
     </div>
     
-    <div class="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 mb-2">
+    <div class="<%= ui_progress_track_lg_class %> mb-2">
       <% percentage = [@budget.percentage_used(@year, @month), 100].min %>
-      <% bar_color = percentage >= 100 ? 'bg-rose-600' : percentage >= 80 ? 'bg-amber-500' : 'bg-emerald-400' %>
-      <div class="<%= bar_color %> h-3 rounded-full" style="width: <%= percentage %>%"></div>
+      <div class="<%= ui_progress_bar_lg_class(@budget.percentage_used(@year, @month)) %>" style="width: <%= percentage %>%"></div>
     </div>
     
     <% remaining = @budget.remaining(@year, @month) %>

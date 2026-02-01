@@ -23,11 +23,11 @@
   <div class="mb-4">
     <%= form.label :color, class: ui_label_class %>
     <div class="mt-1 flex items-center space-x-3">
-      <%= form.color_field :color, class: "h-10 w-14 rounded border border-slate-300 dark:border-slate-600 cursor-pointer", data: { color_target: "picker" } %>
+      <%= form.color_field :color, class: "h-10 w-14 border border-slate-300 dark:border-slate-600 cursor-pointer", data: { color_target: "picker" } %>
       <div class="flex space-x-1">
         <% %w[#93c5fd #86efac #fca5a5 #c4b5fd #fdba74 #67e8f9 #f0abfc #fde047 #cbd5e1 #5eead4].each do |preset| %>
           <button type="button" 
-                  class="w-6 h-6 rounded border border-slate-200 dark:border-slate-600 hover:scale-110 transition"
+                  class="w-6 h-6 border border-slate-200 dark:border-slate-600 hover:scale-110 transition"
                   style="background-color: <%= preset %>;"
                   onclick="document.querySelector('[name=\'asset_group[color]\']').value = '<%= preset %>';"
                   title="<%= preset %>"></button>

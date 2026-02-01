@@ -28,7 +28,7 @@
           <%= f.text_field :search,
                 value: @search_query,
                 placeholder: "Search transactions by description...",
-                class: "w-full pl-10 pr-10 py-2 rounded-xl #{ui_input_class}",
+                class: "w-full pl-10 pr-10 py-2 #{ui_input_class}",
                 autofocus: true %>
           <%= link_to transactions_path, class: "absolute inset-y-0 right-0 pr-3 flex items-center #{ui_text_subtle_class} hover:text-slate-600 dark:hover:text-slate-300" do %>
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -54,7 +54,7 @@
             prev_params[:account_id] = params[:account_id] if params[:account_id].present?
             prev_params[:category_id] = params[:category_id] if params[:category_id].present?
           %>
-          <%= link_to transactions_path(prev_params), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition #{ui_text_muted_class} text-sm" do %>
+          <%= link_to transactions_path(prev_params), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
             &larr; <%= prev_month.strftime("%b") %>
           <% end %>
         <% else %>
@@ -97,7 +97,7 @@
               next_params[:account_id] = params[:account_id] if params[:account_id].present?
               next_params[:category_id] = params[:category_id] if params[:category_id].present?
             %>
-            <%= link_to transactions_path(next_params), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg transition #{ui_text_muted_class} text-sm" do %>
+            <%= link_to transactions_path(next_params), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
               <%= next_month.strftime("%b") %> &rarr;
             <% end %>
           <% else %>
@@ -207,7 +207,7 @@
         </thead>
         <tbody>
           <% @transactions.order(date: :desc, created_at: :desc).group_by(&:date).each do |date, day_transactions| %>
-            <tr class="<%= ui_table_group_header_class %> border-t border-b border-slate-200 dark:border-slate-600">
+            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
               <td colspan="7" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= date.strftime("%A, %B %d") %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= day_transactions.size %> transaction<%= day_transactions.size == 1 ? '' : 's' %></span>
@@ -225,7 +225,7 @@
                   <%= transaction.category.name %>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_muted_class %>">
-                  <%= transaction.account.name %> <span class="px-1.5 py-0.5 text-xs rounded bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= transaction.account.currency %></span>
+                  <%= transaction.account.name %> <span class="px-1.5 py-0.5 text-xs bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= transaction.account.currency %></span>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-xs text-right pr-1 <%= ui_text_subtle_class %>">
                   <% if transaction.currency != transaction.default_currency %>

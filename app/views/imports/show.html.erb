@@ -19,7 +19,7 @@
         <span class="text-sm <%= ui_text_muted_class %>"><%= time_ago_in_words(@import.created_at) %> ago</span>
         <span class="<%= ui_text_subtle_class %>">&middot;</span>
         <span class="text-sm <%= ui_text_muted_class %>">
-          <%= link_to edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" do %><%= @import.account.name %><% end %> <span class="px-1.5 py-0.5 text-xs rounded bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= @import.account.currency %></span>
+          <%= link_to edit_account_path(@import.account), class: "font-medium #{ui_text_class} #{ui_link_class}" do %><%= @import.account.name %><% end %> <span class="px-1.5 py-0.5 text-xs bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"><%= @import.account.currency %></span>
         </span>
       </div>
     </div>
@@ -46,9 +46,9 @@
       <div class="max-w-md mx-auto text-center">
         <!-- Animated spinner (kept outside stream target to stay smooth) -->
         <div class="relative mx-auto w-16 h-16 mb-6">
-          <div class="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-700"></div>
-          <div class="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-500 animate-spin"></div>
-          <div class="absolute inset-2 rounded-full border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+          <div class="absolute inset-0 border-4 border-slate-100 dark:border-slate-700"></div>
+          <div class="absolute inset-0 border-4 border-transparent border-t-cyan-500 animate-spin"></div>
+          <div class="absolute inset-2 border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
         </div>
         
         <!-- Turbo Stream target for live updates -->
@@ -61,7 +61,7 @@
     <div class="<%= ui_card_table_class %>">
       <div class="bg-rose-50 dark:bg-rose-900/30 border-b border-rose-100 dark:border-rose-800 px-6 py-4">
         <div class="flex items-center gap-3">
-          <div class="flex-shrink-0 w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
+          <div class="flex-shrink-0 w-10 h-10 bg-rose-100 dark:bg-rose-900/50 flex items-center justify-center">
             <svg class="w-5 h-5 text-rose-500 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -74,7 +74,7 @@
       </div>
       
       <div class="p-6">
-        <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4 mb-6">
+        <div class="bg-slate-50 dark:bg-slate-900 p-4 mb-6">
           <p class="text-sm font-medium <%= ui_text_class %> mb-1">Error Details</p>
           <p class="text-sm <%= ui_text_muted_class %> font-mono"><%= @import.error_message %></p>
         </div>
@@ -98,7 +98,7 @@
             </svg>
             Add Manually
           <% end %>
-          <%= button_to import_path(@import), method: :delete, class: "inline-flex items-center justify-center gap-2 px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium rounded-lg transition text-sm", form: { data: { turbo_confirm: "Delete this failed import?" } } do %>
+          <%= button_to import_path(@import), method: :delete, class: "inline-flex items-center justify-center gap-2 px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium transition text-sm", form: { data: { turbo_confirm: "Delete this failed import?" } } do %>
             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -145,15 +145,15 @@
           <div class="flex items-center gap-3">
             <span class="font-medium <%= ui_text_class %>">Review & Import</span>
             <% if @import.duration %>
-              <span class="text-xs <%= ui_text_subtle_class %> bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded">Processed in <%= @import.duration.round(1) %>s</span>
+              <span class="text-xs <%= ui_text_subtle_class %> bg-slate-100 dark:bg-slate-700 px-2 py-0.5">Processed in <%= @import.duration.round(1) %>s</span>
             <% end %>
           </div>
           <div class="flex items-center gap-4">
             <span class="text-xs <%= ui_text_subtle_class %> hidden sm:inline">
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %>">j</kbd>/<kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %>">k</kbd> navigate
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">space</kbd> toggle
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">t</kbd> type
-              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 rounded <%= ui_text_muted_class %> ml-2">c</kbd> category
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %>">j</kbd>/<kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %>">k</kbd> navigate
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %> ml-2">space</kbd> toggle
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %> ml-2">t</kbd> type
+              <kbd class="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 <%= ui_text_muted_class %> ml-2">c</kbd> category
             </span>
           <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:text-slate-700 dark:hover:text-slate-300">
               <input type="checkbox" 
@@ -210,7 +210,7 @@
                     <input type="date" 
                            name="transactions[<%= index %>][date]" 
                            value="<%= txn[:date].is_a?(Date) ? txn[:date].strftime('%Y-%m-%d') : txn[:date] %>"
-                           class="text-sm rounded-lg <%= ui_input_sm_class %> py-1.5">
+                           class="text-sm <%= ui_input_sm_class %> py-1.5">
                   </td>
                   <td class="px-4 py-3 text-sm <%= ui_text_class %>">
                     <div class="flex items-center gap-2">
@@ -219,20 +219,20 @@
                         <span class="<%= ui_badge_class %>">Ignored</span>
                       <% end %>
                       <% if txn[:is_duplicate] %>
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Duplicate</span>
+                        <span class="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Duplicate</span>
                       <% end %>
                     </div>
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][transaction_type]" 
-                            class="transaction-type w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5">
+                            class="transaction-type w-full text-sm <%= ui_input_sm_class %> py-1.5">
                       <option value="expense" <%= txn[:transaction_type] == 'expense' ? 'selected' : '' %>>Expense</option>
                       <option value="income" <%= txn[:transaction_type] == 'income' ? 'selected' : '' %>>Income</option>
                     </select>
                   </td>
                   <td class="px-4 py-3">
                     <select name="transactions[<%= index %>][category_id]" 
-                            class="transaction-category w-full text-sm rounded-lg <%= ui_input_sm_class %> py-1.5"
+                            class="transaction-category w-full text-sm <%= ui_input_sm_class %> py-1.5"
                             data-action="change->import-table#categoryChanged">
                       <option value="" <%= txn[:category_id].present? ? '' : 'selected' %>></option>
                       <optgroup label="Expense">
@@ -281,7 +281,7 @@
     <!-- No Transactions Found -->
     <div class="<%= ui_card_class %> p-8 md:p-12">
       <div class="max-w-md mx-auto text-center">
-        <div class="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mx-auto mb-6">
+        <div class="w-16 h-16 bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center mx-auto mb-6">
           <svg class="w-8 h-8 text-amber-500 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
@@ -390,7 +390,7 @@
         <%= link_to transactions_path, class: "px-4 py-2 #{ui_text_muted_class} hover:#{ui_text_class} font-medium transition text-sm" do %>
           View All Transactions
         <% end %>
-        <%= button_to import_path(@import), method: :delete, class: "px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium rounded-lg transition text-sm", form: { data: { turbo_confirm: "Delete this import? The imported transactions will remain." } } do %>
+        <%= button_to import_path(@import), method: :delete, class: "px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium transition text-sm", form: { data: { turbo_confirm: "Delete this import? The imported transactions will remain." } } do %>
           Delete Import
         <% end %>
       </div>
