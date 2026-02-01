@@ -64,7 +64,7 @@
 
   <!-- Net Worth Summary -->
   <% if @net_worth[:net_worth] == 0 && @net_worth[:cash] == 0 && @net_worth[:assets] == 0 %>
-    <div class="<%= ui_card_class %> p-6">
+    <div class="bg-white dark:bg-slate-800 p-6">
       <p class="<%= ui_text_muted_class %>">No financial data yet. Add accounts or assets to get started.</p>
     </div>
   <% end %>
@@ -89,7 +89,7 @@
     %>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Monthly Chart -->
-      <div class="<%= ui_card_class %> p-4">
+      <div class="bg-white dark:bg-slate-800 p-4">
         <h2 class="<%= ui_subheading_class %> mb-3">Monthly</h2>
         <div class="flex w-full">
           <!-- Y-axis labels -->
@@ -148,7 +148,7 @@
       </div>
 
       <!-- Quarterly Chart -->
-      <div class="<%= ui_card_class %> p-4">
+      <div class="bg-white dark:bg-slate-800 p-4">
         <h2 class="<%= ui_subheading_class %> mb-3">Quarterly</h2>
         <div class="flex w-full">
           <!-- Y-axis labels -->
@@ -209,7 +209,7 @@
   <% end %>
 
   <!-- Asset Groups Breakdown -->
-  <div class="<%= ui_card_table_class %>">
+  <div class="bg-white dark:bg-slate-800 overflow-hidden">
     <% 
       # Check if any group has assets to show (active or archived with valuations)
       has_assets_to_show = @asset_groups.any? do |group|
@@ -237,7 +237,7 @@
             <% next if active_assets.empty? && archived_with_valuations.empty? %>
             <% group_has_liabilities = active_assets.any? { |a| a.asset_type.is_liability } || archived_with_valuations.any? { |a| a.asset_type.is_liability } %>
 
-            <tr class="<%= ui_table_group_header_class %> <%= group_index > 0 ? 'border-t-4 border-slate-300 dark:border-slate-500' : '' %>">
+            <tr class="<%= ui_table_group_header_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
               <td class="px-4 py-2">
                 <span class="inline-flex items-center">
                   <svg class="flex-shrink-0 mr-2" width="16" height="16"><rect width="16" height="16" fill="<%= group.color || '#94a3b8' %>"/></svg>
@@ -259,7 +259,7 @@
               <tr class="<%= ui_table_row_class %>">
                 <td class="<%= ui_table_td_class %>">
                   <%= link_to asset, class: "block" do %>
-                    <p class="text-sm font-medium <%= ui_text_class %> hover:text-cyan-600 dark:hover:text-cyan-400 whitespace-nowrap">
+                    <p class="text-sm font-medium <%= ui_text_class %> whitespace-nowrap">
                       <%= asset.name %>
                       <% if @broker_asset_ids.include?(asset.id) %>
                         <span class="ml-1 <%= ui_badge_info_class %>">Broker</span>
@@ -301,7 +301,7 @@
               <tr class="<%= ui_table_row_class %>">
                 <td class="<%= ui_table_td_class %>">
                   <%= link_to asset, class: "block" do %>
-                    <p class="text-sm font-medium <%= ui_text_subtle_class %> hover:text-cyan-600 dark:hover:text-cyan-400 whitespace-nowrap">
+                    <p class="text-sm font-medium <%= ui_text_subtle_class %> whitespace-nowrap">
                       <%= asset.name %>
                       <span class="ml-1 <%= ui_badge_class %>">Archived</span>
                     </p>
@@ -345,7 +345,7 @@
             </tr>
           <% end %>
 
-          <tr class="<%= ui_table_total_class %>">
+          <tr class="bg-slate-200 dark:bg-slate-700 border-t-[6px] border-slate-100 dark:border-slate-900">
             <td class="px-4 py-3">
               <span class="font-bold <%= ui_table_group_text_class %> whitespace-nowrap">Total Net Worth</span>
             </td>
