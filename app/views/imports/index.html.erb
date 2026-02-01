@@ -13,6 +13,26 @@
     <%= link_to "New", new_import_path, class: ui_btn_primary_class %>
   </div>
 
+  <!-- Needs Attention -->
+  <div class="<%= ui_card_table_class %> mb-6">
+    <div class="<%= ui_card_header_class %>">
+      <h2 class="<%= ui_subheading_class %>">Needs Attention</h2>
+    </div>
+    <% if @needs_attention.any? %>
+      <table class="min-w-full">
+        <tbody class="<%= ui_card_body_class %>">
+          <% @needs_attention.each do |import| %>
+            <%= render partial: "imports/import_row", locals: { import: import } %>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <div class="<%= ui_empty_class %>">
+        <p class="<%= ui_text_muted_class %>">No imports need attention.</p>
+      </div>
+    <% end %>
+  </div>
+
   <!-- Year Navigation -->
   <div class="<%= ui_card_class %> mb-4 px-4 py-2">
     <div class="flex items-center justify-between">

@@ -13,72 +13,8 @@
     <%= link_to "Imports", imports_path, class: ui_btn_secondary_class %>
   </div>
 
-  <% if @pending_imports.any? %>
-    <!-- Pending Imports -->
-    <div class="mb-6">
-      <h2 class="text-sm font-semibold <%= ui_text_muted_class %> uppercase tracking-wider mb-3">Needs Attention</h2>
-      <div class="<%= ui_card_table_class %>">
-        <table class="min-w-full">
-          <tbody class="<%= ui_card_body_class %>">
-            <% @pending_imports.each do |import| %>
-              <tr class="<%= ui_table_row_class %>">
-                <td class="<%= ui_table_td_class %> <%= ui_text_class %>">
-                  <div class="flex items-center">
-                    <% if import.pdf? %>
-                      <svg class="h-5 w-5 text-rose-500 dark:text-rose-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
-                      </svg>
-                    <% else %>
-                      <svg class="h-5 w-5 text-emerald-500 dark:text-emerald-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
-                      </svg>
-                    <% end %>
-                    <%= truncate(import.original_filename, length: 40) %>
-                  </div>
-                </td>
-                <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_muted_class %>">
-                  <%= import.account.name %> <span class="<%= ui_currency_badge_class %>"><%= import.account.currency %></span>
-                </td>
-                <td class="<%= ui_table_td_class %>">
-                  <% case import.status %>
-                  <% when "pending" %>
-                    <span class="<%= ui_badge_class %>">Queued</span>
-                  <% when "processing" %>
-                    <span class="<%= ui_badge_info_class %> inline-flex items-center">
-                      <svg class="animate-spin -ml-0.5 mr-1.5 h-3 w-3" fill="none" viewBox="0 0 24 24">
-                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Processing
-                    </span>
-                  <% when "completed" %>
-                    <span class="<%= ui_badge_warning_class %>">Ready for Review</span>
-                  <% when "failed" %>
-                    <span class="<%= ui_badge_danger_class %>">Failed</span>
-                  <% end %>
-                </td>
-                <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_subtle_class %>">
-                  <%= time_ago_in_words(import.created_at) %> ago
-                </td>
-                <td class="<%= ui_table_td_class %> whitespace-nowrap text-right">
-                  <div class="flex items-center justify-end gap-2">
-                    <%= link_to "View", import_path(import), class: ui_link_class %>
-                    <% if import.completed? || import.failed? %>
-                      <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
-                    <% end %>
-                  </div>
-                </td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  <% end %>
-
   <!-- Upload Form -->
   <div class="mb-6">
-    <h2 class="text-sm font-semibold <%= ui_text_muted_class %> uppercase tracking-wider mb-3">Upload Statement</h2>
     <%= form_with url: imports_path, method: :post, multipart: true do |form| %>
       <div class="<%= ui_card_class %> p-6">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -9,6 +9,9 @@ class ImportsController < ApplicationController
       Date.current.year
     end
 
+    # Imports needing attention (completed ready for review, or failed)
+    @needs_attention = Import.needs_attention.includes(:account).recent
+
     # Only show "finalized" imports: done (reviewed and imported) or failed
     # Pending, processing, and completed (ready-for-review) imports are shown on the Import (new) page
     all_imports = Import.recent.includes(:account, :transactions).select do |import|
@@ -39,13 +42,6 @@ class ImportsController < ApplicationController
 
   def new
     @accounts = Account.order(:name)
-    # Load imports that need attention:
-    # - pending/processing (in progress)
-    # - completed (ready for human review)
-    # - failed (can be deleted)
-    @pending_imports = Import.includes(:account).recent.limit(20).select do |import|
-      import.pending? || import.processing? || import.failed? || import.completed?
-    end
   end
 
   def show
