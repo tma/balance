@@ -12,7 +12,7 @@
   <!-- Header -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
     <div>
-      <h1 class="<%= ui_title_class %> mb-1"><%= @import.original_filename %></h1>
+      <h1 class="<%= ui_title_class %> mb-1"><code><%= @import.original_filename %></code></h1>
       <div class="flex items-center gap-2">
         <%= render "imports/status_badge", import: @import %>
         <span class="<%= ui_text_subtle_class %>">&middot;</span>
@@ -30,6 +30,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
           Reprocess
+        <% end %>
+      <% end %>
+      <% if @import.completed? || @import.failed? || @import.done? %>
+        <%= button_to import_path(@import), method: :delete, class: "#{ui_btn_danger_class} text-sm", form: { data: { turbo_confirm: "Delete this import?#{@import.done? ? ' The imported transactions will remain.' : ''}" } } do %>
+          Delete
         <% end %>
       <% end %>
       <%= link_to imports_path, class: "#{ui_btn_secondary_class} text-sm" do %>
@@ -111,29 +116,26 @@
   <% elsif @import.completed? && @transactions.any? %>
     <!-- Summary Stats -->
     <% 
+      total_count = @transactions.size
+      ignored_count = @transactions.count { |t| t[:is_ignored] }
+      duplicate_count = @transactions.count { |t| t[:is_duplicate] }
       selectable_transactions = @transactions.reject { |t| t[:is_ignored] }
       income_txns = selectable_transactions.select { |t| t[:transaction_type] == 'income' }
       expense_txns = selectable_transactions.select { |t| t[:transaction_type] == 'expense' }
-      duplicate_count = selectable_transactions.count { |t| t[:is_duplicate] }
       total_income = income_txns.sum { |t| t[:amount].to_f }
       total_expense = expense_txns.sum { |t| t[:amount].to_f }
     %>
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Transactions</p>
-        <p class="text-2xl font-semibold <%= ui_text_class %>"><%= @transactions.size %></p>
-      </div>
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Income</p>
-        <p class="text-2xl font-semibold <%= ui_positive_class %>">+<%= format_amount(total_income) %></p>
-      </div>
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Expenses</p>
-        <p class="text-2xl font-semibold <%= ui_negative_class %>">-<%= format_amount(total_expense) %></p>
-      </div>
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Duplicates</p>
-        <p class="text-2xl font-semibold <%= duplicate_count > 0 ? 'text-amber-500 dark:text-amber-400' : ui_text_subtle_class %>"><%= duplicate_count %></p>
+    <div class="<%= ui_card_class %> p-4 mb-6">
+      <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center gap-6">
+          <span><span class="font-semibold <%= ui_text_class %>"><%= total_count %></span> <span class="<%= ui_text_muted_class %>">transactions</span></span>
+          <span><span class="font-semibold <%= ui_text_class %>"><%= ignored_count %></span> <span class="<%= ui_text_muted_class %>">ignored</span></span>
+          <span><span class="font-semibold <%= duplicate_count > 0 ? 'text-amber-500 dark:text-amber-400' : ui_text_class %>"><%= duplicate_count %></span> <span class="<%= ui_text_muted_class %>">duplicates</span></span>
+        </div>
+        <div class="flex items-center gap-6">
+          <span class="<%= ui_positive_class %>">+<%= format_amount(total_income) %></span>
+          <span class="<%= ui_negative_class %>">-<%= format_amount(total_expense) %></span>
+        </div>
       </div>
     </div>
 
@@ -258,10 +260,7 @@
       </div>
 
       <!-- Actions -->
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 <%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %>">
-          <span class="font-medium <%= ui_text_class %>" data-import-table-target="selectedCount"><%= @transactions.count { |t| t.key?(:selected) ? t[:selected] : (!t[:is_duplicate] && !t[:is_ignored]) } %></span> transactions selected
-        </p>
+      <div class="flex flex-col sm:flex-row items-center justify-end gap-4 <%= ui_card_class %> p-4">
         <div class="flex items-center gap-3">
           <label class="flex items-center gap-2 text-sm <%= ui_text_muted_class %> cursor-pointer hover:text-slate-700 dark:hover:text-slate-300">
             <input type="checkbox" 
@@ -319,23 +318,20 @@
     %>
     
     <!-- Summary Stats -->
-    <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Imported</p>
-        <p class="text-2xl font-semibold <%= ui_text_class %>"><%= @imported_transactions.size %></p>
-      </div>
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Income</p>
-        <p class="text-2xl font-semibold <%= ui_positive_class %>">+<%= format_amount(total_income) %></p>
-      </div>
-      <div class="<%= ui_card_class %> p-4">
-        <p class="text-sm <%= ui_text_muted_class %> mb-1">Expenses</p>
-        <p class="text-2xl font-semibold <%= ui_negative_class %>">-<%= format_amount(total_expense) %></p>
+    <div class="<%= ui_card_class %> p-4 mb-6">
+      <div class="flex items-center justify-between text-sm">
+        <div class="flex items-center gap-6">
+          <span><span class="font-semibold <%= ui_text_class %>"><%= @imported_transactions.size %></span> <span class="<%= ui_text_muted_class %>">imported</span></span>
+        </div>
+        <div class="flex items-center gap-6">
+          <span class="<%= ui_positive_class %>">+<%= format_amount(total_income) %></span>
+          <span class="<%= ui_negative_class %>">-<%= format_amount(total_expense) %></span>
+        </div>
       </div>
     </div>
 
     <!-- Imported Transactions Table -->
-    <div class="<%= ui_card_table_class %> mb-6">
+    <div class="<%= ui_card_table_class %>">
       <div class="px-4 py-3 <%= ui_table_header_class %> flex items-center justify-between">
         <span class="font-medium <%= ui_text_class %>">Imported Transactions</span>
         <% if @import.completed_at %>
@@ -379,21 +375,6 @@
           No transactions were imported from this file.
         </div>
       <% end %>
-    </div>
-
-    <!-- Actions -->
-    <div class="flex items-center justify-between <%= ui_card_class %> p-4">
-      <p class="text-sm <%= ui_text_muted_class %>">
-        This import has been reviewed and completed.
-      </p>
-      <div class="flex items-center gap-3">
-        <%= link_to transactions_path, class: "px-4 py-2 #{ui_text_muted_class} hover:#{ui_text_class} font-medium transition text-sm" do %>
-          View All Transactions
-        <% end %>
-        <%= button_to import_path(@import), method: :delete, class: "px-4 py-2 text-rose-500 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/30 font-medium transition text-sm", form: { data: { turbo_confirm: "Delete this import? The imported transactions will remain." } } do %>
-          Delete Import
-        <% end %>
-      </div>
     </div>
   <% end %>
 </div>
