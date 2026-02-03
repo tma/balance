@@ -59,7 +59,7 @@
            data-action="click->collapsible#toggle">
         <div class="flex items-center gap-2">
           <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
-          <h2 class="text-sm font-medium <%= ui_text_class %>">Coverage</h2>
+          <h2 class="text-sm font-medium <%= ui_text_class %>">Missing Transactions</h2>
           <% gaps_count = @account_coverage.count { |c| !c[:complete?] } %>
           <% if gaps_count > 0 %>
             <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
@@ -70,33 +70,9 @@
       </div>
 
       <div data-collapsible-target="content" class="hidden">
-        <div class="border-t border-slate-200 dark:border-slate-700">
+        <div class="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
           <% @account_coverage.each do |coverage| %>
-            <div class="px-4 py-2.5 border-b last:border-b-0 border-slate-100 dark:border-slate-700/50">
-              <div class="flex items-center justify-between">
-                <%= link_to imports_path(account_id: coverage[:account].id), class: "#{ui_text_class} font-medium text-sm hover:text-sky-600 dark:hover:text-sky-400" do %>
-                  <%= coverage[:account].name %>
-                <% end %>
-                <span class="<%= ui_text_muted_class %> text-xs">
-                  <%= coverage[:first_date].strftime("%b %-d, %Y") %> &rarr;
-                  <%= coverage[:last_date].strftime("%b %-d, %Y") %>
-                  <% if coverage[:complete?] %>
-                    <span class="text-emerald-600 dark:text-emerald-400 ml-1">&#10003;</span>
-                  <% end %>
-                </span>
-              </div>
-
-              <% if coverage[:gaps].any? %>
-                <div class="mt-1.5 space-y-0.5">
-                  <% coverage[:gaps].each do |gap| %>
-                    <div class="text-xs text-amber-600 dark:text-amber-400">
-                      &#9888; Gap: <%= gap[:start].strftime("%b %-d") %> - <%= gap[:end].strftime("%b %-d, %Y") %>
-                      <span class="<%= ui_text_subtle_class %>">(<%= gap[:days] %> days)</span>
-                    </div>
-                  <% end %>
-                </div>
-              <% end %>
-            </div>
+            <%= render "shared/coverage_row", coverage: coverage %>
           <% end %>
         </div>
       </div>

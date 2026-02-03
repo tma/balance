@@ -3,6 +3,11 @@ class AccountsController < ApplicationController
 
   def index
     @accounts = Account.includes(:account_type).order(:name)
+    # Build a hash of account_id => coverage_analysis for accounts with gaps
+    @coverage_gaps = @accounts.active.each_with_object({}) do |account, hash|
+      coverage = account.coverage_analysis
+      hash[account.id] = coverage if coverage && !coverage[:complete?]
+    end
   end
 
   def new
@@ -56,6 +61,6 @@ class AccountsController < ApplicationController
   end
 
   def account_params
-    params.expect(account: [ :name, :account_type_id, :balance, :currency, :import_ignore_patterns ])
+    params.expect(account: [ :name, :account_type_id, :balance, :currency, :import_ignore_patterns, :expected_transaction_frequency ])
   end
 end

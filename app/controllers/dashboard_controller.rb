@@ -11,6 +11,9 @@ class DashboardController < ApplicationController
 
     # Cash flow for current and 2 previous months
     @monthly_cash_flow = calculate_monthly_data(3)
+
+    # Coverage gaps for data health panel
+    @coverage_gaps = Account.active.filter_map(&:coverage_analysis).reject { |c| c[:complete?] }
   end
 
   def cash_flow

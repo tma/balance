@@ -43,14 +43,11 @@ class ImportsController < ApplicationController
       end.uniq.sort.reverse
     end
 
-    # Coverage analysis for accounts with done imports
-    accounts_with_imports = Account.active
-      .joins(:imports)
-      .where(imports: { status: "done" })
-      .distinct
-      .includes(imports: :transactions)
+    # Coverage analysis for accounts with expected_transaction_frequency set
+    accounts_with_frequency = Account.active
+      .where.not(expected_transaction_frequency: nil)
 
-    @account_coverage = accounts_with_imports.filter_map(&:coverage_analysis)
+    @account_coverage = accounts_with_frequency.filter_map(&:coverage_analysis)
       .sort_by { |c| c[:complete?] ? 1 : 0 } # Show incomplete first
 
     # Accounts for filter dropdown

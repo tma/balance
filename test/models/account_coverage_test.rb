@@ -6,6 +6,10 @@ class AccountCoverageTest < ActiveSupport::TestCase
   setup do
     @account = accounts(:checking_account)
     @category = categories(:groceries)
+    # Enable coverage tracking with 7-day threshold (weekly)
+    @account.update!(expected_transaction_frequency: 7)
+    # Clear existing transactions
+    @account.transactions.destroy_all
     # Freeze time so tests don't flag "gap to today"
     travel_to Date.new(2025, 6, 15)
   end
@@ -14,191 +18,155 @@ class AccountCoverageTest < ActiveSupport::TestCase
     travel_back
   end
 
-  test "coverage_analysis returns nil for account with no imports" do
-    @account.imports.destroy_all
-    assert_nil @account.coverage_analysis
-  end
-
-  test "coverage_analysis returns nil for account with only pending imports" do
-    @account.imports.destroy_all
-    create_import(@account, status: "pending")
+  test "coverage_analysis returns nil for account with no expected_transaction_frequency (opt-out)" do
+    @account.update!(expected_transaction_frequency: nil)
+    create_transaction(@account, date: Date.new(2025, 5, 15))
 
     assert_nil @account.coverage_analysis
   end
 
-  test "coverage_analysis returns nil for account with done imports but no transactions" do
-    @account.imports.destroy_all
-    create_import(@account, status: "done")
-
+  test "coverage_analysis returns nil for account with no transactions" do
     assert_nil @account.coverage_analysis
   end
 
-  test "coverage_analysis returns complete for single recent import with transactions" do
-    @account.imports.destroy_all
-    import = create_import(@account, status: "done")
-    # Use dates within threshold of "today" (June 15, 2025)
-    create_transaction(@account, import, date: Date.new(2025, 5, 15))
-    create_transaction(@account, import, date: Date.new(2025, 6, 14))
+  test "coverage_analysis returns complete for recent transactions within threshold" do
+    # Transactions all within 7 days of each other, ending within threshold of "today" (June 15, 2025)
+    create_transaction(@account, date: Date.new(2025, 6, 1))
+    create_transaction(@account, date: Date.new(2025, 6, 7))   # 6 days later
+    create_transaction(@account, date: Date.new(2025, 6, 14))  # 7 days later
 
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_not_nil result
     assert_equal @account, result[:account]
-    assert_equal Date.new(2025, 5, 15), result[:first_date]
+    assert_equal Date.new(2025, 6, 1), result[:first_date]
     assert_equal Date.new(2025, 6, 14), result[:last_date]
     assert_equal 1, result[:periods].size
     assert_empty result[:gaps]
     assert result[:complete?]
+    assert_equal 7, result[:threshold]
   end
 
-  test "coverage_analysis merges adjacent imports within threshold" do
-    @account.imports.destroy_all
+  test "coverage_analysis merges adjacent transactions within threshold" do
+    # Transactions with gaps <= 7 days should merge into one period
+    create_transaction(@account, date: Date.new(2025, 6, 1))
+    create_transaction(@account, date: Date.new(2025, 6, 8))   # 7 days gap (Jun 2-7 = 6 days between)
+    create_transaction(@account, date: Date.new(2025, 6, 14))  # 6 days gap
 
-    # Import 1: May 1 - May 31
-    import1 = create_import(@account, status: "done")
-    create_transaction(@account, import1, date: Date.new(2025, 5, 1))
-    create_transaction(@account, import1, date: Date.new(2025, 5, 31))
-
-    # Import 2: Jun 1 - Jun 14 (only 1 day gap, within threshold)
-    import2 = create_import(@account, status: "done")
-    create_transaction(@account, import2, date: Date.new(2025, 6, 1))
-    create_transaction(@account, import2, date: Date.new(2025, 6, 14))
-
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_equal 1, result[:periods].size
     assert_empty result[:gaps]
     assert result[:complete?]
   end
 
-  test "coverage_analysis detects gap between imports" do
-    @account.imports.destroy_all
+  test "coverage_analysis detects gap between transaction clusters" do
+    # Two clusters with a gap > 7 days between them
+    # Cluster 1: Jan 10-15 (5 days span, within threshold)
+    create_transaction(@account, date: Date.new(2025, 1, 10))
+    create_transaction(@account, date: Date.new(2025, 1, 15))
 
-    # Import 1: Jan 15 - Feb 14
-    import1 = create_import(@account, status: "done")
-    create_transaction(@account, import1, date: Date.new(2025, 1, 15))
-    create_transaction(@account, import1, date: Date.new(2025, 2, 14))
+    # Gap: Jan 16-31 (16 days)
+    # Cluster 2: Feb 1-8 then continuing to today
+    create_transaction(@account, date: Date.new(2025, 2, 1))
+    create_transaction(@account, date: Date.new(2025, 2, 8))
+    create_transaction(@account, date: Date.new(2025, 2, 15))
+    create_transaction(@account, date: Date.new(2025, 2, 22))
+    create_transaction(@account, date: Date.new(2025, 3, 1))
+    create_transaction(@account, date: Date.new(2025, 3, 8))
+    create_transaction(@account, date: Date.new(2025, 3, 15))
+    create_transaction(@account, date: Date.new(2025, 3, 22))
+    create_transaction(@account, date: Date.new(2025, 3, 29))
+    create_transaction(@account, date: Date.new(2025, 4, 5))
+    create_transaction(@account, date: Date.new(2025, 4, 12))
+    create_transaction(@account, date: Date.new(2025, 4, 19))
+    create_transaction(@account, date: Date.new(2025, 4, 26))
+    create_transaction(@account, date: Date.new(2025, 5, 3))
+    create_transaction(@account, date: Date.new(2025, 5, 10))
+    create_transaction(@account, date: Date.new(2025, 5, 17))
+    create_transaction(@account, date: Date.new(2025, 5, 24))
+    create_transaction(@account, date: Date.new(2025, 5, 31))
+    create_transaction(@account, date: Date.new(2025, 6, 7))
+    create_transaction(@account, date: Date.new(2025, 6, 14))
 
-    # Import 2: Apr 1 - Jun 14 (gap of ~45 days between periods, recent enough to not flag gap to today)
-    import2 = create_import(@account, status: "done")
-    create_transaction(@account, import2, date: Date.new(2025, 4, 1))
-    create_transaction(@account, import2, date: Date.new(2025, 6, 14))
-
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_equal 2, result[:periods].size
     assert_equal 1, result[:gaps].size
     assert_not result[:complete?]
 
     gap = result[:gaps].first
-    assert_equal Date.new(2025, 2, 15), gap[:start]
-    assert_equal Date.new(2025, 3, 31), gap[:end]
-    assert_equal 45, gap[:days]
-  end
-
-  test "coverage_analysis merges overlapping imports" do
-    @account.imports.destroy_all
-
-    # Import 1: Apr 15 - May 20
-    import1 = create_import(@account, status: "done")
-    create_transaction(@account, import1, date: Date.new(2025, 4, 15))
-    create_transaction(@account, import1, date: Date.new(2025, 5, 20))
-
-    # Import 2: May 10 - Jun 14 (overlaps with import 1)
-    import2 = create_import(@account, status: "done")
-    create_transaction(@account, import2, date: Date.new(2025, 5, 10))
-    create_transaction(@account, import2, date: Date.new(2025, 6, 14))
-
-    result = @account.coverage_analysis
-
-    assert_equal 1, result[:periods].size
-    assert_equal Date.new(2025, 4, 15), result[:first_date]
-    assert_equal Date.new(2025, 6, 14), result[:last_date]
-    assert_empty result[:gaps]
-    assert result[:complete?]
-  end
-
-  test "coverage_analysis ignores imports that are not done" do
-    @account.imports.destroy_all
-
-    # Done import: May 15 - Jun 14
-    done_import = create_import(@account, status: "done")
-    create_transaction(@account, done_import, date: Date.new(2025, 5, 15))
-    create_transaction(@account, done_import, date: Date.new(2025, 6, 14))
-
-    # Completed but not done import: Jun 15 - Jun 30
-    completed_import = create_import(@account, status: "completed")
-    create_transaction(@account, completed_import, date: Date.new(2025, 6, 15))
-    create_transaction(@account, completed_import, date: Date.new(2025, 6, 30))
-
-    result = @account.coverage_analysis
-
-    # Should only see the done import
-    assert_equal 1, result[:periods].size
-    assert_equal Date.new(2025, 5, 15), result[:first_date]
-    assert_equal Date.new(2025, 6, 14), result[:last_date]
+    assert_equal Date.new(2025, 1, 16), gap[:start]
+    assert_equal Date.new(2025, 1, 31), gap[:end]
+    assert_equal 16, gap[:days]
   end
 
   test "coverage_analysis handles multiple gaps" do
-    @account.imports.destroy_all
+    # Three clusters with two gaps (each > 7 days)
+    # Cluster 1: Jan 1-7
+    create_transaction(@account, date: Date.new(2025, 1, 1))
+    create_transaction(@account, date: Date.new(2025, 1, 7))
 
-    # Import 1: Jan 15 - Jan 31
-    import1 = create_import(@account, status: "done")
-    create_transaction(@account, import1, date: Date.new(2025, 1, 15))
-    create_transaction(@account, import1, date: Date.new(2025, 1, 31))
+    # Gap: Jan 8-19 (12 days)
+    # Cluster 2: Jan 20-26
+    create_transaction(@account, date: Date.new(2025, 1, 20))
+    create_transaction(@account, date: Date.new(2025, 1, 26))
 
-    # Import 2: Mar 1 - Mar 31 (gap 1: Feb)
-    import2 = create_import(@account, status: "done")
-    create_transaction(@account, import2, date: Date.new(2025, 3, 1))
-    create_transaction(@account, import2, date: Date.new(2025, 3, 31))
+    # Gap: Jan 27 - Feb 9 (14 days)
+    # Cluster 3: Feb 10 onwards with weekly transactions to today
+    create_transaction(@account, date: Date.new(2025, 2, 10))
+    create_transaction(@account, date: Date.new(2025, 2, 17))
+    create_transaction(@account, date: Date.new(2025, 2, 24))
+    create_transaction(@account, date: Date.new(2025, 3, 3))
+    create_transaction(@account, date: Date.new(2025, 3, 10))
+    create_transaction(@account, date: Date.new(2025, 3, 17))
+    create_transaction(@account, date: Date.new(2025, 3, 24))
+    create_transaction(@account, date: Date.new(2025, 3, 31))
+    create_transaction(@account, date: Date.new(2025, 4, 7))
+    create_transaction(@account, date: Date.new(2025, 4, 14))
+    create_transaction(@account, date: Date.new(2025, 4, 21))
+    create_transaction(@account, date: Date.new(2025, 4, 28))
+    create_transaction(@account, date: Date.new(2025, 5, 5))
+    create_transaction(@account, date: Date.new(2025, 5, 12))
+    create_transaction(@account, date: Date.new(2025, 5, 19))
+    create_transaction(@account, date: Date.new(2025, 5, 26))
+    create_transaction(@account, date: Date.new(2025, 6, 2))
+    create_transaction(@account, date: Date.new(2025, 6, 9))
+    create_transaction(@account, date: Date.new(2025, 6, 14))
 
-    # Import 3: May 15 - Jun 14 (gap 2: Apr + early May)
-    import3 = create_import(@account, status: "done")
-    create_transaction(@account, import3, date: Date.new(2025, 5, 15))
-    create_transaction(@account, import3, date: Date.new(2025, 6, 14))
-
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_equal 3, result[:periods].size
-    assert_equal 2, result[:gaps].size  # Two gaps between imports, none to today
+    assert_equal 2, result[:gaps].size
     assert_not result[:complete?]
   end
 
   test "coverage_analysis does not flag gaps within threshold" do
-    @account.imports.destroy_all
+    # Gap of exactly 7 days should be merged
+    create_transaction(@account, date: Date.new(2025, 5, 31))
+    create_transaction(@account, date: Date.new(2025, 6, 8))  # 7 days gap
+    create_transaction(@account, date: Date.new(2025, 6, 14))
 
-    # Import 1: May 1 - May 31
-    import1 = create_import(@account, status: "done")
-    create_transaction(@account, import1, date: Date.new(2025, 5, 1))
-    create_transaction(@account, import1, date: Date.new(2025, 5, 31))
+    result = @account.reload.coverage_analysis
 
-    # Import 2: Jun 8 - Jun 14 (gap of 7 days = exactly at threshold)
-    import2 = create_import(@account, status: "done")
-    create_transaction(@account, import2, date: Date.new(2025, 6, 8))
-    create_transaction(@account, import2, date: Date.new(2025, 6, 14))
-
-    result = @account.coverage_analysis
-
-    # 7 day gap should be merged (threshold is 7 days)
     assert_equal 1, result[:periods].size
     assert_empty result[:gaps]
     assert result[:complete?]
   end
 
   test "coverage_analysis flags gaps just above threshold" do
-    @account.imports.destroy_all
+    # Gap of 8 days should be flagged (threshold is 7)
+    # May 1 to May 10 = 9 days apart, gap between = 8 days (May 2-9)
+    create_transaction(@account, date: Date.new(2025, 5, 1))
+    create_transaction(@account, date: Date.new(2025, 5, 10))  # 8 days gap
+    # Continue to today with weekly transactions
+    create_transaction(@account, date: Date.new(2025, 5, 17))
+    create_transaction(@account, date: Date.new(2025, 5, 24))
+    create_transaction(@account, date: Date.new(2025, 5, 31))
+    create_transaction(@account, date: Date.new(2025, 6, 7))
+    create_transaction(@account, date: Date.new(2025, 6, 14))
 
-    # Import 1: Apr 1 - Apr 30
-    import1 = create_import(@account, status: "done")
-    create_transaction(@account, import1, date: Date.new(2025, 4, 1))
-    create_transaction(@account, import1, date: Date.new(2025, 4, 30))
-
-    # Import 2: May 9 - Jun 14 (gap of 8 days = above threshold)
-    import2 = create_import(@account, status: "done")
-    create_transaction(@account, import2, date: Date.new(2025, 5, 9))
-    create_transaction(@account, import2, date: Date.new(2025, 6, 14))
-
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_equal 2, result[:periods].size
     assert_equal 1, result[:gaps].size
@@ -208,57 +176,97 @@ class AccountCoverageTest < ActiveSupport::TestCase
     assert_equal 8, gap[:days]
   end
 
-  test "coverage_analysis flags gap from last import to today when stale" do
-    @account.imports.destroy_all
+  test "coverage_analysis flags gap from last transaction to today when stale" do
+    # Old transactions, today is June 15, threshold is 7
+    # Last transaction Jan 15 → gap to today is 151 days
+    create_transaction(@account, date: Date.new(2025, 1, 10))
+    create_transaction(@account, date: Date.new(2025, 1, 15))
 
-    # Import with old data: Jan 15 - Jan 31 (today is June 15)
-    import = create_import(@account, status: "done")
-    create_transaction(@account, import, date: Date.new(2025, 1, 15))
-    create_transaction(@account, import, date: Date.new(2025, 1, 31))
-
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_equal 1, result[:periods].size
     assert_equal 1, result[:gaps].size
     assert_not result[:complete?]
 
     gap = result[:gaps].first
-    assert_equal Date.new(2025, 2, 1), gap[:start]
+    assert_equal Date.new(2025, 1, 16), gap[:start]
     assert_equal Date.new(2025, 6, 15), gap[:end]  # Today
-    assert_equal 135, gap[:days]  # Feb 1 to Jun 15
+    assert_equal 151, gap[:days]
   end
 
   test "coverage_analysis does not flag gap to today when within threshold" do
-    @account.imports.destroy_all
+    # Transaction within 7 days of today (June 15)
+    # June 8 to June 15 = 7 days, gap = 6 days (within threshold)
+    create_transaction(@account, date: Date.new(2025, 6, 1))
+    create_transaction(@account, date: Date.new(2025, 6, 8))
 
-    # Import ending 7 days ago (today is June 15, so June 8)
-    import = create_import(@account, status: "done")
-    create_transaction(@account, import, date: Date.new(2025, 5, 15))
-    create_transaction(@account, import, date: Date.new(2025, 6, 8))
-
-    result = @account.coverage_analysis
+    result = @account.reload.coverage_analysis
 
     assert_equal 1, result[:periods].size
     assert_empty result[:gaps]
     assert result[:complete?]
   end
 
-  private
+  test "coverage_analysis respects different frequency thresholds" do
+    # Transactions with 14-day gap (Jun 1 to Jun 14 = 13 days between)
+    create_transaction(@account, date: Date.new(2025, 6, 1))
+    create_transaction(@account, date: Date.new(2025, 6, 14))
 
-  def create_import(account, status:)
-    Import.create!(
-      account: account,
-      status: status,
-      original_filename: "test_#{SecureRandom.hex(4)}.csv",
+    # With 7-day threshold, this should show a gap (13 > 7)
+    @account.update!(expected_transaction_frequency: 7)
+    result = @account.reload.coverage_analysis
+    assert_equal 2, result[:periods].size
+    assert_equal 1, result[:gaps].size
+    assert_not result[:complete?]
+
+    # With 30-day threshold, this should be merged (13 <= 30)
+    @account.update!(expected_transaction_frequency: 30)
+    result = @account.reload.coverage_analysis
+    assert_equal 1, result[:periods].size
+    assert_empty result[:gaps]
+    assert result[:complete?]
+  end
+
+  test "coverage_analysis counts all transactions regardless of import" do
+    # Mix of imported and manual transactions, all within threshold
+    import = Import.create!(
+      account: @account,
+      status: "done",
+      original_filename: "test.csv",
       file_content_type: "text/csv",
       file_data: "test"
     )
+
+    # Imported transaction
+    Transaction.create!(
+      account: @account,
+      import: import,
+      category: @category,
+      date: Date.new(2025, 6, 1),
+      description: "Imported",
+      amount: 100.00,
+      transaction_type: "expense"
+    )
+
+    # Manual transactions (no import)
+    create_transaction(@account, date: Date.new(2025, 6, 7))
+    create_transaction(@account, date: Date.new(2025, 6, 14))
+
+    result = @account.reload.coverage_analysis
+
+    assert_equal 1, result[:periods].size
+    assert_equal Date.new(2025, 6, 1), result[:first_date]
+    assert_equal Date.new(2025, 6, 14), result[:last_date]
+    assert_empty result[:gaps]
+    assert result[:complete?]
   end
 
-  def create_transaction(account, import, date:)
+  private
+
+  def create_transaction(account, date:)
     Transaction.create!(
       account: account,
-      import: import,
+      import: nil,
       category: @category,
       date: date,
       description: "Test transaction",

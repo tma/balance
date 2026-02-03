@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_03_160023) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_03_200430) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -27,6 +27,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_03_160023) do
     t.text "csv_column_mapping"
     t.string "currency"
     t.decimal "exchange_rate"
+    t.integer "expected_transaction_frequency"
     t.text "import_ignore_patterns"
     t.string "name"
     t.datetime "updated_at", null: false

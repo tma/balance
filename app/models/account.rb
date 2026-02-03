@@ -10,6 +10,15 @@ class Account < ApplicationRecord
     Statement Period
   PATTERNS
 
+  # Expected transaction frequency options for coverage tracking
+  # nil = opt-out of coverage tracking, integer = max days between transactions
+  FREQUENCY_OPTIONS = [
+    [ "Not tracked", nil ],
+    [ "Weekly (7 days)", 7 ],
+    [ "Monthly (30 days)", 30 ],
+    [ "Quarterly (90 days)", 90 ]
+  ].freeze
+
   belongs_to :account_type
   has_many :transactions, dependent: :destroy
   has_many :imports, dependent: :destroy
@@ -17,6 +26,7 @@ class Account < ApplicationRecord
   validates :name, presence: true
   validates :currency, presence: true
   validates :balance, numericality: true
+  validates :expected_transaction_frequency, inclusion: { in: FREQUENCY_OPTIONS.map(&:last) }, allow_nil: true
 
   validate :currency_must_exist
   validate :currency_cannot_change, on: :update
@@ -75,6 +85,11 @@ class Account < ApplicationRecord
 
   def unarchive!
     update!(archived: false)
+  end
+
+  # Returns human-readable label for expected_transaction_frequency
+  def frequency_label
+    FREQUENCY_OPTIONS.find { |_, v| v == expected_transaction_frequency }&.first || "Not tracked"
   end
 
   private

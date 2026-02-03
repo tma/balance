@@ -84,8 +84,8 @@
                 <% expense_pct = [expense_pct, 100].min %>
                 <% saved_pct = [100 - expense_pct, 0].max %>
                 <div style="height: 24px; display: flex;" class="overflow-hidden text-xs">
-                  <div style="width: <%= expense_pct %>%;" class="bg-rose-200 dark:bg-rose-900/60 h-full flex items-center justify-start pl-2">
-                    <% if expense_pct > 20 %><span class="text-rose-700 dark:text-rose-300">Expenses <%= expense_pct.round(0) %>%</span><% end %>
+                  <div style="width: <%= expense_pct %>%; background: #fb7185;" class="dark:bg-rose-900/60 h-full flex items-center justify-start pl-2">
+                    <% if expense_pct > 20 %><span class="text-white">Expenses <%= expense_pct.round(0) %>%</span><% end %>
                   </div>
                   <div style="width: <%= saved_pct %>%;" class="bg-emerald-200 dark:bg-emerald-900/60 h-full flex items-center justify-end pr-2">
                     <% if saved_pct > 20 %><span class="text-emerald-700 dark:text-emerald-300">Saved <%= saved_pct.round(0) %>%</span><% end %>
@@ -107,4 +107,24 @@
       <% end %>
     </div>
   </div>
+
+  <%# Missing Transactions Panel - only show if there are coverage gaps %>
+  <% if @coverage_gaps.any? %>
+    <div class="bg-white dark:bg-slate-800 p-6">
+      <div class="mb-4">
+        <%= link_to imports_path, class: "hover:text-cyan-600 dark:hover:text-cyan-400" do %>
+          <h2 class="<%= ui_heading_class %> hover:text-cyan-600 dark:hover:text-cyan-400">Missing Transactions →</h2>
+        <% end %>
+        <p class="text-xs <%= ui_text_subtle_class %>">
+          <%= @coverage_gaps.size %> account<%= @coverage_gaps.size == 1 ? '' : 's' %> with gaps
+        </p>
+      </div>
+
+      <div class="space-y-3">
+        <% @coverage_gaps.each do |coverage| %>
+          <%= render "shared/coverage_row", coverage: coverage %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 </div>

@@ -35,6 +35,11 @@
               <tr class="<%= ui_table_row_class %> last:border-b-0">
                 <td class="<%= ui_table_td_class %> text-sm <%= ui_text_class %> font-medium">
                   <%= link_to account.name, transactions_path(account_id: account.id) %>
+                  <% if @coverage_gaps[account.id] %>
+                    <%= link_to imports_path(account_id: account.id), class: "ml-2 text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 hover:bg-amber-200 dark:hover:bg-amber-900/50" do %>
+                      Missing transactions
+                    <% end %>
+                  <% end %>
                 </td>
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_muted_class %>">
                   <%= account.currency %>

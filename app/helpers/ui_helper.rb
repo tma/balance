@@ -311,7 +311,7 @@ module UiHelper
 
   # Currency badge (small inline currency indicator)
   def ui_currency_badge_class
-    "px-1.5 py-0.5 text-xs bg-sky-50 dark:bg-sky-900/50 text-sky-600 dark:text-sky-300"
+    "px-1.5 py-0.5 text-xs bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
   end
 
   # Keyboard hint (for keyboard shortcuts display)
