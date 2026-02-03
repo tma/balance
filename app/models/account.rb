@@ -1,4 +1,6 @@
 class Account < ApplicationRecord
+  include AccountCoverage
+
   DEFAULT_IGNORE_PATTERNS = <<~PATTERNS.freeze
     Total
     Subtotal

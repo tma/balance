@@ -1199,6 +1199,118 @@ if Rails.env.development?
   end
 
   # ---------------------------------------------------------------------------
+  # Coverage Gap Demo Imports (demonstrates import coverage analysis)
+  # ---------------------------------------------------------------------------
+  puts "\nCreating imports with coverage gaps for demo..."
+
+  # Helper to create an import with transactions directly (no AI extraction needed)
+  def create_demo_import(account:, filename:, start_date:, end_date:, category:)
+    import = Import.create!(
+      account: account,
+      original_filename: filename,
+      file_content_type: "text/csv",
+      file_data: "demo",
+      status: "done"
+    )
+
+    # Create ~15-20 transactions spread across the date range
+    current_date = start_date
+    transaction_count = 0
+    while current_date <= end_date
+      # Add 1-2 transactions every few days
+      if rand < 0.6
+        Transaction.create!(
+          account: account,
+          import: import,
+          category: category,
+          date: current_date,
+          description: [ "Grocery Store", "Gas Station", "Restaurant", "Online Purchase", "Utility Bill" ].sample,
+          amount: (20 + rand * 180).round(2),
+          transaction_type: "expense"
+        )
+        transaction_count += 1
+      end
+      current_date += (1 + rand(3)).days
+    end
+
+    puts "    Created #{filename}: #{transaction_count} transactions (#{start_date.strftime('%b %-d')} - #{end_date.strftime('%b %-d, %Y')})"
+    import
+  end
+
+  groceries_category = Category.find_by(name: "Groceries", category_type: "expense")
+
+  # Main Checking - Create gap from Nov 15 - Dec 14, 2025 (30 days)
+  # Statement 1: Oct 15 - Nov 14
+  create_demo_import(
+    account: accounts[:main_checking],
+    filename: "checking_oct_2025.csv",
+    start_date: Date.new(2025, 10, 15),
+    end_date: Date.new(2025, 11, 14),
+    category: groceries_category
+  )
+
+  # Statement 2: Dec 15 - Jan 14 (creates gap)
+  create_demo_import(
+    account: accounts[:main_checking],
+    filename: "checking_dec_2025.csv",
+    start_date: Date.new(2025, 12, 15),
+    end_date: Date.new(2026, 1, 14),
+    category: groceries_category
+  )
+
+  # Visa Credit Card - Create larger gap from Oct 1 - Nov 30, 2025 (61 days)
+  # Statement 1: Sep 1 - Sep 30
+  create_demo_import(
+    account: accounts[:visa],
+    filename: "visa_sep_2025.csv",
+    start_date: Date.new(2025, 9, 1),
+    end_date: Date.new(2025, 9, 30),
+    category: groceries_category
+  )
+
+  # Statement 2: Dec 1 - Dec 31 (creates large gap)
+  create_demo_import(
+    account: accounts[:visa],
+    filename: "visa_dec_2025.csv",
+    start_date: Date.new(2025, 12, 1),
+    end_date: Date.new(2025, 12, 31),
+    category: groceries_category
+  )
+
+  # Euro Account - Complete coverage (no gaps)
+  # Statement 1: Sep 15 - Oct 14
+  create_demo_import(
+    account: accounts[:euro_checking],
+    filename: "euro_sep_2025.csv",
+    start_date: Date.new(2025, 9, 15),
+    end_date: Date.new(2025, 10, 14),
+    category: groceries_category
+  )
+
+  # Statement 2: Oct 15 - Nov 14 (adjacent, no gap)
+  create_demo_import(
+    account: accounts[:euro_checking],
+    filename: "euro_oct_2025.csv",
+    start_date: Date.new(2025, 10, 15),
+    end_date: Date.new(2025, 11, 14),
+    category: groceries_category
+  )
+
+  # Statement 3: Nov 15 - Dec 14 (adjacent, no gap)
+  create_demo_import(
+    account: accounts[:euro_checking],
+    filename: "euro_nov_2025.csv",
+    start_date: Date.new(2025, 11, 15),
+    end_date: Date.new(2025, 12, 14),
+    category: groceries_category
+  )
+
+  puts "  Coverage gap demo imports created!"
+  puts "  - Main Checking: Gap Nov 15 - Dec 14, 2025 (30 days)"
+  puts "  - Visa Credit Card: Gap Oct 1 - Nov 30, 2025 (61 days)"
+  puts "  - Euro Account: Complete coverage (no gaps)"
+
+  # ---------------------------------------------------------------------------
   # Broker Connections and Positions (demonstrates broker integration)
   # ---------------------------------------------------------------------------
   puts "Creating broker connections..."

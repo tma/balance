@@ -10,49 +10,125 @@
 <div class="w-full">
   <div class="flex justify-between items-center h-10 mb-6">
     <h1 class="<%= ui_title_class %>">Imports</h1>
-    <%= link_to "New", new_import_path, class: ui_btn_primary_class %>
+    <div class="flex items-center gap-3">
+      <%= form_with url: imports_path, method: :get, local: true, class: "flex items-center" do %>
+        <%= select_tag :account_id,
+          options_for_select(
+            [["Account", ""]] + @filter_accounts.map { |a| [a.name, a.id] },
+            @filter_account&.id
+          ),
+          onchange: "this.form.submit()",
+          class: "#{ui_input_class} py-1.5 text-sm" %>
+      <% end %>
+      <%= link_to "New", new_import_path, class: ui_btn_primary_class %>
+    </div>
   </div>
 
-  <% if @needs_attention.any? %>
-    <!-- Needs Attention -->
-    <div class="<%= ui_card_table_class %> mb-6">
-      <div class="<%= ui_card_header_class %>">
-        <h2 class="<%= ui_subheading_class %>">Needs Attention</h2>
+  <% if @needs_attention.any? && !@filter_account %>
+    <!-- Ready for Review -->
+    <div class="<%= ui_card_class %> mb-4" data-controller="collapsible">
+      <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+           data-action="click->collapsible#toggle">
+        <div class="flex items-center gap-2">
+          <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
+          <h2 class="text-sm font-medium <%= ui_text_class %>">Ready for Review</h2>
+          <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+            <%= @needs_attention.size %> import<%= @needs_attention.size == 1 ? '' : 's' %>
+          </span>
+        </div>
       </div>
-      <table class="min-w-full">
-        <tbody class="<%= ui_card_body_class %>">
-          <% @needs_attention.each do |import| %>
-            <%= render partial: "imports/import_row", locals: { import: import, compact: true } %>
-          <% end %>
-        </tbody>
-      </table>
+
+      <div data-collapsible-target="content" class="hidden">
+        <div class="border-t border-slate-200 dark:border-slate-700">
+          <table class="min-w-full">
+            <tbody class="<%= ui_card_body_class %>">
+              <% @needs_attention.each do |import| %>
+                <%= render partial: "imports/import_row", locals: { import: import, compact: true } %>
+              <% end %>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   <% end %>
 
-  <!-- Year Navigation -->
-  <div class="<%= ui_card_class %> mb-4 px-4 py-2">
-    <div class="flex items-center justify-between">
-      <% prev_year = @current_year - 1 %>
-      <% if @available_years.include?(prev_year) %>
-        <%= link_to imports_path(year: prev_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
-          &larr; <%= prev_year %>
-        <% end %>
-      <% else %>
-        <span class="p-1 text-transparent text-sm">&larr; <%= prev_year %></span>
-      <% end %>
+  <%# Coverage Analysis Section - only show in default view %>
+  <% if @account_coverage.any? && !@filter_account %>
+    <div class="<%= ui_card_class %> mb-4" data-controller="collapsible">
+      <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+           data-action="click->collapsible#toggle">
+        <div class="flex items-center gap-2">
+          <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
+          <h2 class="text-sm font-medium <%= ui_text_class %>">Coverage</h2>
+          <% gaps_count = @account_coverage.count { |c| !c[:complete?] } %>
+          <% if gaps_count > 0 %>
+            <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+              <%= gaps_count %> account<%= gaps_count == 1 ? '' : 's' %> with gaps
+            </span>
+          <% end %>
+        </div>
+      </div>
 
-      <span class="font-semibold <%= ui_text_class %>"><%= @current_year %></span>
+      <div data-collapsible-target="content" class="hidden">
+        <div class="border-t border-slate-200 dark:border-slate-700">
+          <% @account_coverage.each do |coverage| %>
+            <div class="px-4 py-2.5 border-b last:border-b-0 border-slate-100 dark:border-slate-700/50">
+              <div class="flex items-center justify-between">
+                <%= link_to imports_path(account_id: coverage[:account].id), class: "#{ui_text_class} font-medium text-sm hover:text-sky-600 dark:hover:text-sky-400" do %>
+                  <%= coverage[:account].name %>
+                <% end %>
+                <span class="<%= ui_text_muted_class %> text-xs">
+                  <%= coverage[:first_date].strftime("%b %-d, %Y") %> &rarr;
+                  <%= coverage[:last_date].strftime("%b %-d, %Y") %>
+                  <% if coverage[:complete?] %>
+                    <span class="text-emerald-600 dark:text-emerald-400 ml-1">&#10003;</span>
+                  <% end %>
+                </span>
+              </div>
 
-      <% next_year = @current_year + 1 %>
-      <% if @available_years.include?(next_year) %>
-        <%= link_to imports_path(year: next_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
-          <%= next_year %> &rarr;
-        <% end %>
-      <% else %>
-        <span class="p-1 text-transparent text-sm"><%= next_year %> &rarr;</span>
-      <% end %>
+              <% if coverage[:gaps].any? %>
+                <div class="mt-1.5 space-y-0.5">
+                  <% coverage[:gaps].each do |gap| %>
+                    <div class="text-xs text-amber-600 dark:text-amber-400">
+                      &#9888; Gap: <%= gap[:start].strftime("%b %-d") %> - <%= gap[:end].strftime("%b %-d, %Y") %>
+                      <span class="<%= ui_text_subtle_class %>">(<%= gap[:days] %> days)</span>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
     </div>
-  </div>
+  <% end %>
+
+  <%# Year Navigation - only show in default view %>
+  <% unless @filter_account %>
+    <div class="<%= ui_card_class %> mb-4 px-4 py-2">
+      <div class="flex items-center justify-between">
+        <% prev_year = @current_year - 1 %>
+        <% if @available_years.include?(prev_year) %>
+          <%= link_to imports_path(year: prev_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
+            &larr; <%= prev_year %>
+          <% end %>
+        <% else %>
+          <span class="p-1 text-transparent text-sm">&larr; <%= prev_year %></span>
+        <% end %>
+
+        <span class="font-semibold <%= ui_text_class %>"><%= @current_year %></span>
+
+        <% next_year = @current_year + 1 %>
+        <% if @available_years.include?(next_year) %>
+          <%= link_to imports_path(year: next_year), class: "p-1 hover:bg-slate-50 dark:hover:bg-slate-700 transition #{ui_text_muted_class} text-sm" do %>
+            <%= next_year %> &rarr;
+          <% end %>
+        <% else %>
+          <span class="p-1 text-transparent text-sm"><%= next_year %> &rarr;</span>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
 
   <% if @sorted_months.any? || @has_ungrouped %>
     <div class="<%= ui_card_table_class %>">
@@ -73,7 +149,7 @@
             <% month_imports = @imports_by_month[month] %>
             <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %>">
               <td colspan="6" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
-                <%= month.strftime("%B") %>
+                <%= month.strftime(@filter_account ? "%B %Y" : "%B") %>
                 <span class="<%= ui_text_muted_class %> ml-2"><%= month_imports.size %> import<%= month_imports.size == 1 ? '' : 's' %></span>
               </td>
             </tr>
@@ -104,7 +180,11 @@
     </div>
   <% else %>
     <div class="<%= ui_card_class %> <%= ui_empty_class %>">
-      <p class="<%= ui_text_muted_class %> mb-4">No imports for <%= @current_year %>.</p>
+      <% if @filter_account %>
+        <p class="<%= ui_text_muted_class %> mb-4">No imports for <%= @filter_account.name %>.</p>
+      <% else %>
+        <p class="<%= ui_text_muted_class %> mb-4">No imports for <%= @current_year %>.</p>
+      <% end %>
       <%= link_to "Upload a statement", new_import_path, class: ui_link_class %>
     </div>
   <% end %>

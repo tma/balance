@@ -111,12 +111,18 @@ class Import < ApplicationRecord
     broadcast_status_complete
   end
 
-  # Returns the most recent month from extracted transactions
+  # Returns the most recent month from transactions
+  # For done imports, uses committed transactions; for completed, uses extracted data
   # @return [Date, nil] First day of the most recent transaction month, or nil
   def transaction_month
     return nil unless completed? || done?
 
-    dates = extracted_transactions.map { |t| parse_transaction_date(t[:date]) }.compact
+    dates = if done? && transactions.any?
+      transactions.pluck(:date).compact
+    else
+      extracted_transactions.map { |t| parse_transaction_date(t[:date]) }.compact
+    end
+
     return nil if dates.empty?
 
     most_recent = dates.max

@@ -2,13 +2,6 @@ class ImportsController < ApplicationController
   before_action :set_import, only: %i[show save confirm reprocess status destroy]
 
   def index
-    # Determine current year from params or default to current year
-    @current_year = if params[:year].present?
-      params[:year].to_i
-    else
-      Date.current.year
-    end
-
     # Imports needing attention (completed ready for review, or failed)
     @needs_attention = Import.needs_attention.includes(:account).recent
 
@@ -18,26 +11,50 @@ class ImportsController < ApplicationController
       import.failed? || import.done?
     end
 
-    # Filter by year based on transaction_month or created_at
-    imports = all_imports.select do |import|
-      if import.transaction_month
-        import.transaction_month.year == @current_year
-      else
-        import.created_at.year == @current_year
+    # Account filter mode: show all imports for a specific account, sorted by date
+    if params[:account_id].present?
+      @filter_account = Account.find(params[:account_id])
+      imports = all_imports.select { |i| i.account_id == @filter_account.id }
+        .sort_by { |i| i.transaction_month || i.created_at.to_date }.reverse
+
+      @imports_by_month = imports.group_by(&:transaction_month)
+      @sorted_months = @imports_by_month.keys.compact.sort.reverse
+      @has_ungrouped = @imports_by_month.key?(nil)
+      @available_years = []
+      @current_year = nil
+    else
+      # Year filter mode (default)
+      @current_year = params[:year].present? ? params[:year].to_i : Date.current.year
+
+      imports = all_imports.select do |import|
+        if import.transaction_month
+          import.transaction_month.year == @current_year
+        else
+          import.created_at.year == @current_year
+        end
       end
+
+      @imports_by_month = imports.group_by(&:transaction_month)
+      @sorted_months = @imports_by_month.keys.compact.sort.reverse
+      @has_ungrouped = @imports_by_month.key?(nil)
+
+      @available_years = all_imports.map do |import|
+        import.transaction_month&.year || import.created_at.year
+      end.uniq.sort.reverse
     end
 
-    # Group imports by transaction month
-    @imports_by_month = imports.group_by(&:transaction_month)
+    # Coverage analysis for accounts with done imports
+    accounts_with_imports = Account.active
+      .joins(:imports)
+      .where(imports: { status: "done" })
+      .distinct
+      .includes(imports: :transactions)
 
-    # Sort months descending (most recent first), with nil (ungrouped) at the end
-    @sorted_months = @imports_by_month.keys.compact.sort.reverse
-    @has_ungrouped = @imports_by_month.key?(nil)
+    @account_coverage = accounts_with_imports.filter_map(&:coverage_analysis)
+      .sort_by { |c| c[:complete?] ? 1 : 0 } # Show incomplete first
 
-    # Determine available years for navigation
-    @available_years = all_imports.map do |import|
-      import.transaction_month&.year || import.created_at.year
-    end.uniq.sort.reverse
+    # Accounts for filter dropdown
+    @filter_accounts = Account.active.order(:name)
   end
 
   def new
