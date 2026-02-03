@@ -64,13 +64,28 @@ A personal finance budgeting application to track income, expenses, budgets, and
 Split into two views:
 
 #### Cash Flow View (root path)
-- **12-Month Summary Cards:**
-  - Total income
-  - Total expenses  
-  - Net savings
-  - Saving rate percentage
-- **Monthly Breakdown Table** - Last 12 months with income/expenses/net/saving rate
+- **Year Navigation:**
+  - Navigate between calendar years using prev/next arrows
+  - URL parameter: `?year=2025`
+  - Default to current year
+  - Shows all 12 months of the selected year (Jan-Dec)
+- **Month Filter:**
+  - Clickable month tabs/buttons within the displayed year
+  - URL parameter: `?year=2025&month=3` (for March)
+  - "Year" option shows full year aggregate
+  - Selected month highlighted in the monthly table
+  - Donut chart reflects selected period (month or full year)
+- **Summary Card** - Compact flow showing: +Income − Expenses = Net (X% saved)
+  - Single cohesive card with visual progress bar showing expense/savings ratio
+- **Nested Donut Chart:**
+  - Inner ring: Income broken down by category (cool tones)
+  - Outer ring: Expenses by category + savings slice if positive net (warm tones)
+  - Center: Net amount (green if positive, red if negative)
+- **Monthly Breakdown Table** - All 12 months of selected year with income/expenses/net/saving rate
+  - Current month highlighted, selected month has accent border
+  - Links to filtered cash flow view when clicking a month
 - **Budget Status** - Two-column layout for monthly and yearly budgets with progress bars
+  - Budgets follow the navigation context (selected year/month)
   - Budgets link to filtered transaction list for category and time range
 
 #### Net Worth View
