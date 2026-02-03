@@ -112,6 +112,7 @@ module DashboardHelper
 
     data = top.map.with_index do |cat, idx|
       {
+        id: cat[:id],
         name: cat[:name],
         value: cat[:amount],
         color: colors[idx % colors.length]
@@ -120,7 +121,7 @@ module DashboardHelper
 
     if rest.any?
       other_value = rest.sum { |c| c[:amount] }
-      data << { name: "Other", value: other_value, color: other_color }
+      data << { id: nil, name: "Other", value: other_value, color: other_color }
     end
 
     data

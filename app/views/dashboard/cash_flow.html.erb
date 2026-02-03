@@ -7,7 +7,7 @@
 
 <div class="space-y-6">
   <!-- Navigation -->
-  <div class="flex flex-wrap items-center justify-between gap-4">
+  <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 py-3 -mx-4 px-4 flex flex-wrap items-center justify-between gap-4">
     <!-- Month Filter Tabs -->
     <div class="flex flex-wrap items-center gap-4">
       <div class="flex flex-wrap gap-1">
@@ -217,7 +217,18 @@
                   <div class="flex items-center justify-between py-0.5 gap-8">
                     <div class="flex items-center">
                       <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: <%= item[:color] %>"></span>
-                      <span class="<%= ui_text_muted_class %> truncate"><%= item[:name] %></span>
+                      <% if item[:id] %>
+                        <%
+                          tx_path = if @selected_month
+                            transactions_path(month: Date.new(@selected_year, @selected_month, 1).strftime("%Y-%m"), category_id: item[:id])
+                          else
+                            transactions_path(start_date: "#{@selected_year}-01-01", end_date: "#{@selected_year}-12-31", category_id: item[:id])
+                          end
+                        %>
+                        <%= link_to item[:name], tx_path, class: "#{ui_text_muted_class} truncate hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" %>
+                      <% else %>
+                        <span class="<%= ui_text_muted_class %> truncate"><%= item[:name] %></span>
+                      <% end %>
                     </div>
                     <span class="<%= ui_text_class %> tabular-nums"><%= item[:pct] %>%</span>
                   </div>
@@ -231,7 +242,18 @@
                   <div class="flex items-center justify-between py-0.5 gap-8">
                     <div class="flex items-center">
                       <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: <%= item[:color] %>"></span>
-                      <span class="<%= ui_text_muted_class %> truncate <%= item[:name] == 'Savings' ? 'font-medium' : '' %>"><%= item[:name] %></span>
+                      <% if item[:id] %>
+                        <%
+                          tx_path = if @selected_month
+                            transactions_path(month: Date.new(@selected_year, @selected_month, 1).strftime("%Y-%m"), category_id: item[:id])
+                          else
+                            transactions_path(start_date: "#{@selected_year}-01-01", end_date: "#{@selected_year}-12-31", category_id: item[:id])
+                          end
+                        %>
+                        <%= link_to item[:name], tx_path, class: "#{ui_text_muted_class} truncate hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" %>
+                      <% else %>
+                        <span class="<%= ui_text_muted_class %> truncate"><%= item[:name] %></span>
+                      <% end %>
                     </div>
                     <span class="<%= ui_text_class %> tabular-nums"><%= item[:pct] %>%</span>
                   </div>
@@ -280,7 +302,7 @@
             %>
             <tr class="<%= ui_table_row_class %><%= ' ' + ui_table_group_separator_class if index == 0 %>">
               <td class="<%= ui_table_td_class %>">
-                <%= link_to category.name, tx_path, class: "font-medium #{ui_text_class} hover:#{ui_link_class}" %>
+                <%= link_to category.name, tx_path, class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" %>
               </td>
               <td class="<%= ui_table_td_class %> text-right tabular-nums pr-2 <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_muted_class %>">
                 <%= format_currency(spent) %>
@@ -334,7 +356,7 @@
             <% is_current = month[:date].year == Date.current.year && month[:date].month == Date.current.month %>
             <tr class="<%= is_selected ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border-l-2 border-cyan-500' : (is_current ? 'bg-slate-50/50 dark:bg-slate-700/30' : ui_table_row_class) %><%= ' ' + ui_table_group_separator_class if index == 0 %>">
               <td class="<%= ui_table_td_class %> whitespace-nowrap">
-                <%= link_to cash_flow_path(year: @selected_year, month: month[:month]), class: "font-medium #{ui_text_class}" do %>
+                <%= link_to cash_flow_path(year: @selected_year, month: month[:month]), class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" do %>
                   <%= Date::MONTHNAMES[month[:month]] %>
                 <% end %>
                 <% if is_current %>
