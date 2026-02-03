@@ -16,16 +16,30 @@ class DashboardController < ApplicationController
   def cash_flow
     @default_currency = Currency.default_code
 
-    # Last 12 months data (including current month) - all in default currency
-    @monthly_data = calculate_monthly_data(12)
-    @twelve_month_totals = calculate_twelve_month_totals
+    # Parse year/month from params
+    @selected_year = (params[:year] || Date.current.year).to_i
+    @selected_month = params[:month]&.to_i  # nil = full year
+
+    # Year range for navigation (based on available transactions)
+    @min_year = Transaction.minimum(:date)&.year || Date.current.year
+    @max_year = Date.current.year
+
+    # Monthly data for selected calendar year (Jan-Dec)
+    @monthly_data = calculate_monthly_data_for_year(@selected_year)
+    @year_totals = calculate_year_totals(@selected_year)
+
+    # Period totals (respects month filter)
+    @period_totals = calculate_period_totals(@selected_year, @selected_month)
+
+    # Category breakdowns for donut chart
+    @income_by_category = calculate_category_breakdown(:income, @selected_year, @selected_month)
+    @expense_by_category = calculate_category_breakdown(:expense, @selected_year, @selected_month)
 
     # Budgets separated by period
     @monthly_budgets = Budget.monthly.includes(:category).order("categories.name")
     @yearly_budgets = Budget.yearly.includes(:category).order("categories.name")
-
-    # Recent transactions
-    @recent_transactions = Transaction.includes(:account, :category).recent(5)
+    @budget_year = @selected_year
+    @budget_month = @selected_month || Date.current.month
   end
 
   def net_worth
@@ -185,5 +199,62 @@ class DashboardController < ApplicationController
       net: net,
       saving_rate: saving_rate
     }
+  end
+
+  def calculate_monthly_data_for_year(year)
+    (1..12).map do |month|
+      month_start = Date.new(year, month, 1)
+      income = Transaction.income.in_month(year, month).sum(:amount_in_default_currency) || 0
+      expenses = Transaction.expense.in_month(year, month).sum(:amount_in_default_currency) || 0
+      net = income - expenses
+      saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
+
+      {
+        date: month_start,
+        year: year,
+        month: month,
+        month_name: month_start.strftime("%B %Y"),
+        month_abbr: Date::ABBR_MONTHNAMES[month],
+        income: income,
+        expenses: expenses,
+        net: net,
+        saving_rate: saving_rate,
+        is_future: month_start > Date.current
+      }
+    end
+  end
+
+  def calculate_year_totals(year)
+    income = Transaction.income.in_year(year).sum(:amount_in_default_currency) || 0
+    expenses = Transaction.expense.in_year(year).sum(:amount_in_default_currency) || 0
+    net = income - expenses
+    saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
+
+    { income: income, expenses: expenses, net: net, saving_rate: saving_rate }
+  end
+
+  def calculate_period_totals(year, month = nil)
+    if month
+      income = Transaction.income.in_month(year, month).sum(:amount_in_default_currency) || 0
+      expenses = Transaction.expense.in_month(year, month).sum(:amount_in_default_currency) || 0
+    else
+      income = Transaction.income.in_year(year).sum(:amount_in_default_currency) || 0
+      expenses = Transaction.expense.in_year(year).sum(:amount_in_default_currency) || 0
+    end
+    net = income - expenses
+    saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
+
+    { income: income, expenses: expenses, net: net, saving_rate: saving_rate }
+  end
+
+  def calculate_category_breakdown(type, year, month = nil)
+    scope = Transaction.where(transaction_type: type)
+    scope = month ? scope.in_month(year, month) : scope.in_year(year)
+
+    scope.joins(:category)
+         .group("categories.id", "categories.name")
+         .sum(:amount_in_default_currency)
+         .map { |(id, name), amount| { id: id, name: name, amount: amount } }
+         .sort_by { |c| -c[:amount] }
   end
 end

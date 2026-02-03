@@ -1,6 +1,13 @@
 module DashboardHelper
   DEFAULT_CHART_COLORS = %w[#60a5fa #4ade80 #f87171 #a78bfa #fb923c #22d3ee #e879f9 #facc15 #94a3b8 #2dd4bf].freeze
 
+  # Color palettes for nested donut chart
+  # Income: Blue-teal spectrum (cool, calming - money coming in)
+  INCOME_COLORS = %w[#3b82f6 #0ea5e9 #06b6d4 #14b8a6 #10b981 #22c55e].freeze
+  # Expenses: Warm diverse spectrum (distinct categories)
+  EXPENSE_COLORS = %w[#8b5cf6 #ec4899 #f43f5e #f97316 #eab308 #84cc16 #06b6d4 #64748b].freeze
+  SAVINGS_COLOR = "#10b981".freeze  # emerald-500
+
   # Build group data for donut charts from asset groups and group totals
   # Returns array of { name:, value:, pct:, color: } hashes
   def build_chart_group_data(asset_groups, group_totals)
@@ -22,6 +29,58 @@ module DashboardHelper
     end
 
     group_data
+  end
+
+  # Build nested donut chart data for cash flow visualization
+  # Returns { income: [...], expenses: [...] } with segment data for each ring
+  def build_nested_donut_data(income_by_category, expense_by_category, period_totals)
+    # Build income ring data
+    income_data = income_by_category.map.with_index do |cat, idx|
+      {
+        name: cat[:name],
+        value: cat[:amount],
+        color: INCOME_COLORS[idx % INCOME_COLORS.length]
+      }
+    end
+
+    # Build expense ring data
+    expense_data = expense_by_category.map.with_index do |cat, idx|
+      {
+        name: cat[:name],
+        value: cat[:amount],
+        color: EXPENSE_COLORS[idx % EXPENSE_COLORS.length]
+      }
+    end
+
+    # Add savings slice if positive net
+    savings = period_totals[:net]
+    if savings > 0
+      expense_data << { name: "Savings", value: savings, color: SAVINGS_COLOR }
+    end
+
+    # Calculate percentages (ensure they sum to exactly 100 to close the ring)
+    income_total = income_data.sum { |d| d[:value] }
+    expense_total = expense_data.sum { |d| d[:value] }
+
+    calculate_percentages(income_data, income_total)
+    calculate_percentages(expense_data, expense_total)
+
+    { income: income_data, expenses: expense_data }
+  end
+
+  # Calculate percentages ensuring they sum to exactly 100
+  def calculate_percentages(data, total)
+    return if data.empty? || total <= 0
+
+    # Calculate raw percentages
+    data.each { |d| d[:pct] = (d[:value].to_f / total * 100).round(1) }
+
+    # Adjust largest segment to ensure sum is exactly 100
+    sum = data.sum { |d| d[:pct] }
+    if sum != 100.0 && data.any?
+      largest = data.max_by { |d| d[:value] }
+      largest[:pct] += (100.0 - sum).round(1)
+    end
   end
 
   # Generate nice tick values for Y-axis scaling
