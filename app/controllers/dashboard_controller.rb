@@ -35,7 +35,10 @@ class DashboardController < ApplicationController
     @income_by_category = calculate_category_breakdown(:income, @selected_year, @selected_month)
     @expense_by_category = calculate_category_breakdown(:expense, @selected_year, @selected_month)
 
-    # Budgets separated by period
+    # Combined categories with spending and budgets
+    @category_spending = build_category_spending(@selected_year, @selected_month)
+
+    # Budgets separated by period (kept for reference)
     @monthly_budgets = Budget.monthly.includes(:category).order("categories.name")
     @yearly_budgets = Budget.yearly.includes(:category).order("categories.name")
     @budget_year = @selected_year
@@ -184,23 +187,6 @@ class DashboardController < ApplicationController
     data
   end
 
-  def calculate_twelve_month_totals
-    twelve_months_ago = Date.current.beginning_of_month - 11.months
-
-    # Use amount_in_default_currency for consistent totals
-    income = Transaction.income.where("date >= ?", twelve_months_ago).sum(:amount_in_default_currency) || 0
-    expenses = Transaction.expense.where("date >= ?", twelve_months_ago).sum(:amount_in_default_currency) || 0
-    net = income - expenses
-    saving_rate = income > 0 ? ((income - expenses) / income * 100).round(1) : 0
-
-    {
-      income: income,
-      expenses: expenses,
-      net: net,
-      saving_rate: saving_rate
-    }
-  end
-
   def calculate_monthly_data_for_year(year)
     (1..12).map do |month|
       month_start = Date.new(year, month, 1)
@@ -248,7 +234,7 @@ class DashboardController < ApplicationController
   end
 
   def calculate_category_breakdown(type, year, month = nil)
-    scope = Transaction.where(transaction_type: type)
+    scope = type == :income ? Transaction.income : Transaction.expense
     scope = month ? scope.in_month(year, month) : scope.in_year(year)
 
     scope.joins(:category)
@@ -256,5 +242,43 @@ class DashboardController < ApplicationController
          .sum(:amount_in_default_currency)
          .map { |(id, name), amount| { id: id, name: name, amount: amount } }
          .sort_by { |c| -c[:amount] }
+  end
+
+  # Build combined category spending with budget info
+  # Returns array of { category:, spent:, budget:, budget_amount: } for all categories
+  # that have either transactions or budgets in the period
+  def build_category_spending(year, month = nil)
+    # Get all expense transactions grouped by category for the period
+    scope = month ? Transaction.expense.in_month(year, month) : Transaction.expense.in_year(year)
+    spending_by_category = scope.joins(:category)
+                                .group("categories.id")
+                                .sum(:amount_in_default_currency)
+
+    # Get relevant budgets (monthly if month selected, yearly if full year)
+    budgets = month ? Budget.monthly.includes(:category) : Budget.yearly.includes(:category)
+    budgets_by_category = budgets.index_by(&:category_id)
+
+    # Collect all relevant category IDs
+    category_ids = (spending_by_category.keys + budgets_by_category.keys).uniq
+    categories = Category.where(id: category_ids).index_by(&:id)
+
+    # Build result array
+    result = category_ids.map do |cat_id|
+      category = categories[cat_id]
+      next unless category
+
+      spent = spending_by_category[cat_id] || 0
+      budget = budgets_by_category[cat_id]
+
+      {
+        category: category,
+        spent: spent,
+        budget: budget,
+        budget_amount: budget&.amount
+      }
+    end.compact
+
+    # Sort alphabetically by category name
+    result.sort_by { |r| r[:category].name }
   end
 end
