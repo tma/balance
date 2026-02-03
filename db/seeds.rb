@@ -417,10 +417,26 @@ if Rails.env.development?
     [ "Casual shoes", 70, 130 ]
   ]
 
+  # Monthly profiles for varied cash flow demonstration
+  # Profiles define extra income/expenses to create different scenarios
+  monthly_profiles = {
+    0 => { description: "Normal month", extra_income: 0, extra_expense: 0, extra_category: nil },
+    1 => { description: "High expenses (travel)", extra_income: 0, extra_expense: 3500, extra_category: "travel" },
+    2 => { description: "Bonus month", extra_income: 5000, extra_expense: 0, extra_category: nil },
+    3 => { description: "Normal month", extra_income: 0, extra_expense: 500, extra_category: nil },
+    4 => { description: "Medical emergency", extra_income: 0, extra_expense: 5000, extra_category: "healthcare" },
+    5 => { description: "Normal month", extra_income: 0, extra_expense: 0, extra_category: nil },
+    6 => { description: "Break-even month", extra_income: 0, extra_expense: 2000, extra_category: "maintenance" }
+    # Months 7-11 will use default (normal) profile
+  }
+
   # Generate 12 months of transactions
   12.times do |months_ago|
     month_start = (today - months_ago.months).beginning_of_month
     month_num = month_start.month
+
+    # Get profile for this month (default to normal for months 7-11)
+    profile = monthly_profiles[months_ago] || { description: "Normal month", extra_income: 0, extra_expense: 0, extra_category: nil }
 
     # ===== INCOME =====
 
@@ -489,8 +505,18 @@ if Rails.env.development?
       )
     end
 
-    # Annual bonus in December
-    if month_num == 12
+    # Profile-based bonus income (replaces fixed December bonus)
+    if profile[:extra_income] > 0
+      create_transaction(
+        account: accounts[:main_checking],
+        category: income_categories["bonus"],
+        amount: profile[:extra_income].to_f,
+        transaction_type: "income",
+        date: month_start + 15.days,
+        description: "Performance bonus"
+      )
+    # Still include December bonus if no profile bonus
+    elsif month_num == 12 && months_ago > 2
       create_transaction(
         account: accounts[:main_checking],
         category: income_categories["bonus"],
@@ -887,7 +913,20 @@ if Rails.env.development?
       )
     end
 
-    puts "  Month #{month_start.strftime('%B %Y')}: transactions created"
+    # Profile-based extra expenses (for varied cash flow scenarios)
+    if profile[:extra_expense] > 0
+      extra_category = expense_categories[profile[:extra_category]] || expense_categories["other expense"]
+      create_transaction(
+        account: accounts[:visa],
+        category: extra_category,
+        amount: profile[:extra_expense].to_f,
+        transaction_type: "expense",
+        date: month_start + 10.days,
+        description: profile[:description]
+      )
+    end
+
+    puts "  Month #{month_start.strftime('%B %Y')}: transactions created (#{profile[:description]})"
   end
 
   # ---------------------------------------------------------------------------
