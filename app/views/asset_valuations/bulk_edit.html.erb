@@ -49,6 +49,8 @@
         <% ideal_scroll_month = (Date.current - 2.months).end_of_month %>
         <%# Find best scroll target: ideal month if in range, otherwise current month, otherwise nil %>
         <% scroll_target_month = @months.include?(ideal_scroll_month) ? ideal_scroll_month : (@months.include?(current_month) ? current_month : nil) %>
+        <%# Find current month index for copy button positioning %>
+        <% current_month_idx = @months.index(current_month) %>
         <div style="height: calc(100vh - 180px); overflow: auto;" data-controller="scroll-right" data-scroll-right-target-value="<%= scroll_target_month ? '.scroll-target' : '' %>">
           <table class="w-full min-w-max">
             <thead>
@@ -56,10 +58,11 @@
                 <th style="position: sticky; left: 0; top: 0; z-index: 30;" class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-2 text-left text-xs font-semibold <%= ui_text_muted_class %> uppercase tracking-wider min-w-[200px]">
                   Asset
                 </th>
-                <% @months.each do |month| %>
+                <% @months.each_with_index do |month, month_idx| %>
                   <% is_adjacent = month.year != @year %>
                   <% is_current = month == current_month %>
                   <% is_scroll_target = month == scroll_target_month %>
+                  <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
                   <%
                     month_text_class = if is_current
                       "text-slate-900 dark:text-slate-100"
@@ -69,7 +72,7 @@
                       ui_text_muted_class
                     end
                   %>
-                  <th style="position: sticky; top: 0; z-index: 20;" class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 py-2 text-center text-xs font-semibold uppercase tracking-wider min-w-[100px] <%= month_text_class %> <%= 'scroll-target' if is_scroll_target %>" <%= 'data-current-month' if is_current %>>
+                  <th style="position: sticky; top: 0; z-index: 20;" class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-2 py-2 text-center text-xs font-semibold uppercase tracking-wider min-w-[100px] <%= month_text_class %> <%= 'scroll-target' if is_scroll_target %> <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>" <%= 'data-current-month' if is_current %>>
                     <%= month.strftime("%b %Y") %>
                   </th>
                 <% end %>
@@ -89,16 +92,17 @@
                       <span class="font-semibold <%= ui_table_group_text_class %> whitespace-nowrap"><%= group.name %></span>
                     </span>
                   </td>
-                  <% @months.each do |month| %>
+                  <% @months.each_with_index do |month, month_idx| %>
                     <% is_adjacent = month.year != @year %>
-                    <td class="bg-slate-200 dark:bg-slate-700 <%= is_adjacent ? 'opacity-50' : '' %>"></td>
+                    <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
+                    <td class="bg-slate-200 dark:bg-slate-700 <%= is_adjacent ? 'opacity-50' : '' %> <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>"></td>
                   <% end %>
                 </tr>
 
                 <%# Active assets %>
                 <% active_assets.each do |asset| %>
                   <% has_broker = @broker_asset_ids.include?(asset.id) %>
-                  <tr class="group hover:bg-slate-50 dark:hover:bg-slate-900 transition border-t border-slate-100 dark:border-slate-700" data-controller="copy-previous">
+                  <tr class="group border-t border-slate-100 dark:border-slate-700" data-controller="copy-previous">
                     <td class="sticky left-0 z-10 bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 px-4 py-2">
                       <%= link_to asset, class: "block" do %>
                         <p class="text-sm font-medium <%= ui_text_class %> whitespace-nowrap">
@@ -114,15 +118,18 @@
                     </td>
                     <% @months.each_with_index do |month, month_idx| %>
                       <% is_adjacent = month.year != @year %>
-                      <td class="px-2 py-2 <%= is_adjacent ? 'bg-slate-100 dark:bg-slate-900' : '' %>">
+                      <% is_current = month == current_month %>
+                      <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
+                      <%# Copy button shows in current month, copying from the previous month %>
+                      <% is_copy_destination = is_current %>
+                      <% is_copy_source = current_month_idx && month_idx == current_month_idx - 1 %>
+                      <td class="px-2 py-2 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>">
                         <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
                         <% existing_formula = @formulas_by_asset_and_month[asset.id][month] %>
                         <% is_liability = asset.asset_type.is_liability %>
-                        <% is_last = month_idx == @months.length - 1 %>
-                        <% is_second_last = month_idx == @months.length - 2 %>
                         <% tab_index = (month_idx * total_assets) + asset_row_index[asset.id] + 1 %>
                         <div class="relative">
-                          <% if is_last %>
+                          <% if is_copy_destination %>
                             <button type="button" 
                                     data-action="click->copy-previous#copy"
                                     class="absolute inset-y-0 flex items-center <%= ui_text_subtle_class %> text-xs" 
@@ -141,10 +148,10 @@
                                  data-currency-input-original-value="<%= existing_value&.to_f %>"
                                  data-currency-input-formula-value="<%= existing_formula %>"
                                  data-action="focus->currency-input#unformat blur->currency-input#format"
-                                 <% if is_second_last %>data-copy-previous-target="source"<% end %>
-                                 <% if is_last %>data-copy-previous-target="destination"<% end %>
-                                 class="<%= ui_input_sm_class %> w-32 text-right <%= existing_value ? '' : 'bg-slate-50 dark:bg-slate-900' %> <%= is_adjacent ? 'text-slate-400 dark:text-slate-500' : '' %>"
-                                 style="<%= is_last ? 'padding-left: 1.75rem;' : '' %>"
+                                 <% if is_copy_source %>data-copy-previous-target="source"<% end %>
+                                 <% if is_copy_destination %>data-copy-previous-target="destination"<% end %>
+                                 class="<%= ui_input_sm_class %> w-32 text-right bg-slate-50 dark:bg-slate-900 <%= is_adjacent ? 'text-slate-300 dark:text-slate-600 border-slate-200 dark:border-slate-700' : '' %> <%= is_current ? 'ring-1 ring-slate-400 dark:ring-slate-500' : '' %>"
+                                 style="<%= is_copy_destination ? 'padding-left: 1.75rem;' : '' %>"
                                  placeholder="—">
                         </div>
                       </td>
@@ -161,13 +168,14 @@
                       <span data-collapsible-target="icon">▶</span>
                       <span class="ml-1">Archived</span>
                     </td>
-                    <% @months.each do |month| %>
+                    <% @months.each_with_index do |month, month_idx| %>
                       <% is_adjacent = month.year != @year %>
-                      <td class="bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 py-1 <%= is_adjacent ? 'opacity-50' : '' %>"></td>
+                      <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
+                      <td class="bg-white dark:bg-slate-800 group-hover:bg-slate-50 dark:group-hover:bg-slate-900 py-1 <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>"></td>
                     <% end %>
                   </tr>
                   <% archived_assets.each do |asset| %>
-                    <tr class="group transition border-t border-slate-100 dark:border-slate-700 hidden" data-collapsible-target="content">
+                    <tr class="group border-t border-slate-100 dark:border-slate-700 hidden" data-collapsible-target="content">
                       <td class="sticky left-0 bg-slate-100 dark:bg-slate-900 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 px-4 py-2 z-10">
                         <%= link_to asset, class: "block" do %>
                           <p class="text-sm font-medium <%= ui_text_subtle_class %> whitespace-nowrap">
@@ -179,9 +187,11 @@
                           </p>
                         <% end %>
                       </td>
-                      <% @months.each do |month| %>
+                      <% @months.each_with_index do |month, month_idx| %>
                         <% is_adjacent = month.year != @year %>
-                        <td class="px-2 py-2 bg-slate-100 dark:bg-slate-900 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 <%= is_adjacent ? 'opacity-50' : '' %>">
+                        <% is_current = month == current_month %>
+                        <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
+                        <td class="px-2 py-2 bg-slate-100 dark:bg-slate-900 group-hover:bg-slate-200 dark:group-hover:bg-slate-800 <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>">
                           <% existing_value = @valuations_by_asset_and_month[asset.id][month] %>
                           <% existing_formula = @formulas_by_asset_and_month[asset.id][month] %>
                           <% is_liability = asset.asset_type.is_liability %>
@@ -197,7 +207,7 @@
                                    data-currency-input-original-value="<%= existing_value&.to_f %>"
                                    data-currency-input-formula-value="<%= existing_formula %>"
                                    data-action="focus->currency-input#unformat blur->currency-input#format"
-                                   class="<%= ui_input_sm_class %> w-32 text-right <%= ui_text_subtle_class %> <%= existing_value ? 'bg-white dark:bg-slate-800' : 'bg-slate-50 dark:bg-slate-900' %>"
+                                   class="<%= ui_input_sm_class %> w-32 text-right <%= ui_text_subtle_class %> bg-slate-50 dark:bg-slate-900 <%= is_adjacent ? 'text-slate-300 dark:text-slate-600 border-slate-200 dark:border-slate-700' : '' %> <%= is_current ? 'ring-1 ring-slate-400 dark:ring-slate-500' : '' %>"
                                    placeholder="—">
                           </div>
                         </td>
@@ -212,9 +222,10 @@
                 <tr class="<%= ui_table_subtotal_class %>">
                   <td class="sticky left-0 bg-slate-50 dark:bg-slate-800 px-4 py-2 z-10 h-10">
                   </td>
-                  <% @months.each do |month| %>
+                  <% @months.each_with_index do |month, month_idx| %>
                     <% is_adjacent = month.year != @year %>
-                    <td class="bg-slate-50 dark:bg-slate-800 px-2 py-2 text-right h-10 <%= is_adjacent ? 'opacity-50' : '' %>">
+                    <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
+                    <td class="bg-slate-50 dark:bg-slate-800 px-2 py-2 text-right h-10 <%= is_adjacent ? 'opacity-50' : '' %> <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>">
                       <% net_value = @group_totals_by_month[group.id][month] %>
                       <% if net_value && net_value != 0 %>
                         <span class="font-semibold text-sm whitespace-nowrap <%= ui_text_muted_class %>"><%= format_currency(net_value, precision: 0) %></span>
@@ -229,9 +240,10 @@
                 <td class="sticky left-0 bg-slate-200 dark:bg-slate-700 px-4 py-3 z-10">
                   <span class="font-bold <%= ui_text_class %> whitespace-nowrap">Total Net Worth</span>
                 </td>
-                <% @months.each do |month| %>
+                <% @months.each_with_index do |month, month_idx| %>
                   <% is_adjacent = month.year != @year %>
-                  <td class="bg-slate-200 dark:bg-slate-700 px-2 py-3 text-right <%= is_adjacent ? 'opacity-50' : '' %>">
+                  <% is_year_start = month_idx > 0 && month.year != @months[month_idx - 1].year %>
+                  <td class="bg-slate-200 dark:bg-slate-700 px-2 py-3 text-right <%= is_adjacent ? 'opacity-50' : '' %> <%= is_year_start ? 'border-l-2 border-l-slate-50 dark:border-l-slate-900' : '' %>">
                     <% total = @totals_by_month[month] %>
                     <span class="font-bold text-sm whitespace-nowrap <%= ui_text_class %>"><%= format_currency(total, precision: 0) %></span>
                   </td>
