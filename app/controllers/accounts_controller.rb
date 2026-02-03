@@ -1,5 +1,5 @@
 class AccountsController < ApplicationController
-  before_action :set_account, only: %i[ edit update destroy ]
+  before_action :set_account, only: %i[ edit update destroy archive unarchive ]
 
   def index
     @accounts = Account.includes(:account_type).order(:name)
@@ -33,6 +33,20 @@ class AccountsController < ApplicationController
   def destroy
     @account.destroy!
     redirect_to accounts_path, notice: "Account was successfully destroyed.", status: :see_other
+  end
+
+  def archive
+    @account.archive!
+    redirect_to accounts_path, notice: "#{@account.name} has been archived.", status: :see_other
+  rescue ActiveRecord::RecordInvalid
+    redirect_to accounts_path, alert: "Cannot archive #{@account.name}: #{@account.errors.full_messages.join(', ')}", status: :see_other
+  end
+
+  def unarchive
+    @account.unarchive!
+    redirect_to accounts_path, notice: "#{@account.name} has been restored.", status: :see_other
+  rescue ActiveRecord::RecordInvalid
+    redirect_to accounts_path, alert: "Cannot restore #{@account.name}: #{@account.errors.full_messages.join(', ')}", status: :see_other
   end
 
   private

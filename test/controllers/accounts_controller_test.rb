@@ -42,4 +42,34 @@ class AccountsControllerTest < ActionDispatch::IntegrationTest
 
     assert_redirected_to accounts_url
   end
+
+  test "should archive account" do
+    assert_not @account.archived?
+    patch archive_account_url(@account)
+    assert_redirected_to accounts_url
+    assert @account.reload.archived?
+  end
+
+  test "should unarchive account" do
+    @account.update!(archived: true)
+    patch unarchive_account_url(@account)
+    assert_redirected_to accounts_url
+    assert_not @account.reload.archived?
+  end
+
+  test "should not archive account with pending imports" do
+    Import.create!(
+      account: @account,
+      status: "pending",
+      original_filename: "test.csv",
+      file_content_type: "text/csv",
+      file_data: "test data"
+    )
+
+    assert @account.has_pending_imports?
+    patch archive_account_url(@account)
+    assert_redirected_to accounts_url
+    assert_not @account.reload.archived?
+    assert_match(/Cannot archive/, flash[:alert])
+  end
 end

@@ -20,11 +20,11 @@
             <th class="<%= ui_table_th_class %>">Account</th>
             <th class="<%= ui_table_th_class %>">Currency</th>
             <th class="<%= ui_table_th_class %> text-right">Balance</th>
-            <th class="<%= ui_table_th_class %> text-right w-24"></th>
+            <th class="<%= ui_table_th_class %> text-right w-32"></th>
           </tr>
         </thead>
         <tbody>
-          <% @accounts.includes(:account_type).order("account_types.name", :name).group_by(&:account_type).each do |account_type, type_accounts| %>
+          <% @accounts.active.includes(:account_type).order("account_types.name", :name).group_by(&:account_type).each do |account_type, type_accounts| %>
             <tr class="<%= ui_table_group_header_class %> <%= ui_table_group_separator_class %>">
               <td colspan="4" class="px-4 py-1.5 text-xs font-medium <%= ui_table_group_text_class %>">
                 <%= account_type.name %>
@@ -45,13 +45,53 @@
                 <td class="<%= ui_table_td_class %> whitespace-nowrap text-right text-sm">
                   <div class="flex items-center justify-end gap-2">
                     <%= link_to "Edit", edit_account_path(account), class: ui_link_class %>
-                    <%= button_to "Delete", account, method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure? This will delete all associated transactions." } } %>
+                    <% if account.has_pending_imports? %>
+                      <span class="<%= ui_text_subtle_class %> cursor-not-allowed" title="Cannot archive: has pending imports">Archive</span>
+                    <% else %>
+                      <%= button_to "Archive", archive_account_path(account), method: :patch, class: "text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300", form: { data: { turbo_confirm: "Archive #{account.name}? It will be hidden from most lists but transactions will be preserved." }, class: "inline" } %>
+                    <% end %>
+                    <%= button_to "Delete", account, method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure? This will delete all associated transactions." }, class: "inline" } %>
                   </div>
                 </td>
               </tr>
             <% end %>
           <% end %>
         </tbody>
+
+        <%# Archived accounts - collapsible section %>
+        <% archived_accounts = @accounts.archived.includes(:account_type).order("account_types.name", :name) %>
+        <% if archived_accounts.any? %>
+          <tbody data-controller="collapsible" class="<%= ui_card_body_class %>">
+            <tr class="border-b border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700" data-action="click->collapsible#toggle">
+              <td colspan="4" class="px-4 py-1.5 text-xs <%= ui_text_subtle_class %>">
+                <span data-collapsible-target="icon">▶</span>
+                <span class="ml-1">Archived (<%= archived_accounts.size %>)</span>
+              </td>
+            </tr>
+            <% archived_accounts.each do |account| %>
+              <tr data-collapsible-target="content" class="hidden <%= ui_table_row_class %> bg-slate-50 dark:bg-slate-800/50">
+                <td class="<%= ui_table_td_class %> text-sm <%= ui_text_subtle_class %> font-medium">
+                  <%= link_to account.name, transactions_path(account_id: account.id) %>
+                  <span class="ml-1 <%= ui_badge_class %>">Archived</span>
+                  <span class="ml-1 text-xs <%= ui_text_subtle_class %>">(<%= account.account_type.name %>)</span>
+                </td>
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm <%= ui_text_subtle_class %>">
+                  <%= account.currency %>
+                </td>
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-sm text-right <%= ui_text_subtle_class %>">
+                  <%= format_amount(account.balance) %>
+                </td>
+                <td class="<%= ui_table_td_class %> whitespace-nowrap text-right text-sm">
+                  <div class="flex items-center justify-end gap-2">
+                    <%= button_to "Unarchive", unarchive_account_path(account), method: :patch, class: ui_link_class, form: { class: "inline" } %>
+                    <%= link_to "Edit", edit_account_path(account), class: ui_link_muted_class %>
+                    <%= button_to "Delete", account, method: :delete, class: "text-rose-400 dark:text-rose-500 hover:text-rose-600 dark:hover:text-rose-400", form: { data: { turbo_confirm: "Are you sure? This will permanently delete this account and all its transactions." }, class: "inline" } %>
+                  </div>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        <% end %>
       </table>
     </div>
   <% else %>

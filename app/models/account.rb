@@ -10,6 +10,7 @@ class Account < ApplicationRecord
 
   belongs_to :account_type
   has_many :transactions, dependent: :destroy
+  has_many :imports, dependent: :destroy
 
   validates :name, presence: true
   validates :currency, presence: true
@@ -20,6 +21,8 @@ class Account < ApplicationRecord
 
   scope :by_currency, ->(code) { where(currency: code) }
   scope :needs_exchange_rate, -> { where(exchange_rate: nil).where.not(currency: Currency.default&.code) }
+  scope :active, -> { where(archived: false) }
+  scope :archived, -> { where(archived: true) }
 
   attribute :balance, :decimal, default: 0
 
@@ -53,6 +56,23 @@ class Account < ApplicationRecord
   # Stores a CSV column mapping for future imports
   def cache_csv_mapping!(mapping)
     update!(csv_column_mapping: mapping.to_json)
+  end
+
+  # Check if account has pending or processing imports
+  def has_pending_imports?
+    imports.where(status: %w[pending processing]).exists?
+  end
+
+  def archive!
+    if has_pending_imports?
+      errors.add(:base, "Cannot archive account with pending imports")
+      raise ActiveRecord::RecordInvalid, self
+    end
+    update!(archived: true)
+  end
+
+  def unarchive!
+    update!(archived: false)
   end
 
   private

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_31_115914) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_03_160023) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -20,6 +20,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_115914) do
 
   create_table "accounts", force: :cascade do |t|
     t.integer "account_type_id", null: false
+    t.boolean "archived", default: false, null: false
     t.decimal "balance"
     t.decimal "balance_in_default_currency"
     t.datetime "created_at", null: false
@@ -30,6 +31,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_31_115914) do
     t.string "name"
     t.datetime "updated_at", null: false
     t.index ["account_type_id"], name: "index_accounts_on_account_type_id"
+    t.index ["archived"], name: "index_accounts_on_archived"
   end
 
   create_table "asset_groups", force: :cascade do |t|

@@ -81,7 +81,7 @@
                     <% if asset.has_broker? %>
                       <span class="<%= ui_text_subtle_class %> cursor-not-allowed" title="Cannot archive: linked to broker positions">Archive</span>
                     <% else %>
-                      <%= button_to "Archive", archive_asset_path(asset), method: :patch, class: "text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300", form: { class: "inline" } %>
+                      <%= button_to "Archive", archive_asset_path(asset), method: :patch, class: "text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300", form: { data: { turbo_confirm: "Archive #{asset.name}? It will be hidden from most lists but valuations will be preserved." }, class: "inline" } %>
                     <% end %>
                     <%= button_to "Delete", asset, method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Are you sure? This will delete all valuation history." }, class: "inline" } %>
                   </div>

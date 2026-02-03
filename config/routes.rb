@@ -16,7 +16,12 @@ Rails.application.routes.draw do
   get "net-worth", to: "dashboard#net_worth", as: :net_worth
 
   # Main resources
-  resources :accounts, except: :show
+  resources :accounts, except: :show do
+    member do
+      patch :archive
+      patch :unarchive
+    end
+  end
   resources :assets, path: "financial-assets" do
     resources :valuations, only: [ :edit, :update, :destroy ], controller: "asset_valuations"
     collection do
