@@ -72,6 +72,7 @@ The app will be available at http://localhost:3000
 - Deviate from the spec without updating it
 - Use raw SQL when ActiveRecord suffices
 - Commit code that breaks existing tests
+- Push to remote without first running `rubocop` and `rails test` and ensuring they pass
 
 ## Tech Stack Rules
 
