@@ -5,14 +5,65 @@
   <% end %>
 <% end %>
 
-<div class="space-y-6">
+<%# Calculate previous/next month navigation for keyboard shortcuts %>
+<% if @selected_month %>
+  <% nav_prev_month = @selected_month == 1 ? 12 : @selected_month - 1 %>
+  <% nav_prev_year = @selected_month == 1 ? @selected_year - 1 : @selected_year %>
+  <% nav_next_month = @selected_month == 12 ? 1 : @selected_month + 1 %>
+  <% nav_next_year = @selected_month == 12 ? @selected_year + 1 : @selected_year %>
+<% else %>
+  <% nav_prev_month = 12 %>
+  <% nav_prev_year = @selected_year - 1 %>
+  <% nav_next_month = 1 %>
+  <% nav_next_year = @selected_year %>
+<% end %>
+<% nav_can_go_prev = nav_prev_year >= @min_year %>
+<% nav_next_month_date = Date.new(nav_next_year, nav_next_month, 1) %>
+<% nav_can_go_next = nav_next_year <= @max_year && nav_next_month_date <= Date.current %>
+
+<div class="space-y-6"
+     data-controller="month-navigation"
+     <%= "data-month-navigation-prev-url-value=#{cash_flow_path(year: nav_prev_year, month: nav_prev_month)}" if nav_can_go_prev %>
+     <%= "data-month-navigation-next-url-value=#{cash_flow_path(year: nav_next_year, month: nav_next_month)}" if nav_can_go_next %>>
   <!-- Navigation -->
   <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 py-3 -mx-4 px-4 flex flex-wrap items-center justify-between gap-4">
-    <!-- Month Filter Tabs -->
-    <div class="flex flex-wrap items-center gap-4">
+    <!-- Month Filter Tabs with Navigation Arrows -->
+    <div class="flex flex-wrap items-center gap-2">
+      <%# Calculate previous/next month navigation %>
+      <% if @selected_month %>
+        <% prev_month = @selected_month == 1 ? 12 : @selected_month - 1 %>
+        <% prev_year = @selected_month == 1 ? @selected_year - 1 : @selected_year %>
+        <% next_month = @selected_month == 12 ? 1 : @selected_month + 1 %>
+        <% next_year = @selected_month == 12 ? @selected_year + 1 : @selected_year %>
+      <% else %>
+        <%# Year view: left goes to Dec of prev year, right goes to Jan of current year %>
+        <% prev_month = 12 %>
+        <% prev_year = @selected_year - 1 %>
+        <% next_month = 1 %>
+        <% next_year = @selected_year %>
+      <% end %>
+      <% can_go_prev = prev_year >= @min_year %>
+      <% next_month_date = Date.new(next_year, next_month, 1) %>
+      <% can_go_next = next_year <= @max_year && next_month_date <= Date.current %>
+
+      <%# Year button %>
+      <%= link_to "Year", cash_flow_path(year: @selected_year),
+          class: @selected_month.nil? ? "px-3 py-1.5 text-sm font-medium bg-cyan-500 text-white mr-2" : "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 mr-2",
+          data: { action: "click->month-navigation#navigateLink" } %>
+
+      <%# Left arrow - previous month %>
+      <% if can_go_prev %>
+        <%= link_to cash_flow_path(year: prev_year, month: prev_month),
+            class: "pl-3 pr-1 py-1.5 text-sm #{ui_text_muted_class} hover:text-slate-900 dark:hover:text-white",
+            title: "#{Date::MONTHNAMES[prev_month]} #{prev_year}",
+            data: { action: "click->month-navigation#navigateLink" } do %>
+          ←
+        <% end %>
+      <% else %>
+        <span class="pl-3 pr-1 py-1.5 text-sm text-slate-300 dark:text-slate-600">←</span>
+      <% end %>
+
       <div class="flex flex-wrap gap-1">
-        <%= link_to "Year", cash_flow_path(year: @selected_year),
-            class: @selected_month.nil? ? "px-3 py-1.5 text-sm font-medium bg-cyan-500 text-white" : "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600" %>
         <% (1..12).each do |m| %>
           <% is_future = Date.new(@selected_year, m, 1) > Date.current %>
           <%= link_to Date::ABBR_MONTHNAMES[m], cash_flow_path(year: @selected_year, month: m),
@@ -20,15 +71,28 @@
                 "px-3 py-1.5 text-sm",
                 @selected_month == m ? "font-medium bg-cyan-500 text-white" : "#{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600",
                 is_future ? "opacity-50" : ""
-              ].join(" ") %>
+              ].join(" "),
+              data: { action: "click->month-navigation#navigateLink" } %>
         <% end %>
       </div>
+
+      <%# Right arrow - next month %>
+      <% if can_go_next %>
+        <%= link_to cash_flow_path(year: next_year, month: next_month),
+            class: "pl-1 pr-3 py-1.5 text-sm #{ui_text_muted_class} hover:text-slate-900 dark:hover:text-white",
+            title: "#{Date::MONTHNAMES[next_month]} #{next_year}",
+            data: { action: "click->month-navigation#navigateLink" } do %>
+          →
+        <% end %>
+      <% else %>
+        <span class="pl-1 pr-3 py-1.5 text-sm text-slate-300 dark:text-slate-600">→</span>
+      <% end %>
     </div>
 
     <!-- Year Navigation (matching net_worth style) -->
     <div class="flex items-center space-x-4">
       <% if @selected_year > @min_year %>
-        <%= link_to cash_flow_path(year: @selected_year - 1, month: @selected_month), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
+        <%= link_to cash_flow_path(year: @selected_year - 1, month: @selected_month), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300", data: { action: "click->month-navigation#navigateLink" } do %>
           ← <%= @selected_year - 1 %>
         <% end %>
       <% else %>
@@ -38,7 +102,7 @@
       <span class="font-semibold <%= ui_text_class %>"><%= @selected_year %></span>
 
       <% if @selected_year < @max_year %>
-        <%= link_to cash_flow_path(year: @selected_year + 1, month: @selected_month), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
+        <%= link_to cash_flow_path(year: @selected_year + 1, month: @selected_month), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300", data: { action: "click->month-navigation#navigateLink" } do %>
           <%= @selected_year + 1 %> →
         <% end %>
       <% else %>
