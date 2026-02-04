@@ -13,6 +13,7 @@ export default class extends Controller {
   connect() {
     this.currentIndex = -1
     this.bindKeyboardEvents()
+    this.initializeRowDimming()
     this.highlightEmptyCategories()
   }
 
@@ -144,6 +145,11 @@ export default class extends Controller {
     if (checkbox) {
       checkbox.checked = !checkbox.checked
       this.updateSelectedCount()
+      this.updateRowDimming(row)
+      const categorySelect = row.querySelector('.transaction-category')
+      if (categorySelect) {
+        this.updateCategoryHighlight(categorySelect)
+      }
     }
   }
 
@@ -200,6 +206,11 @@ export default class extends Controller {
         if (checkbox) {
           checkbox.checked = checked
         }
+        this.updateRowDimming(row)
+        const categorySelect = row.querySelector('.transaction-category')
+        if (categorySelect) {
+          this.updateCategoryHighlight(categorySelect)
+        }
       }
     })
 
@@ -233,6 +244,11 @@ export default class extends Controller {
         if (checkbox) {
           checkbox.checked = checked
         }
+        this.updateRowDimming(row)
+        const categorySelect = row.querySelector('.transaction-category')
+        if (categorySelect) {
+          this.updateCategoryHighlight(categorySelect)
+        }
       }
     })
 
@@ -240,12 +256,22 @@ export default class extends Controller {
   }
 
   // Handle individual checkbox change
-  checkboxChanged() {
+  checkboxChanged(event) {
     this.updateSelectedCount()
     
     // Update select all checkbox state
     if (this.hasSelectAllTarget) {
       this.selectAllTarget.checked = this.allSelectableSelected()
+    }
+
+    // Update row dimming and category highlighting based on selection
+    const row = event.target.closest('tr')
+    if (row) {
+      this.updateRowDimming(row)
+      const categorySelect = row.querySelector('.transaction-category')
+      if (categorySelect) {
+        this.updateCategoryHighlight(categorySelect)
+      }
     }
   }
 
@@ -260,6 +286,28 @@ export default class extends Controller {
     }
   }
 
+  // Update row dimming based on checkbox selection
+  updateRowDimming(row) {
+    // Skip rows that are already ignored or duplicate (they have permanent styling)
+    if (row.classList.contains('ignored-row') || row.classList.contains('duplicate-row')) {
+      return
+    }
+
+    const checkbox = row.querySelector('.transaction-checkbox')
+    if (checkbox && !checkbox.checked) {
+      row.classList.add('opacity-60')
+    } else {
+      row.classList.remove('opacity-60')
+    }
+  }
+
+  // Initialize row dimming for all rows
+  initializeRowDimming() {
+    this.rowTargets.forEach(row => {
+      this.updateRowDimming(row)
+    })
+  }
+
   // Category highlighting for empty selections
   highlightEmptyCategories() {
     this.element.querySelectorAll('.transaction-category').forEach(select => {
@@ -268,9 +316,17 @@ export default class extends Controller {
   }
 
   updateCategoryHighlight(select) {
-    // Don't highlight ignored or duplicate rows
+    // Don't highlight ignored, duplicate, or unselected rows
     const row = select.closest('tr')
     if (row?.classList.contains('ignored-row') || row?.classList.contains('duplicate-row')) {
+      select.classList.remove('border-amber-400', 'bg-amber-50', 'dark:bg-amber-900/30')
+      select.classList.add('border-slate-300', 'dark:border-slate-600')
+      return
+    }
+
+    // Check if the row is unselected (checkbox unchecked)
+    const checkbox = row?.querySelector('.transaction-checkbox')
+    if (checkbox && !checkbox.checked) {
       select.classList.remove('border-amber-400', 'bg-amber-50', 'dark:bg-amber-900/30')
       select.classList.add('border-slate-300', 'dark:border-slate-600')
       return
