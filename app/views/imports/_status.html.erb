@@ -1,8 +1,8 @@
 <div id="import_status">
 <% if import.pending? || import.processing? %>
-  <h2 class="text-xl font-semibold <%= ui_text_class %> mb-2">
-    <%= import.pending? ? "Waiting in Queue" : "Analyzing Statement" %>
-  </h2>
+  <% if import.pending? %>
+    <h2 class="text-xl font-semibold <%= ui_text_class %> mb-2">Waiting in Queue</h2>
+  <% end %>
   
   <p class="<%= ui_text_muted_class %> mb-6">
     <% if import.processing? %>
@@ -14,41 +14,43 @@
       <% elsif (progress = import.progress_info) %>
         Processing...
       <% else %>
-        AI is extracting and categorizing transactions.
+        AI is processing and categorizing transactions.
       <% end %>
     <% else %>
       Import is queued and will begin processing shortly.
     <% end %>
   </p>
 
-  <% if import.processing? && (progress = import.progress_info) %>
-    <!-- Progress bar -->
-    <div class="w-full max-w-xs mx-auto mb-6">
-      <div class="flex justify-between text-xs <%= ui_text_muted_class %> mb-1">
-        <span>Progress</span>
-        <span><%= progress[:percent] %>%</span>
+  <div class="inline-block">
+    <% if import.processing? && (progress = import.progress_info) %>
+      <!-- Progress bar -->
+      <div class="mb-6">
+        <div class="flex justify-between text-xs <%= ui_text_muted_class %> mb-1">
+          <span>Progress</span>
+          <span><%= progress[:percent] %>%</span>
+        </div>
+        <div class="<%= ui_progress_track_class %>">
+          <div class="<%= ui_progress_bar_class(:success) %>" style="width: <%= progress[:percent] %>%"></div>
+        </div>
       </div>
-      <div class="<%= ui_progress_track_class %>">
-        <div class="<%= ui_progress_bar_class(:success) %>" style="width: <%= progress[:percent] %>%"></div>
-      </div>
-    </div>
-  <% end %>
+    <% end %>
 
-  <!-- Progress indicators -->
-  <div class="flex items-center justify-center gap-6 text-sm">
-    <div class="flex items-center gap-2 <%= import.pending? || import.processing? ? 'text-cyan-600 dark:text-cyan-400' : ui_text_subtle_class %>">
-      <div class="w-2 h-2 <%= import.pending? ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500' %>"></div>
-      <span>Upload</span>
-    </div>
-    <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
-    <div class="flex items-center gap-2 <%= import.processing? ? 'text-cyan-600 dark:text-cyan-400' : ui_text_subtle_class %>">
-      <div class="w-2 h-2 <%= import.processing? ? 'bg-cyan-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600' %>"></div>
-      <span>Extract</span>
-    </div>
-    <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
-    <div class="flex items-center gap-2 <%= ui_text_subtle_class %>">
-      <div class="w-2 h-2 bg-slate-300 dark:bg-slate-600"></div>
-      <span>Review</span>
+    <!-- Progress indicators -->
+    <div class="flex items-center justify-center gap-6 text-sm">
+      <div class="flex items-center gap-2 <%= import.pending? || import.processing? ? 'text-cyan-600 dark:text-cyan-400' : ui_text_subtle_class %>">
+        <div class="w-2 h-2 <%= import.pending? ? 'bg-cyan-500 animate-pulse' : 'bg-emerald-500' %>"></div>
+        <span>Upload</span>
+      </div>
+      <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+      <div class="flex items-center gap-2 <%= import.processing? ? 'text-cyan-600 dark:text-cyan-400' : ui_text_subtle_class %>">
+        <div class="w-2 h-2 <%= import.processing? ? 'bg-cyan-500 animate-pulse' : 'bg-slate-300 dark:bg-slate-600' %>"></div>
+        <span>Process</span>
+      </div>
+      <div class="w-8 h-px bg-slate-200 dark:bg-slate-700"></div>
+      <div class="flex items-center gap-2 <%= ui_text_subtle_class %>">
+        <div class="w-2 h-2 bg-slate-300 dark:bg-slate-600"></div>
+        <span>Review</span>
+      </div>
     </div>
   </div>
 <% else %>

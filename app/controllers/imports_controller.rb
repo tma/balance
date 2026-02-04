@@ -2,7 +2,7 @@ class ImportsController < ApplicationController
   before_action :set_import, only: %i[show save confirm reprocess status destroy]
 
   def index
-    # Imports needing attention (completed ready for review, or failed)
+    # Imports needing attention (processing, completed ready for review, or failed)
     @needs_attention = Import.needs_attention.includes(:account).recent
 
     # Only show "finalized" imports: done (reviewed and imported) or failed

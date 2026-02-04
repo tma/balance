@@ -50,10 +50,11 @@
     <div class="<%= ui_card_class %> p-8 md:p-12" data-controller="import-status">
       <div class="max-w-md mx-auto text-center">
         <!-- Animated spinner (kept outside stream target to stay smooth) -->
-        <div class="relative mx-auto w-16 h-16 mb-6">
-          <div class="absolute inset-0 border-4 border-slate-100 dark:border-slate-700"></div>
-          <div class="absolute inset-0 border-4 border-transparent border-t-cyan-500 animate-spin"></div>
-          <div class="absolute inset-2 border-4 border-transparent border-t-cyan-300 animate-spin" style="animation-direction: reverse; animation-duration: 1.5s;"></div>
+        <div class="mx-auto w-20 h-20 mb-6 flex items-center justify-center">
+          <svg class="w-16 h-16 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"/>
+            <path class="text-cyan-500" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+          </svg>
         </div>
         
         <!-- Turbo Stream target for live updates -->
@@ -288,7 +289,7 @@
         
         <h2 class="text-xl font-semibold <%= ui_text_class %> mb-2">No Transactions Found</h2>
         <p class="<%= ui_text_muted_class %> mb-6">
-          The AI couldn't extract any transactions from this file. This might happen if the file format is unusual or the content is image-based.
+          The AI couldn't find any transactions in this file. This might happen if the file format is unusual or the content is image-based.
         </p>
         
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">

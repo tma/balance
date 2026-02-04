@@ -25,13 +25,13 @@
   </div>
 
   <% if @needs_attention.any? && !@filter_account %>
-    <!-- Ready for Review -->
+    <!-- Needs Attention: processing, ready for review, or failed -->
     <div class="<%= ui_card_class %> mb-4" data-controller="collapsible">
       <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
            data-action="click->collapsible#toggle">
         <div class="flex items-center gap-2">
           <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
-          <h2 class="text-sm font-medium <%= ui_text_class %>">Ready for Review</h2>
+          <h2 class="text-sm font-medium <%= ui_text_class %>">Needs Attention</h2>
           <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
             <%= @needs_attention.size %> import<%= @needs_attention.size == 1 ? '' : 's' %>
           </span>
