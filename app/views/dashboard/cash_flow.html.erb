@@ -282,8 +282,8 @@
             <th class="<%= ui_table_th_class %>" style="min-width: 200px;"></th>
           </tr>
         </thead>
-        <tbody>
-          <% @category_spending.each_with_index do |item, index| %>
+        <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
+          <% @category_spending.each do |item| %>
             <% 
               category = item[:category]
               spent = item[:spent]
@@ -300,7 +300,7 @@
               percentage = budget_amount && budget_amount > 0 ? (spent / budget_amount * 100).round : nil
               is_over_budget = percentage && percentage > 100
             %>
-            <tr class="<%= ui_table_row_class %><%= ' ' + ui_table_group_separator_class if index == 0 %>">
+            <tr class="<%= ui_table_row_class %>">
               <td class="<%= ui_table_td_class %>">
                 <%= link_to category.name, tx_path, class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" %>
               </td>
@@ -317,14 +317,16 @@
               <td class="<%= ui_table_td_class %>">
                 <% if percentage %>
                   <% bar_pct = [percentage, 100].min %>
-                  <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
-                    <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#fb7185' %>;" class="h-full flex items-center justify-start pl-1">
-                      <% if bar_pct > 25 %><span class="text-white"><%= percentage %>%</span><% end %>
+                  <%= link_to budget_path(item[:budget]), class: "block no-underline" do %>
+                    <div style="height: 20px; display: flex;" class="text-xs overflow-hidden hover:opacity-80 transition">
+                      <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                        <% if bar_pct > 25 %><span class="text-white"><%= percentage %>%</span><% end %>
+                      </div>
+                      <% if percentage <= 100 %>
+                        <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
+                      <% end %>
                     </div>
-                    <% if percentage <= 100 %>
-                      <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
-                    <% end %>
-                  </div>
+                  <% end %>
                 <% else %>
                   <span class="<%= ui_text_subtle_class %>">-</span>
                 <% end %>
@@ -350,11 +352,11 @@
             <th class="<%= ui_table_th_class %>" style="min-width: 200px;">Breakdown</th>
           </tr>
         </thead>
-        <tbody>
-          <% @monthly_data.each_with_index do |month, index| %>
+        <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
+          <% @monthly_data.each do |month| %>
             <% is_selected = @selected_month == month[:month] %>
             <% is_current = month[:date].year == Date.current.year && month[:date].month == Date.current.month %>
-            <tr class="<%= is_selected ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border-l-2 border-cyan-500' : (is_current ? 'bg-slate-50/50 dark:bg-slate-700/30' : ui_table_row_class) %><%= ' ' + ui_table_group_separator_class if index == 0 %>">
+            <tr class="<%= is_selected ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border-l-2 border-cyan-500' : (is_current ? 'bg-slate-50/50 dark:bg-slate-700/30' : ui_table_row_class) %>">
               <td class="<%= ui_table_td_class %> whitespace-nowrap">
                 <%= link_to cash_flow_path(year: @selected_year, month: month[:month]), class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" do %>
                   <%= Date::MONTHNAMES[month[:month]] %>

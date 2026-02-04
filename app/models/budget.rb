@@ -7,6 +7,8 @@ class Budget < ApplicationRecord
   validates :period, presence: true, inclusion: { in: PERIODS }
   validates :category_id, uniqueness: { message: "already has a budget" }
 
+  before_save :normalize_start_date
+
   scope :monthly, -> { where(period: "monthly") }
   scope :yearly, -> { where(period: "yearly") }
 
@@ -44,5 +46,19 @@ class Budget < ApplicationRecord
 
   def period_label
     monthly? ? "per month" : "per year"
+  end
+
+  private
+
+  def normalize_start_date
+    return if start_date.nil?
+
+    if yearly?
+      # For yearly budgets, normalize to January 1st of that year
+      self.start_date = start_date.beginning_of_year
+    else
+      # For monthly budgets, normalize to 1st of the month
+      self.start_date = start_date.beginning_of_month
+    end
   end
 end

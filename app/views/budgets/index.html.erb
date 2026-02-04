@@ -35,33 +35,41 @@
       <table class="min-w-full">
         <thead class="<%= ui_table_header_class %>">
           <tr>
-            <th colspan="5" class="<%= ui_table_th_class %>">
-              Monthly Budgets
-              <span class="<%= ui_text_subtle_class %> ml-2"><%= @monthly_budgets.size %> budget<%= @monthly_budgets.size == 1 ? '' : 's' %></span>
-            </th>
+            <th class="<%= ui_table_th_class %> whitespace-nowrap">Monthly</th>
+            <th class="<%= ui_table_th_class %> text-right pr-2">Spent</th>
+            <th class="<%= ui_table_th_class %> text-right pl-0">Budget</th>
+            <th class="<%= ui_table_th_class %>" style="min-width: 200px;"></th>
+            <th class="<%= ui_table_th_class %>"></th>
           </tr>
         </thead>
-        <tbody class="<%= ui_card_body_class %>">
+        <tbody class="<%= ui_card_body_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
           <% @monthly_budgets.each do |budget| %>
             <% percentage = budget.percentage_used(@year, @month) %>
             <% remaining = budget.remaining(@year, @month) %>
+            <% is_over_budget = percentage > 100 %>
+            <% bar_pct = [percentage, 100].min %>
             <tr class="<%= ui_table_row_class %>">
               <td class="<%= ui_table_td_class %> <%= ui_text_class %> font-medium w-40">
-                <%= budget.category.name %>
+                <%= link_to budget.category.name, budget_path(budget), class: "hover:text-cyan-600 dark:hover:text-cyan-400 transition" %>
               </td>
-              <td class="px-4 py-2 w-full">
-                <div class="<%= ui_progress_track_class %>">
-                  <div class="<%= ui_progress_bar_class(percentage) %>" style="width: <%= [percentage, 100].min %>%"></div>
-                </div>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums pr-2 <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_muted_class %>">
+                <%= format_currency(budget.spent(@year, @month)) %>
               </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
-                <%= format_currency(budget.spent(@year, @month)) %> / <%= format_currency(budget.amount) %>
+              <td class="<%= ui_table_td_class %> text-right <%= ui_text_muted_class %> tabular-nums pl-0">
+                <%= format_currency(budget.amount) %>
               </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= remaining >= 0 ? ui_positive_class : ui_negative_class %>">
-                <% if remaining >= 0 %>
-                  <%= format_currency(remaining) %>
+              <td class="<%= ui_table_td_class %>" style="min-width: 200px;">
+                <% if percentage > 0 %>
+                  <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
+                    <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                      <% if bar_pct > 25 %><span class="text-white"><%= percentage %>%</span><% end %>
+                    </div>
+                    <% if percentage <= 100 %>
+                      <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
+                    <% end %>
+                  </div>
                 <% else %>
-                  -<%= format_currency(remaining.abs) %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
                 <% end %>
               </td>
               <td class="<%= ui_table_td_class %> whitespace-nowrap text-right w-24">
@@ -89,33 +97,41 @@
       <table class="min-w-full">
         <thead class="<%= ui_table_header_class %>">
           <tr>
-            <th colspan="5" class="<%= ui_table_th_class %>">
-              Yearly Budgets (<%= @year %>)
-              <span class="<%= ui_text_subtle_class %> ml-2"><%= @yearly_budgets.size %> budget<%= @yearly_budgets.size == 1 ? '' : 's' %></span>
-            </th>
+            <th class="<%= ui_table_th_class %> whitespace-nowrap">Yearly (<%= @year %>)</th>
+            <th class="<%= ui_table_th_class %> text-right pr-2">Spent</th>
+            <th class="<%= ui_table_th_class %> text-right pl-0">Budget</th>
+            <th class="<%= ui_table_th_class %>" style="min-width: 200px;"></th>
+            <th class="<%= ui_table_th_class %>"></th>
           </tr>
         </thead>
-        <tbody class="<%= ui_card_body_class %>">
+        <tbody class="<%= ui_card_body_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
           <% @yearly_budgets.each do |budget| %>
             <% percentage = budget.percentage_used(@year, nil) %>
             <% remaining = budget.remaining(@year, nil) %>
+            <% is_over_budget = percentage > 100 %>
+            <% bar_pct = [percentage, 100].min %>
             <tr class="<%= ui_table_row_class %>">
               <td class="<%= ui_table_td_class %> <%= ui_text_class %> font-medium w-40">
-                <%= budget.category.name %>
+                <%= link_to budget.category.name, budget_path(budget), class: "hover:text-cyan-600 dark:hover:text-cyan-400 transition" %>
               </td>
-              <td class="px-4 py-2 w-full">
-                <div class="<%= ui_progress_track_class %>">
-                  <div class="<%= ui_progress_bar_class(percentage) %>" style="width: <%= [percentage, 100].min %>%"></div>
-                </div>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums pr-2 <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_muted_class %>">
+                <%= format_currency(budget.spent(@year, nil)) %>
               </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
-                <%= format_currency(budget.spent(@year, nil)) %> / <%= format_currency(budget.amount) %>
+              <td class="<%= ui_table_td_class %> text-right <%= ui_text_muted_class %> tabular-nums pl-0">
+                <%= format_currency(budget.amount) %>
               </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= remaining >= 0 ? ui_positive_class : ui_negative_class %>">
-                <% if remaining >= 0 %>
-                  <%= format_currency(remaining) %>
+              <td class="<%= ui_table_td_class %>" style="min-width: 200px;">
+                <% if percentage > 0 %>
+                  <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
+                    <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                      <% if bar_pct > 25 %><span class="text-white"><%= percentage %>%</span><% end %>
+                    </div>
+                    <% if percentage <= 100 %>
+                      <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
+                    <% end %>
+                  </div>
                 <% else %>
-                  -<%= format_currency(remaining.abs) %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
                 <% end %>
               </td>
               <td class="<%= ui_table_td_class %> whitespace-nowrap text-right w-24">

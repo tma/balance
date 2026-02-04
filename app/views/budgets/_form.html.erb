@@ -1,4 +1,4 @@
-<%= form_with(model: budget, class: "contents") do |form| %>
+<%= form_with(model: budget, class: "contents", data: { controller: "budget-form" }) do |form| %>
   <% if budget.errors.any? %>
     <div class="<%= ui_alert_error_class %> mb-4">
       <h2 class="font-medium"><%= pluralize(budget.errors.count, "error") %> prohibited this budget from being saved:</h2>
@@ -17,7 +17,7 @@
 
   <div class="mb-4">
     <%= form.label :period, "Budget Period", class: ui_label_class %>
-    <%= form.select :period, [["Monthly", "monthly"], ["Yearly", "yearly"]], {}, class: ui_input_class %>
+    <%= form.select :period, [["Monthly", "monthly"], ["Yearly", "yearly"]], {}, class: ui_input_class, data: { budget_form_target: "period", action: "change->budget-form#toggleDateFields" } %>
     <p class="mt-1 text-sm <%= ui_text_muted_class %>">Monthly budgets reset each month. Yearly budgets track spending for the entire year.</p>
   </div>
 
@@ -28,8 +28,34 @@
 
   <div class="mb-4">
     <%= form.label :start_date, "Start Date (optional)", class: ui_label_class %>
-    <%= form.date_field :start_date, class: ui_input_class %>
-    <p class="mt-1 text-sm <%= ui_text_muted_class %>">Leave blank to apply to all time. Set a date to only track spending from that month forward.</p>
+    
+    <!-- Year select for yearly budgets -->
+    <div data-budget-form-target="yearlySelect" class="<%= budget.monthly? ? 'hidden' : '' %>">
+      <select name="budget[start_year]" class="<%= ui_input_class %>" data-budget-form-target="yearSelect">
+        <option value="">-</option>
+        <% (2020..Date.current.year + 1).to_a.reverse.each do |y| %>
+          <option value="<%= y %>" <%= 'selected' if budget.start_date&.year == y %>><%= y %></option>
+        <% end %>
+      </select>
+    </div>
+    
+    <!-- Month/Year selects for monthly budgets -->
+    <div data-budget-form-target="monthlySelect" class="<%= budget.yearly? ? 'hidden' : '' %> flex gap-2">
+      <select name="budget[start_month]" class="<%= ui_input_class %>" data-budget-form-target="monthSelect">
+        <option value="">-</option>
+        <% Date::MONTHNAMES.compact.each_with_index do |month_name, index| %>
+          <option value="<%= index + 1 %>" <%= 'selected' if budget.start_date&.month == index + 1 %>><%= month_name %></option>
+        <% end %>
+      </select>
+      <select name="budget[start_month_year]" class="<%= ui_input_class %>" data-budget-form-target="monthYearSelect">
+        <option value="">-</option>
+        <% (2020..Date.current.year + 1).to_a.reverse.each do |y| %>
+          <option value="<%= y %>" <%= 'selected' if budget.start_date&.year == y %>><%= y %></option>
+        <% end %>
+      </select>
+    </div>
+    
+    <p class="mt-1 text-sm <%= ui_text_muted_class %>">Leave blank to apply to all time.</p>
   </div>
 
   <div class="flex space-x-4">

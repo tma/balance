@@ -7,14 +7,19 @@
   <% end %>
 <% end %>
 
-<div class="max-w-md">
-  <div class="flex items-center h-10 mb-6">
-    <h1 class="<%= ui_title_class %>">Budget: <%= @budget.category.name %></h1>
+<div class="w-full">
+  <div class="flex items-center justify-between h-10 mb-6">
+    <h1 class="<%= ui_title_class %>"><%= @budget.category.name %></h1>
+    <div class="flex items-center gap-2">
+      <%= link_to "Edit", edit_budget_path(@budget), class: ui_btn_primary_class %>
+      <%= button_to "Delete", @budget, method: :delete, class: "#{ui_btn_danger_class} cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+    </div>
   </div>
 
+  <!-- Current Period Summary -->
   <div class="<%= ui_card_class %> p-6 mb-6">
     <div class="flex justify-between items-center mb-4">
-      <span class="text-sm font-medium px-2 py-1 <%= @budget.monthly? ? ui_badge_info_class : 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300' %>">
+      <span class="text-sm font-medium px-2 py-1 <%= ui_badge_info_class %>">
         <%= @budget.monthly? ? "Monthly" : "Yearly" %>
       </span>
       <% if @budget.start_date %>
@@ -22,14 +27,15 @@
       <% end %>
     </div>
     
-    <div class="mb-4">
-      <p class="text-sm <%= ui_text_muted_class %>">Budget</p>
-      <p class="text-2xl font-bold <%= ui_text_class %>"><%= format_currency(@budget.amount) %> <%= @budget.period_label %></p>
-    </div>
-    
-    <div class="mb-4">
-      <p class="text-sm <%= ui_text_muted_class %>">Spent (<%= @budget.monthly? ? "#{Date::MONTHNAMES[@month]} #{@year}" : @year %>)</p>
-      <p class="text-2xl font-bold <%= ui_negative_class %>"><%= format_currency(@budget.spent(@year, @month)) %></p>
+    <div class="grid grid-cols-2 gap-6 mb-4">
+      <div>
+        <p class="text-sm <%= ui_text_muted_class %>">Budget</p>
+        <p class="text-2xl font-bold <%= ui_text_class %>"><%= format_currency(@budget.amount) %> <span class="text-base font-normal <%= ui_text_muted_class %>"><%= @budget.period_label %></span></p>
+      </div>
+      <div>
+        <p class="text-sm <%= ui_text_muted_class %>">Spent (<%= @budget.monthly? ? "#{Date::MONTHNAMES[@month]} #{@year}" : @year %>)</p>
+        <p class="text-2xl font-bold <%= ui_negative_class %>"><%= format_currency(@budget.spent(@year, @month)) %></p>
+      </div>
     </div>
     
     <div class="<%= ui_progress_track_lg_class %> mb-2">
@@ -38,14 +44,89 @@
     </div>
     
     <% remaining = @budget.remaining(@year, @month) %>
-    <p class="text-sm <%= remaining >= 0 ? ui_positive_class : ui_negative_class %>">
-      <%= remaining >= 0 ? "#{format_currency(remaining)} remaining" : "#{format_currency(remaining.abs)} over budget" %>
-      (<%= @budget.percentage_used(@year, @month) %>%)
-    </p>
+    <div class="flex justify-between items-center">
+      <p class="text-sm <%= remaining >= 0 ? ui_positive_class : ui_negative_class %>">
+        <% if remaining >= 0 %>
+          <%= format_currency(remaining) %> remaining
+        <% else %>
+          <%= format_currency(remaining.abs) %> over budget
+        <% end %>
+        (<%= @budget.percentage_used(@year, @month) %>%)
+      </p>
+      <%
+        if @budget.monthly?
+          txn_path = transactions_path(category_id: @budget.category_id, month: "#{@year}-#{@month.to_s.rjust(2, '0')}")
+        else
+          txn_path = transactions_path(category_id: @budget.category_id, start_date: "#{@year}-01-01", end_date: "#{@year}-12-31")
+        end
+      %>
+      <%= link_to "Transactions", txn_path, class: "px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-medium transition" %>
+    </div>
   </div>
 
-  <div class="flex space-x-4">
-    <%= link_to "Edit", edit_budget_path(@budget), class: ui_btn_primary_class %>
-    <%= button_to "Delete", @budget, method: :delete, class: "#{ui_btn_danger_class} cursor-pointer", data: { turbo_confirm: "Are you sure?" } %>
+  <!-- Historical Spending -->
+  <div class="<%= ui_card_table_class %>">
+    <table class="min-w-full">
+      <thead class="<%= ui_table_header_class %>">
+        <tr>
+          <th class="<%= ui_table_th_class %>"><%= @budget.monthly? ? "Month" : "Year" %></th>
+          <th class="<%= ui_table_th_class %> text-right pr-2">Spent</th>
+          <th class="<%= ui_table_th_class %> text-right pl-0">Budget</th>
+          <th class="<%= ui_table_th_class %>" style="min-width: 200px;"></th>
+          <th class="<%= ui_table_th_class %>"></th>
+        </tr>
+      </thead>
+      <tbody class="<%= ui_card_body_class %> border-t-[6px] border-slate-100 dark:border-slate-900">
+        <% @history.each do |period| %>
+          <%
+            is_over_budget = period[:percentage] > 100
+            bar_pct = [period[:percentage], 100].min
+          %>
+          <tr class="<%= ui_table_row_class %>">
+            <td class="<%= ui_table_td_class %> <%= ui_text_class %> font-medium whitespace-nowrap py-3">
+              <% if @budget.monthly? %>
+                <%= Date::MONTHNAMES[period[:month]] %> <%= period[:year] %>
+              <% else %>
+                <%= period[:year] %>
+              <% end %>
+            </td>
+            <td class="<%= ui_table_td_class %> whitespace-nowrap text-right tabular-nums pr-2 py-3 <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_muted_class %>">
+              <%= format_currency(period[:spent]) %>
+            </td>
+            <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %> tabular-nums pl-0 py-3">
+              <%= format_currency(period[:budget_amount]) %>
+            </td>
+            <td class="<%= ui_table_td_class %> py-3">
+              <% if period[:percentage] > 0 %>
+                <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
+                  <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                    <% if bar_pct > 25 %><span class="text-white"><%= period[:percentage] %>%</span><% end %>
+                  </div>
+                  <% if period[:percentage] <= 100 %>
+                    <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
+                  <% end %>
+                </div>
+              <% else %>
+                <span class="<%= ui_text_subtle_class %>">-</span>
+              <% end %>
+            </td>
+            <td class="<%= ui_table_td_class %> whitespace-nowrap text-right py-3">
+              <%
+                if @budget.monthly?
+                  txn_path = transactions_path(category_id: @budget.category_id, month: "#{period[:year]}-#{period[:month].to_s.rjust(2, '0')}")
+                else
+                  txn_path = transactions_path(category_id: @budget.category_id, start_date: "#{period[:year]}-01-01", end_date: "#{period[:year]}-12-31")
+                end
+              %>
+              <% if period[:spent] > 0 %>
+                <%= link_to "Transactions", txn_path, class: "px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-medium transition" %>
+              <% else %>
+                <span class="<%= ui_text_subtle_class %>">—</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
   </div>
 </div>
