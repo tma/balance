@@ -81,7 +81,7 @@ class BudgetsController < ApplicationController
       # For monthly budgets, use start_month and start_month_year params
       month = params[:budget][:start_month]
       year = params[:budget][:start_month_year]
-      
+
       if month.present? && year.present?
         @budget.start_date = Date.new(year.to_i, month.to_i, 1)
       elsif month.blank? || year.blank?
@@ -98,7 +98,7 @@ class BudgetsController < ApplicationController
       start_date = budget.start_date || Transaction.minimum(:date) || current_date
       start_month = start_date.beginning_of_month
       end_month = current_date.beginning_of_month
-      
+
       months = []
       date = end_month
       while date >= start_month
@@ -121,7 +121,7 @@ class BudgetsController < ApplicationController
       # Get all years from start_date (or earliest transaction) to current year
       start_year = budget.start_date&.year || Transaction.minimum(:date)&.year || current_date.year
       end_year = current_date.year
-      
+
       (start_year..end_year).to_a.reverse.map do |year|
         spent = budget.spent(year, nil)
         {
