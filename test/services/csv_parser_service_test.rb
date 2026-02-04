@@ -31,7 +31,7 @@ class CsvParserServiceTest < ActiveSupport::TestCase
 
   test "handles ISO-8859-1 encoded content" do
     # Create content with ISO-8859-1 characters (e.g., German umlauts)
-    iso_content = "Date,Description,Amount\n2026-01-15,Caf\xE9,5.50\n2026-01-16,Z\xFCrich,12.00"
+    iso_content = +"Date,Description,Amount\n2026-01-15,Caf\xE9,5.50\n2026-01-16,Z\xFCrich,12.00"
     iso_content.force_encoding("ASCII-8BIT")
 
     file = StringIO.new(iso_content)
