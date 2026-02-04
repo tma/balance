@@ -88,6 +88,12 @@ export default class extends Controller {
       return
     }
 
+    // Don't toggle if user is selecting text
+    const selection = window.getSelection()
+    if (selection && selection.toString().length > 0) {
+      return
+    }
+
     const row = event.currentTarget
     const index = this.rowTargets.indexOf(row)
     
