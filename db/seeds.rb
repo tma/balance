@@ -223,6 +223,11 @@ if Rails.env.development?
     a.currency = "USD"
   end
 
+  # Set expected transaction frequencies for coverage gap detection
+  accounts[:main_checking].update!(expected_transaction_frequency: 7)   # weekly
+  accounts[:visa].update!(expected_transaction_frequency: 30)           # monthly
+  accounts[:euro_checking].update!(expected_transaction_frequency: 30)  # monthly
+
   # ---------------------------------------------------------------------------
   # Assets and Liabilities (one of each type)
   # ---------------------------------------------------------------------------
