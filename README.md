@@ -2,8 +2,6 @@
 
 A personal finance budgeting application for tracking income, expenses, budgets, and assets with a clean, mobile-friendly web interface.
 
-![Dashboard](doc/home.png)
-
 ![Net Worth](doc/net-worth.png)
 
 ![Cash Flow](doc/cash-flow.png)
