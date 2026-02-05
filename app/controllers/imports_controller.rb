@@ -48,7 +48,7 @@ class ImportsController < ApplicationController
       .where.not(expected_transaction_frequency: nil)
 
     @account_coverage = accounts_with_frequency.filter_map(&:coverage_analysis)
-      .sort_by { |c| c[:complete?] ? 1 : 0 } # Show incomplete first
+      .sort_by { |c| [ c[:account].name, c[:account].currency ] }
 
     # Accounts for filter dropdown
     @filter_accounts = Account.active.order(:name)
