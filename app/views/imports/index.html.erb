@@ -24,59 +24,70 @@
     </div>
   </div>
 
-  <% if @needs_attention.any? && !@filter_account %>
-    <!-- Needs Attention: processing, ready for review, or failed -->
-    <% has_processing = @needs_attention.any?(&:processing?) %>
-    <div class="<%= ui_card_class %> mb-4" data-controller="collapsible" data-collapsible-open-value="<%= has_processing %>">
-      <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-           data-action="click->collapsible#toggle">
-        <div class="flex items-center gap-2">
-          <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
-          <h2 class="text-sm font-medium <%= ui_text_class %>">Needs Attention</h2>
-          <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-            <%= @needs_attention.size %> import<%= @needs_attention.size == 1 ? '' : 's' %>
-          </span>
-        </div>
-      </div>
+  <% show_attention = @needs_attention.any? && !@filter_account %>
+  <% show_coverage = @account_coverage.any? && !@filter_account %>
+  <% if show_attention || show_coverage %>
+    <div class="<%= show_attention && show_coverage ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : '' %> mb-4">
+      <% if show_attention %>
+        <!-- Needs Attention: processing, ready for review, or failed -->
+        <% has_processing = @needs_attention.any?(&:processing?) %>
+        <div class="<%= ui_card_class %>" data-controller="collapsible" data-collapsible-open-value="<%= has_processing %>">
+          <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+               data-action="click->collapsible#toggle">
+            <div class="flex items-center gap-2">
+              <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
+              <h2 class="text-sm font-medium <%= ui_text_class %>">Needs Attention</h2>
+              <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                <%= @needs_attention.size %> import<%= @needs_attention.size == 1 ? '' : 's' %>
+              </span>
+            </div>
+          </div>
 
-      <div data-collapsible-target="content" class="hidden">
-        <div class="border-t border-slate-200 dark:border-slate-700">
-          <table class="min-w-full">
-            <tbody class="<%= ui_card_body_class %>">
-              <% @needs_attention.each do |import| %>
-                <%= render partial: "imports/import_row", locals: { import: import, compact: true } %>
+          <div data-collapsible-target="content" class="hidden">
+            <div class="border-t border-slate-200 dark:border-slate-700">
+              <table class="w-full table-fixed">
+                <colgroup>
+                  <col class="w-2/5">
+                  <col class="w-2/5">
+                  <col class="w-1/5">
+                </colgroup>
+                <tbody class="<%= ui_card_body_class %>">
+                  <% @needs_attention.each do |import| %>
+                    <%= render partial: "imports/import_row", locals: { import: import, compact: true } %>
+                  <% end %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% end %>
+
+      <%# Coverage Analysis Section %>
+      <% if show_coverage %>
+        <% gaps_count = @account_coverage.count { |c| !c[:complete?] } %>
+        <div class="<%= ui_card_class %>" data-controller="collapsible" data-collapsible-open-value="<%= gaps_count > 0 %>">
+          <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
+               data-action="click->collapsible#toggle">
+            <div class="flex items-center gap-2">
+              <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
+              <h2 class="text-sm font-medium <%= ui_text_class %>">Transaction Frequency</h2>
+              <% if gaps_count > 0 %>
+                <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
+                  <%= gaps_count %> account<%= gaps_count == 1 ? '' : 's' %> with gaps
+                </span>
               <% end %>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  <% end %>
+            </div>
+          </div>
 
-  <%# Coverage Analysis Section - only show in default view %>
-  <% if @account_coverage.any? && !@filter_account %>
-    <div class="<%= ui_card_class %> mb-4" data-controller="collapsible">
-      <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
-           data-action="click->collapsible#toggle">
-        <div class="flex items-center gap-2">
-          <span data-collapsible-target="icon" class="<%= ui_text_muted_class %> text-xs">&#9654;</span>
-          <h2 class="text-sm font-medium <%= ui_text_class %>">Missing Transactions</h2>
-          <% gaps_count = @account_coverage.count { |c| !c[:complete?] } %>
-          <% if gaps_count > 0 %>
-            <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400">
-              <%= gaps_count %> account<%= gaps_count == 1 ? '' : 's' %> with gaps
-            </span>
-          <% end %>
+          <div data-collapsible-target="content" class="hidden">
+            <div class="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
+              <% @account_coverage.each do |coverage| %>
+                <%= render "shared/coverage_row", coverage: coverage %>
+              <% end %>
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div data-collapsible-target="content" class="hidden">
-        <div class="border-t border-slate-200 dark:border-slate-700 p-4 space-y-3">
-          <% @account_coverage.each do |coverage| %>
-            <%= render "shared/coverage_row", coverage: coverage %>
-          <% end %>
-        </div>
-      </div>
+      <% end %>
     </div>
   <% end %>
 

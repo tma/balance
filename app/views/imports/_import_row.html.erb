@@ -1,7 +1,7 @@
 <% compact = local_assigns.fetch(:compact, false) %>
 <tr class="<%= ui_table_row_class %>">
-  <td class="<%= ui_table_td_class %> <%= ui_text_class %>">
-    <div class="flex items-center">
+  <td class="<%= ui_table_td_class %> <%= ui_text_class %> overflow-hidden">
+    <div class="flex items-center min-w-0">
       <% if import.pdf? %>
         <svg class="h-5 w-5 text-rose-500 dark:text-rose-400 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
           <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
@@ -11,7 +11,7 @@
           <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"/>
         </svg>
       <% end %>
-      <%= link_to import_path(import), class: ui_link_class do %><code><%= truncate(import.original_filename, length: 30) %></code><% end %>
+      <%= link_to import_path(import), class: "#{ui_link_class} truncate" do %><code class="truncate"><%= import.original_filename %></code><% end %>
     </div>
   </td>
   <td class="<%= ui_table_td_class %> whitespace-nowrap <%= ui_text_muted_class %>">
@@ -45,12 +45,14 @@
       <%= time_ago_in_words(import.created_at) %> ago
     </td>
   <% end %>
-  <td class="<%= ui_table_td_class %> whitespace-nowrap text-right">
-    <div class="flex items-center justify-end gap-2">
-      <%= link_to "View", import_path(import), class: ui_link_class %>
-      <% if import.completed? || import.failed? || import.done? %>
-        <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
-      <% end %>
-    </div>
-  </td>
+  <% unless compact %>
+    <td class="<%= ui_table_td_class %> whitespace-nowrap text-right">
+      <div class="flex items-center justify-end gap-2">
+        <%= link_to "View", import_path(import), class: ui_link_class %>
+        <% if import.completed? || import.failed? || import.done? %>
+          <%= button_to "Delete", import_path(import), method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300", form: { data: { turbo_confirm: "Delete this import?" }, class: "inline" } %>
+        <% end %>
+      </div>
+    </td>
+  <% end %>
 </tr>
