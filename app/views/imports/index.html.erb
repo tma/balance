@@ -26,7 +26,8 @@
 
   <% if @needs_attention.any? && !@filter_account %>
     <!-- Needs Attention: processing, ready for review, or failed -->
-    <div class="<%= ui_card_class %> mb-4" data-controller="collapsible">
+    <% has_processing = @needs_attention.any?(&:processing?) %>
+    <div class="<%= ui_card_class %> mb-4" data-controller="collapsible" data-collapsible-open-value="<%= has_processing %>">
       <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
            data-action="click->collapsible#toggle">
         <div class="flex items-center gap-2">

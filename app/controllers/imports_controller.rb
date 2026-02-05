@@ -80,29 +80,11 @@ class ImportsController < ApplicationController
       return
     end
 
-    transactions_data = params[:transactions]&.values || []
+    save_extracted_transactions!
 
-    updated_transactions = transactions_data.map do |txn_params|
-      {
-        date: txn_params[:date],
-        description: txn_params[:description],
-        amount: txn_params[:amount],
-        transaction_type: txn_params[:transaction_type],
-        category_id: txn_params[:category_id].present? ? txn_params[:category_id].to_i : nil,
-        duplicate_hash: txn_params[:duplicate_hash],
-        is_duplicate: txn_params[:is_duplicate] == "1",
-        is_ignored: txn_params[:is_ignored] == "1",
-        selected: txn_params[:selected] == "1"
-      }
-    end
-
-    @import.extracted_transactions = updated_transactions
-
-    if @import.save
-      redirect_to import_path(@import), notice: "Changes saved."
-    else
-      redirect_to import_path(@import), alert: "Failed to save changes."
-    end
+    redirect_to import_path(@import), notice: "Changes saved."
+  rescue ActiveRecord::RecordInvalid
+    redirect_to import_path(@import), alert: "Failed to save changes."
   end
 
   # Create the import record and enqueue the job
@@ -140,6 +122,10 @@ class ImportsController < ApplicationController
     end
 
     transactions_data = params[:transactions]&.values || []
+
+    # Persist current form state so edits aren't lost
+    save_extracted_transactions!
+
     imported_count = 0
     errors = []
 
@@ -176,7 +162,7 @@ class ImportsController < ApplicationController
       flash[:notice] = "Successfully imported #{imported_count} transactions."
     end
 
-    redirect_to transactions_path
+    redirect_to imports_path
   end
 
   def destroy
@@ -211,6 +197,26 @@ class ImportsController < ApplicationController
 
   def set_import
     @import = Import.find(params[:id])
+  end
+
+  def save_extracted_transactions!
+    transactions_data = params[:transactions]&.values || []
+
+    updated = transactions_data.map do |txn_params|
+      {
+        date: txn_params[:date],
+        description: txn_params[:description],
+        amount: txn_params[:amount],
+        transaction_type: txn_params[:transaction_type],
+        category_id: txn_params[:category_id].present? ? txn_params[:category_id].to_i : nil,
+        duplicate_hash: txn_params[:duplicate_hash],
+        is_duplicate: txn_params[:is_duplicate] == "1",
+        is_ignored: txn_params[:is_ignored] == "1",
+        selected: txn_params[:selected] == "1"
+      }
+    end
+
+    @import.update!(extracted_transactions: updated)
   end
 
   def determine_content_type(file)

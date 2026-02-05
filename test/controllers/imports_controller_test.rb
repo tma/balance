@@ -75,7 +75,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to transactions_path
+    assert_redirected_to imports_path
     assert_equal initial_count + 1, Transaction.count
     assert_match(/Successfully imported 1 transaction/, flash[:notice])
 
@@ -121,7 +121,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
 
     post confirm_import_path(@completed_import)
 
-    assert_redirected_to transactions_path
+    assert_redirected_to imports_path
     assert_equal initial_count, Transaction.count
   end
 
@@ -143,7 +143,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
       }
     }
 
-    assert_redirected_to transactions_path
+    assert_redirected_to imports_path
     assert_equal initial_count, Transaction.count
     assert_match(/Successfully imported 0 transactions/, flash[:notice])
   end
