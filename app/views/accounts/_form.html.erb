@@ -45,13 +45,25 @@
     <p class="mt-1 text-xs <%= ui_text_muted_class %>">One pattern per line. Transactions containing these texts will be ignored during import. Case-sensitive. Leave blank for defaults.</p>
   </div>
 
-  <div class="mb-4">
+  <div class="mb-4" data-controller="frequency-preset">
     <%= form.label :expected_transaction_frequency, "Transaction Frequency", class: ui_label_class %>
-    <%= form.select :expected_transaction_frequency,
-        Account::FREQUENCY_OPTIONS,
-        { selected: account.expected_transaction_frequency },
-        class: "mt-1 #{ui_input_class}" %>
-    <p class="mt-1 text-xs <%= ui_text_muted_class %>">How often this account typically has transactions. Used to detect missing transactions.</p>
+    <div class="flex items-stretch gap-2 mt-1">
+      <select class="<%= ui_input_class %>"
+              data-frequency-preset-target="preset"
+              data-action="change->frequency-preset#selectPreset">
+        <% Account::FREQUENCY_PRESETS.each do |label, value| %>
+          <option value="<%= value %>" <%= "selected" if value.to_s == account.expected_transaction_frequency.to_s %>><%= label %></option>
+        <% end %>
+      </select>
+      <%= form.number_field :expected_transaction_frequency,
+          min: 1,
+          step: 1,
+          placeholder: "Days",
+          class: "w-24 #{ui_input_class}",
+          data: { frequency_preset_target: "input", action: "input->frequency-preset#syncPreset" } %>
+      <span class="text-sm <%= ui_text_subtle_class %> flex items-center">days</span>
+    </div>
+    <p class="mt-1 text-xs <%= ui_text_muted_class %>">Max days between transactions. Used to detect missing transactions. Pick a preset or type a custom number.</p>
   </div>
 
   <div class="flex space-x-4">

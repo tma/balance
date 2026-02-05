@@ -10,13 +10,13 @@ class Account < ApplicationRecord
     Statement Period
   PATTERNS
 
-  # Expected transaction frequency options for coverage tracking
-  # nil = opt-out of coverage tracking, integer = max days between transactions
-  FREQUENCY_OPTIONS = [
-    [ "Not tracked", nil ],
-    [ "Weekly (7 days)", 7 ],
-    [ "Monthly (30 days)", 30 ],
-    [ "Quarterly (90 days)", 90 ]
+  # Preset frequency values for the form dropdown (convenience shortcuts)
+  # The actual field accepts any positive integer (days between transactions)
+  FREQUENCY_PRESETS = [
+    [ "Not tracked", "" ],
+    [ "Weekly", 7 ],
+    [ "Monthly", 30 ],
+    [ "Quarterly", 90 ]
   ].freeze
 
   belongs_to :account_type
@@ -26,7 +26,7 @@ class Account < ApplicationRecord
   validates :name, presence: true
   validates :currency, presence: true
   validates :balance, numericality: true
-  validates :expected_transaction_frequency, inclusion: { in: FREQUENCY_OPTIONS.map(&:last) }, allow_nil: true
+  validates :expected_transaction_frequency, numericality: { only_integer: true, greater_than: 0 }, allow_nil: true
 
   validate :currency_must_exist
   validate :currency_cannot_change, on: :update
@@ -89,7 +89,13 @@ class Account < ApplicationRecord
 
   # Returns human-readable label for expected_transaction_frequency
   def frequency_label
-    FREQUENCY_OPTIONS.find { |_, v| v == expected_transaction_frequency }&.first || "Not tracked"
+    return "Not tracked" if expected_transaction_frequency.nil?
+    preset = FREQUENCY_PRESETS.find { |_, v| v == expected_transaction_frequency }
+    if preset
+      "#{preset.first} (#{expected_transaction_frequency} days)"
+    else
+      "Every #{expected_transaction_frequency} days"
+    end
   end
 
   private
