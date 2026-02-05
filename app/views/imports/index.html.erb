@@ -27,11 +27,13 @@
   <% show_attention = @needs_attention.any? && !@filter_account %>
   <% show_coverage = @account_coverage.any? && !@filter_account %>
   <% if show_attention || show_coverage %>
+    <% has_processing = show_attention && @needs_attention.any?(&:processing?) %>
+    <% gaps_count = show_coverage ? @account_coverage.count { |c| !c[:complete?] } : 0 %>
+    <% sections_open = has_processing || gaps_count > 0 %>
     <div class="<%= show_attention && show_coverage ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : '' %> mb-4">
       <% if show_attention %>
         <!-- Needs Attention: processing, ready for review, or failed -->
-        <% has_processing = @needs_attention.any?(&:processing?) %>
-        <div class="<%= ui_card_class %>" data-controller="collapsible" data-collapsible-open-value="<%= has_processing %>">
+        <div class="<%= ui_card_class %>" data-controller="collapsible" data-collapsible-open-value="<%= sections_open %>">
           <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
                data-action="click->collapsible#toggle">
             <div class="flex items-center gap-2">
@@ -64,8 +66,7 @@
 
       <%# Coverage Analysis Section %>
       <% if show_coverage %>
-        <% gaps_count = @account_coverage.count { |c| !c[:complete?] } %>
-        <div class="<%= ui_card_class %>" data-controller="collapsible" data-collapsible-open-value="<%= gaps_count > 0 %>">
+        <div class="<%= ui_card_class %>" data-controller="collapsible" data-collapsible-open-value="<%= sections_open %>">
           <div class="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition"
                data-action="click->collapsible#toggle">
             <div class="flex items-center gap-2">
