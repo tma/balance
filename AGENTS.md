@@ -42,6 +42,9 @@ docker exec -d balance-devcontainer bin/dev
 ```
 The app will be available at http://localhost:3000
 
+### Playwright / Browser Automation
+When using Playwright to access the dev server, use `http://host.docker.internal:3000` instead of `http://localhost:3000`. The `localhost` domain is not reachable from the Playwright browser context.
+
 ### Never
 - Run `rails`, `ruby`, or `bundle` commands directly on the host machine
 - Use system Ruby (it's outdated and incompatible)
