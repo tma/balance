@@ -34,18 +34,23 @@
       <% if group_data.any? %>
         <% chart_size = group_data.size * 22 %>
         <div class="flex items-center gap-6">
-          <svg width="<%= chart_size %>" height="<%= chart_size %>" class="flex-shrink-0" viewBox="0 0 160 160">
-            <% offset = 0 %>
-            <% group_data.each do |group| %>
-              <% arc_length = (group[:pct] * 3.77).round(2) %>
-              <circle cx="80" cy="80" r="60" fill="none" 
-                      stroke="<%= group[:color] %>" stroke-width="35"
-                      stroke-dasharray="<%= arc_length %> 377"
-                      stroke-dashoffset="<%= -offset %>"
-                      transform="rotate(-90 80 80)" />
-              <% offset += arc_length %>
-            <% end %>
-          </svg>
+          <div data-controller="chart-tooltip" style="position: relative;" class="flex-shrink-0">
+            <svg width="<%= chart_size %>" height="<%= chart_size %>" viewBox="0 0 160 160">
+              <% offset = 0 %>
+              <% group_data.each do |group| %>
+                <% arc_length = (group[:pct] * 3.77).round(2) %>
+                <circle cx="80" cy="80" r="60" fill="none" 
+                        stroke="<%= group[:color] %>" stroke-width="35"
+                        stroke-dasharray="<%= arc_length %> 377"
+                        stroke-dashoffset="<%= -offset %>"
+                        transform="rotate(-90 80 80)"
+                        style="pointer-events: stroke;"
+                        data-tooltip="<%= group[:name] %>: <%= format_currency_plain(group[:value], precision: 0) %> (<%= group[:pct] %>%)" />
+                <% offset += arc_length %>
+              <% end %>
+            </svg>
+            <%= render "shared/chart_tooltip" %>
+          </div>
           
           <table class="text-sm ml-auto">
             <% group_data.each do |group| %>
@@ -99,7 +104,7 @@
             <% end %>
           </div>
           <!-- Chart area -->
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0" data-controller="chart-tooltip" data-chart-tooltip-always-above-value="true" style="position: relative;">
             <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
               <!-- Grid lines -->
               <% y_ticks.each do |tick| %>
@@ -125,14 +130,29 @@
                   <% pct = month_total > 0 ? (value.to_f / month_total * 100).round(1) : 0 %>
                   
                   <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
-                        fill="<%= group.color || '#94a3b8' %>">
-                    <title><%= group.name %>: <%= format_currency(value, precision: 0) %> (<%= pct %>%)</title>
+                        fill="<%= group.color || '#94a3b8' %>"
+                        data-bar-group="m<%= month_idx %>"
+                        data-tooltip="<%= month.strftime('%b %Y') %> · <%= group.name %>: <%= format_currency_plain(value, precision: 0) %> (<%= pct %>%)">
                   </rect>
                   
                   <% y_offset += bar_height %>
                 <% end %>
+
+                <%# Invisible rect covering empty space above the bar — shows total on hover %>
+                <% if y_tick_max > 0 && month_total > 0 %>
+                  <% total_bar_height = (month_total.to_f / y_tick_max * chart_height).round %>
+                  <% gap_top = chart_height - total_bar_height %>
+                  <% if gap_top > 0 %>
+                    <rect x="<%= x_pct %>%" y="0" width="<%= bar_pct %>%" height="<%= gap_top %>"
+                          fill="transparent"
+                          data-bar-group="m<%= month_idx %>"
+                          data-tooltip="<%= month.strftime('%b %Y') %> · Total: <%= format_currency_plain(month_total, precision: 0) %>">
+                    </rect>
+                  <% end %>
+                <% end %>
               <% end %>
             </svg>
+            <%= render "shared/chart_tooltip" %>
             <div class="flex" style="font-size: 9px;">
               <% @history_months.each_with_index do |month, month_idx| %>
                 <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">
@@ -158,7 +178,7 @@
             <% end %>
           </div>
           <!-- Chart area -->
-          <div class="flex-1 min-w-0">
+          <div class="flex-1 min-w-0" data-controller="chart-tooltip" data-chart-tooltip-always-above-value="true" style="position: relative;">
             <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
               <!-- Grid lines -->
               <% y_ticks.each do |tick| %>
@@ -184,14 +204,29 @@
                   <% pct = quarter_total > 0 ? (value.to_f / quarter_total * 100).round(1) : 0 %>
                   
                   <rect x="<%= x_pct %>%" y="<%= y %>" width="<%= bar_pct %>%" height="<%= bar_height %>"
-                        fill="<%= group.color || '#94a3b8' %>">
-                    <title><%= group.name %>: <%= format_currency(value, precision: 0) %> (<%= pct %>%)</title>
+                        fill="<%= group.color || '#94a3b8' %>"
+                        data-bar-group="q<%= q_idx %>"
+                        data-tooltip="Q<%= ((quarter.month - 1) / 3) + 1 %> <%= quarter.strftime('%Y') %> · <%= group.name %>: <%= format_currency_plain(value, precision: 0) %> (<%= pct %>%)">
                   </rect>
                   
                   <% y_offset += bar_height %>
                 <% end %>
+
+                <%# Invisible rect covering empty space above the bar — shows total on hover %>
+                <% if y_tick_max > 0 && quarter_total > 0 %>
+                  <% total_bar_height = (quarter_total.to_f / y_tick_max * chart_height).round %>
+                  <% gap_top = chart_height - total_bar_height %>
+                  <% if gap_top > 0 %>
+                    <rect x="<%= x_pct %>%" y="0" width="<%= bar_pct %>%" height="<%= gap_top %>"
+                          fill="transparent"
+                          data-bar-group="q<%= q_idx %>"
+                          data-tooltip="Q<%= ((quarter.month - 1) / 3) + 1 %> <%= quarter.strftime('%Y') %> · Total: <%= format_currency_plain(quarter_total, precision: 0) %>">
+                    </rect>
+                  <% end %>
+                <% end %>
               <% end %>
             </svg>
+            <%= render "shared/chart_tooltip" %>
             <div class="flex" style="font-size: 9px;">
               <% @history_quarters.each_with_index do |quarter, q_idx| %>
                 <div style="width: <%= bar_pct + gap_pct %>%; text-align: center;">

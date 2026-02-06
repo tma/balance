@@ -130,61 +130,67 @@
         <% expense_pct = income > 0 ? [(expenses.to_f / income * 100).round, 100].min : 0 %>
         <% saved_pct = income > 0 ? [100 - expense_pct, 0].max : 0 %>
 
-        <svg width="300" height="300" viewBox="0 0 300 300" class="flex-shrink-0">
-          <% circumference_outer = 2 * Math::PI * 120 %>
-          <% circumference_inner = 2 * Math::PI * 70 %>
-          
-          <!-- Outer ring: Expenses + Savings (relative to income) -->
-          <% if income > 0 %>
-            <!-- Expenses arc (rose) -->
-            <circle cx="150" cy="150" r="120" fill="none"
-                    stroke="#fb7185"
-                    stroke-width="40"
-                    stroke-dasharray="<%= expense_pct / 100.0 * circumference_outer %> <%= circumference_outer %>"
-                    transform="rotate(-90 150 150)">
-              <title>Spent: <%= format_currency(expenses, precision: 0) %> (<%= expense_pct %>%)</title>
-            </circle>
-            <!-- Savings arc (transparent gap) -->
-            <% if saved_pct > 0 %>
+        <div data-controller="chart-tooltip" style="position: relative;">
+          <svg width="300" height="300" viewBox="0 0 300 300" class="flex-shrink-0">
+            <% circumference_outer = 2 * Math::PI * 120 %>
+            <% circumference_inner = 2 * Math::PI * 70 %>
+            
+            <!-- Outer ring: Expenses + Savings (relative to income) -->
+            <% if income > 0 %>
+              <!-- Expenses arc (rose) -->
               <circle cx="150" cy="150" r="120" fill="none"
-                      stroke="#94a3b8" stroke-opacity="0.15"
+                      stroke="#fb7185"
                       stroke-width="40"
-                      stroke-dasharray="<%= saved_pct / 100.0 * circumference_outer %> <%= circumference_outer %>"
-                      transform="rotate(<%= -90 + (expense_pct / 100.0 * 360) %> 150 150)">
-                <title>Saved: <%= format_currency(net, precision: 0) %> (<%= saved_pct %>%)</title>
+                      stroke-dasharray="<%= expense_pct / 100.0 * circumference_outer %> <%= circumference_outer %>"
+                      transform="rotate(-90 150 150)"
+                      style="pointer-events: stroke;"
+                      data-tooltip="Spent: <%= format_currency_plain(expenses, precision: 0) %> (<%= expense_pct %>%)">
               </circle>
+              <!-- Savings arc (transparent gap) -->
+              <% if saved_pct > 0 %>
+                <circle cx="150" cy="150" r="120" fill="none"
+                        stroke="#94a3b8" stroke-opacity="0.15"
+                        stroke-width="40"
+                        stroke-dasharray="<%= saved_pct / 100.0 * circumference_outer %> <%= circumference_outer %>"
+                        transform="rotate(<%= -90 + (expense_pct / 100.0 * 360) %> 150 150)"
+                        style="pointer-events: stroke;"
+                        data-tooltip="Saved: <%= format_currency_plain(net, precision: 0) %> (<%= saved_pct %>%)">
+                </circle>
+              <% end %>
+            <% else %>
+              <!-- Background circle when no income -->
+              <circle cx="150" cy="150" r="120" fill="none"
+                      class="stroke-slate-200 dark:stroke-slate-700"
+                      stroke-width="40"/>
             <% end %>
-          <% else %>
-            <!-- Background circle when no income -->
-            <circle cx="150" cy="150" r="120" fill="none"
-                    class="stroke-slate-200 dark:stroke-slate-700"
-                    stroke-width="40"/>
-          <% end %>
 
-          <!-- Inner ring: Full income (shows total) -->
-          <% if income > 0 %>
-            <circle cx="150" cy="150" r="70" fill="none"
-                    stroke="#60a5fa"
-                    stroke-width="35"
-                    stroke-dasharray="<%= circumference_inner %> 0"
-                    transform="rotate(-90 150 150)">
-              <title>Income: <%= format_currency(income, precision: 0) %></title>
-            </circle>
-          <% else %>
-            <circle cx="150" cy="150" r="70" fill="none"
-                    class="stroke-slate-200 dark:stroke-slate-700"
-                    stroke-width="35"/>
-          <% end %>
+            <!-- Inner ring: Full income (shows total) -->
+            <% if income > 0 %>
+              <circle cx="150" cy="150" r="70" fill="none"
+                      stroke="#60a5fa"
+                      stroke-width="35"
+                      stroke-dasharray="<%= circumference_inner %> 0"
+                      transform="rotate(-90 150 150)"
+                      style="pointer-events: stroke;"
+                      data-tooltip="Income: <%= format_currency_plain(income, precision: 0) %>">
+              </circle>
+            <% else %>
+              <circle cx="150" cy="150" r="70" fill="none"
+                      class="stroke-slate-200 dark:stroke-slate-700"
+                      stroke-width="35"/>
+            <% end %>
 
-          <!-- Center text -->
-          <text x="150" y="145" text-anchor="middle"
-                class="text-xl font-bold <%= net >= 0 ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-rose-500 dark:fill-rose-400' %>">
-            <%= saving_rate %>%
-          </text>
-          <text x="150" y="165" text-anchor="middle" class="text-xs fill-slate-400">
-            <%= net >= 0 ? 'Saving Rate' : 'Deficit' %>
-          </text>
-        </svg>
+            <!-- Center text -->
+            <text x="150" y="145" text-anchor="middle"
+                  class="text-xl font-bold <%= net >= 0 ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-rose-500 dark:fill-rose-400' %>">
+              <%= saving_rate %>%
+            </text>
+            <text x="150" y="165" text-anchor="middle" class="text-xs fill-slate-400">
+              <%= net >= 0 ? 'Saving Rate' : 'Deficit' %>
+            </text>
+          </svg>
+          <%= render "shared/chart_tooltip" %>
+        </div>
 
         <!-- Legend (3 rows, each with: name | percentage | value) -->
         <div class="mt-4 text-sm w-full space-y-1">
@@ -228,49 +234,54 @@
         <h3 class="<%= ui_subheading_class %> mb-4">Categories</h3>
         <div class="flex flex-col md:flex-row items-start gap-8">
           <!-- SVG Donut -->
-          <svg width="300" height="300" viewBox="0 0 300 300" class="flex-shrink-0">
-            <!-- Outer ring (expenses only - savings shown as gap) -->
-            <% circumference_outer = 2 * Math::PI * 120 %>
-            <% rotation_outer = -90 %>
-            <% chart_data[:expenses].each do |segment| %>
-              <% next if segment[:name] == "Savings" %>
-              <% arc_length = (segment[:pct] / 100.0 * circumference_outer) %>
-              <circle cx="150" cy="150" r="120" fill="none"
-                      stroke="<%= segment[:color] %>"
-                      stroke-width="40"
-                      stroke-dasharray="<%= arc_length %> <%= circumference_outer - arc_length %>"
-                      transform="rotate(<%= rotation_outer %> 150 150)"
-                      class="transition-all duration-300">
-                <title><%= segment[:name] %>: <%= format_currency(segment[:value], precision: 0) %> (<%= segment[:pct] %>%)</title>
-              </circle>
-              <% rotation_outer += (segment[:pct] / 100.0 * 360) %>
-            <% end %>
+          <div data-controller="chart-tooltip" style="position: relative;" class="flex-shrink-0">
+            <svg width="300" height="300" viewBox="0 0 300 300">
+              <!-- Outer ring (expenses only - savings shown as gap) -->
+              <% circumference_outer = 2 * Math::PI * 120 %>
+              <% rotation_outer = -90 %>
+              <% chart_data[:expenses].each do |segment| %>
+                <% next if segment[:name] == "Savings" %>
+                <% arc_length = (segment[:pct] / 100.0 * circumference_outer) %>
+                <circle cx="150" cy="150" r="120" fill="none"
+                        stroke="<%= segment[:color] %>"
+                        stroke-width="40"
+                        stroke-dasharray="<%= arc_length %> <%= circumference_outer - arc_length %>"
+                        transform="rotate(<%= rotation_outer %> 150 150)"
+                        class="transition-opacity duration-150"
+                        style="pointer-events: stroke;"
+                        data-tooltip="<%= segment[:name] %>: <%= format_currency_plain(segment[:value], precision: 0) %> (<%= segment[:pct] %>%)">
+                </circle>
+                <% rotation_outer += (segment[:pct] / 100.0 * 360) %>
+              <% end %>
 
-            <!-- Inner ring (income) -->
-            <% circumference_inner = 2 * Math::PI * 70 %>
-            <% rotation_inner = -90 %>
-            <% chart_data[:income].each do |segment| %>
-              <% arc_length = (segment[:pct] / 100.0 * circumference_inner) %>
-              <circle cx="150" cy="150" r="70" fill="none"
-                      stroke="<%= segment[:color] %>"
-                      stroke-width="35"
-                      stroke-dasharray="<%= arc_length %> <%= circumference_inner - arc_length %>"
-                      transform="rotate(<%= rotation_inner %> 150 150)"
-                      class="transition-all duration-300">
-                <title><%= segment[:name] %>: <%= format_currency(segment[:value], precision: 0) %> (<%= segment[:pct] %>%)</title>
-              </circle>
-              <% rotation_inner += (segment[:pct] / 100.0 * 360) %>
-            <% end %>
+              <!-- Inner ring (income) -->
+              <% circumference_inner = 2 * Math::PI * 70 %>
+              <% rotation_inner = -90 %>
+              <% chart_data[:income].each do |segment| %>
+                <% arc_length = (segment[:pct] / 100.0 * circumference_inner) %>
+                <circle cx="150" cy="150" r="70" fill="none"
+                        stroke="<%= segment[:color] %>"
+                        stroke-width="35"
+                        stroke-dasharray="<%= arc_length %> <%= circumference_inner - arc_length %>"
+                        transform="rotate(<%= rotation_inner %> 150 150)"
+                        class="transition-opacity duration-150"
+                        style="pointer-events: stroke;"
+                        data-tooltip="<%= segment[:name] %>: <%= format_currency_plain(segment[:value], precision: 0) %> (<%= segment[:pct] %>%)">
+                </circle>
+                <% rotation_inner += (segment[:pct] / 100.0 * 360) %>
+              <% end %>
 
-            <!-- Center text -->
-            <text x="150" y="145" text-anchor="middle"
-                  class="text-xl font-bold <%= @period_totals[:net] >= 0 ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-rose-500 dark:fill-rose-400' %>">
-              <%= @period_totals[:net] >= 0 ? '+' : '' %><%= number_to_currency(@period_totals[:net].abs, unit: '', precision: 0, delimiter: ',') %>
-            </text>
-            <text x="150" y="165" text-anchor="middle" class="text-xs fill-slate-400">
-              <%= @period_totals[:net] >= 0 ? 'Net Savings' : 'Deficit' %>
-            </text>
-          </svg>
+              <!-- Center text -->
+              <text x="150" y="145" text-anchor="middle"
+                    class="text-xl font-bold <%= @period_totals[:net] >= 0 ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-rose-500 dark:fill-rose-400' %>">
+                <%= @period_totals[:net] >= 0 ? '+' : '' %><%= number_to_currency(@period_totals[:net].abs, unit: '', precision: 0, delimiter: ',') %>
+              </text>
+              <text x="150" y="165" text-anchor="middle" class="text-xs fill-slate-400">
+                <%= @period_totals[:net] >= 0 ? 'Net Savings' : 'Deficit' %>
+              </text>
+            </svg>
+            <%= render "shared/chart_tooltip" %>
+          </div>
 
           <!-- Legend -->
           <div class="space-y-4 text-sm max-w-64">

@@ -64,3 +64,12 @@ body.privacy-mode input.currency-input:focus {
     color: #94a3b8; /* slate-400 */
   }
 }
+
+/* Chart tooltip hover highlight */
+[data-controller="chart-tooltip"] [data-tooltip] {
+  transition: filter 150ms ease;
+}
+
+[data-controller="chart-tooltip"] [data-tooltip]:hover {
+  filter: brightness(1.2);
+}

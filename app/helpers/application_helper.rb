@@ -58,6 +58,19 @@ module ApplicationHelper
     content_tag(:span, formatted, class: "currency-value")
   end
 
+  # Format currency as plain text (no HTML wrapping). For use in data attributes, tooltips, etc.
+  def format_currency_plain(amount, currency: nil, precision: 2)
+    currency ||= Currency.default_code
+    number_to_currency(
+      amount,
+      unit: "#{currency} ",
+      delimiter: "'",
+      separator: ".",
+      precision: precision,
+      format: "%u%n"
+    )
+  end
+
   # Format number with Swiss-style formatting (no currency): 1'234.56
   # Used when currency is shown separately
   # Wraps output in span for privacy mode blur support
