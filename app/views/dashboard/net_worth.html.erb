@@ -142,11 +142,17 @@
                 <% if y_tick_max > 0 && month_total > 0 %>
                   <% total_bar_height = (month_total.to_f / y_tick_max * chart_height).round %>
                   <% gap_top = chart_height - total_bar_height %>
+                  <%
+                    prev_month = month_idx > 0 ? @history_months[month_idx - 1] : nil
+                    prev_total = prev_month ? @asset_groups.sum { |g| @history_by_group[g.id][prev_month] || 0 } : nil
+                    pct_change = prev_total && prev_total != 0 ? ((month_total - prev_total).to_f / prev_total * 100).round(1) : nil
+                    pct_label = pct_change ? " (#{pct_change >= 0 ? '+' : ''}#{pct_change}%)" : ""
+                  %>
                   <% if gap_top > 0 %>
                     <rect x="<%= x_pct %>%" y="0" width="<%= bar_pct %>%" height="<%= gap_top %>"
                           fill="transparent"
                           data-bar-group="m<%= month_idx %>"
-                          data-tooltip="<%= month.strftime('%b %Y') %> · Total: <%= format_currency_plain(month_total, precision: 0) %>">
+                          data-tooltip="<%= month.strftime('%b %Y') %> · Total: <%= format_currency_plain(month_total, precision: 0) %><%= pct_label %>">
                     </rect>
                   <% end %>
                 <% end %>
@@ -216,11 +222,17 @@
                 <% if y_tick_max > 0 && quarter_total > 0 %>
                   <% total_bar_height = (quarter_total.to_f / y_tick_max * chart_height).round %>
                   <% gap_top = chart_height - total_bar_height %>
+                  <%
+                    prev_quarter = q_idx > 0 ? @history_quarters[q_idx - 1] : nil
+                    prev_q_total = prev_quarter ? @asset_groups.sum { |g| @history_by_group_quarterly[g.id][prev_quarter] || 0 } : nil
+                    q_pct_change = prev_q_total && prev_q_total != 0 ? ((quarter_total - prev_q_total).to_f / prev_q_total * 100).round(1) : nil
+                    q_pct_label = q_pct_change ? " (#{q_pct_change >= 0 ? '+' : ''}#{q_pct_change}%)" : ""
+                  %>
                   <% if gap_top > 0 %>
                     <rect x="<%= x_pct %>%" y="0" width="<%= bar_pct %>%" height="<%= gap_top %>"
                           fill="transparent"
                           data-bar-group="q<%= q_idx %>"
-                          data-tooltip="Q<%= ((quarter.month - 1) / 3) + 1 %> <%= quarter.strftime('%Y') %> · Total: <%= format_currency_plain(quarter_total, precision: 0) %>">
+                          data-tooltip="Q<%= ((quarter.month - 1) / 3) + 1 %> <%= quarter.strftime('%Y') %> · Total: <%= format_currency_plain(quarter_total, precision: 0) %><%= q_pct_label %>">
                     </rect>
                   <% end %>
                 <% end %>
