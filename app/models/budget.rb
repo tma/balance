@@ -13,14 +13,18 @@ class Budget < ApplicationRecord
   scope :yearly, -> { where(period: "yearly") }
 
   def spent(year, month = nil)
-    scope = Transaction.expense.where(category_id: category_id)
+    scope = Transaction.where(category_id: category_id)
 
-    if monthly?
+    scope = if monthly?
       return 0 if month.blank?
-      scope.in_month(year, month).sum(:amount_in_default_currency)
+      scope.in_month(year, month)
     else
-      scope.in_year(year).sum(:amount_in_default_currency)
+      scope.in_year(year)
     end
+
+    # Use signed amounts: expense transactions add to spent, income transactions
+    # (refunds) subtract, so refunds reduce the budget's spent amount.
+    scope.sum(Transaction.signed_amount_sql("expense"))
   end
 
   def remaining(year, month = nil)

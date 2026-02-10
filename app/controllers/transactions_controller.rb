@@ -47,9 +47,13 @@ class TransactionsController < ApplicationController
     # Group transactions by date for display
     @transactions_by_date = @transactions.group_by(&:date)
 
-    # Calculate totals
-    @total_income = @transactions.income.sum(:amount_in_default_currency)
-    @total_expenses = @transactions.expense.sum(:amount_in_default_currency)
+    # Calculate totals using category type with signed amounts
+    # (refunds on expense categories reduce expenses, not inflate income)
+    totals = @transactions.joins(:category)
+                          .group("categories.category_type")
+                          .sum(Transaction.signed_amount_by_category_type_sql)
+    @total_income = totals["income"] || 0
+    @total_expenses = totals["expense"] || 0
   end
 
   def new

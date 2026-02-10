@@ -127,4 +127,48 @@ class BudgetTest < ActiveSupport::TestCase
     @monthly_budget.save(validate: false)
     assert_equal 0, @monthly_budget.percentage_used(2026, 1)
   end
+
+  test "spent subtracts refunds from expenses" do
+    account = accounts(:checking_account)
+    # Normal expense
+    Transaction.create!(
+      account: account,
+      category: @monthly_budget.category,
+      amount: 200.00,
+      transaction_type: "expense",
+      date: Date.new(2099, 6, 10)
+    )
+    # Refund on same expense category
+    Transaction.create!(
+      account: account,
+      category: @monthly_budget.category,
+      amount: 50.00,
+      transaction_type: "income",
+      date: Date.new(2099, 6, 15)
+    )
+
+    assert_equal 150.00, @monthly_budget.spent(2099, 6)
+  end
+
+  test "spent goes negative when refunds exceed expenses" do
+    account = accounts(:checking_account)
+    # Small expense
+    Transaction.create!(
+      account: account,
+      category: @monthly_budget.category,
+      amount: 30.00,
+      transaction_type: "expense",
+      date: Date.new(2099, 7, 10)
+    )
+    # Larger refund
+    Transaction.create!(
+      account: account,
+      category: @monthly_budget.category,
+      amount: 100.00,
+      transaction_type: "income",
+      date: Date.new(2099, 7, 15)
+    )
+
+    assert_equal(-70.00, @monthly_budget.spent(2099, 7))
+  end
 end

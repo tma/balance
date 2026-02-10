@@ -76,6 +76,19 @@ class DashboardController < ApplicationController
 
   private
 
+  # Compute signed income/expense totals based on category type (not transaction type).
+  # For income categories: income transactions add, expense transactions subtract.
+  # For expense categories: expense transactions add, income transactions subtract.
+  # This ensures refunds on expense categories reduce expenses rather than inflating income.
+  def signed_sum_by_category_type(scope)
+    signed = scope.joins(:category)
+                  .group("categories.category_type")
+                  .sum(Transaction.signed_amount_by_category_type_sql)
+    income = signed["income"] || 0
+    expenses = signed["expense"] || 0
+    { income: income, expenses: expenses }
+  end
+
   # Default to last complete month (end of previous month)
   def default_valuation_date
     (Date.current.beginning_of_month - 1.day).end_of_month
@@ -171,11 +184,12 @@ class DashboardController < ApplicationController
       year = month_start.year
       month = month_start.month
 
-      # Use amount_in_default_currency for consistent totals
-      income = Transaction.income.in_month(year, month).sum(:amount_in_default_currency) || 0
-      expenses = Transaction.expense.in_month(year, month).sum(:amount_in_default_currency) || 0
+      # Use category type for income/expense classification (not transaction type)
+      totals = signed_sum_by_category_type(Transaction.in_month(year, month))
+      income = totals[:income]
+      expenses = totals[:expenses]
       net = income - expenses
-      saving_rate = income > 0 ? ((income - expenses) / income * 100).round(1) : 0
+      saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
 
       data << {
         date: month_start,
@@ -195,8 +209,9 @@ class DashboardController < ApplicationController
   def calculate_monthly_data_for_year(year)
     (1..12).map do |month|
       month_start = Date.new(year, month, 1)
-      income = Transaction.income.in_month(year, month).sum(:amount_in_default_currency) || 0
-      expenses = Transaction.expense.in_month(year, month).sum(:amount_in_default_currency) || 0
+      totals = signed_sum_by_category_type(Transaction.in_month(year, month))
+      income = totals[:income]
+      expenses = totals[:expenses]
       net = income - expenses
       saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
 
@@ -216,8 +231,9 @@ class DashboardController < ApplicationController
   end
 
   def calculate_year_totals(year)
-    income = Transaction.income.in_year(year).sum(:amount_in_default_currency) || 0
-    expenses = Transaction.expense.in_year(year).sum(:amount_in_default_currency) || 0
+    totals = signed_sum_by_category_type(Transaction.in_year(year))
+    income = totals[:income]
+    expenses = totals[:expenses]
     net = income - expenses
     saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
 
@@ -225,13 +241,10 @@ class DashboardController < ApplicationController
   end
 
   def calculate_period_totals(year, month = nil)
-    if month
-      income = Transaction.income.in_month(year, month).sum(:amount_in_default_currency) || 0
-      expenses = Transaction.expense.in_month(year, month).sum(:amount_in_default_currency) || 0
-    else
-      income = Transaction.income.in_year(year).sum(:amount_in_default_currency) || 0
-      expenses = Transaction.expense.in_year(year).sum(:amount_in_default_currency) || 0
-    end
+    scope = month ? Transaction.in_month(year, month) : Transaction.in_year(year)
+    totals = signed_sum_by_category_type(scope)
+    income = totals[:income]
+    expenses = totals[:expenses]
     net = income - expenses
     saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
 
@@ -245,14 +258,18 @@ class DashboardController < ApplicationController
   def enrich_monthly_data_with_averages(monthly_data, year)
     # Batch-fetch all monthly expense totals for the full lookback window in a single query.
     # The earliest trailing month needed is 12 months before January of the selected year.
+    # Uses category_type to determine expenses (not transaction_type), with signed amounts
+    # so that refunds on expense categories reduce the expense total.
     lookback_start = Date.new(year, 1, 1) - 12.months
     lookback_end = Date.new(year, 12, 31)
 
-    expense_totals_by_month = Transaction.expense
+    expense_totals_by_month = Transaction
+      .joins(:category)
       .where(date: lookback_start..lookback_end)
+      .where(categories: { category_type: "expense" })
       .group("strftime('%Y', date)", "strftime('%m', date)")
-      .sum(:amount_in_default_currency)
-      .transform_keys { |y, m| [y.to_i, m.to_i] }
+      .sum(Transaction.signed_amount_sql("expense"))
+      .transform_keys { |y, m| [ y.to_i, m.to_i ] }
 
     monthly_data.each do |month|
       if month[:is_future] || (month[:income] == 0 && month[:expenses] == 0)
@@ -267,7 +284,7 @@ class DashboardController < ApplicationController
       trailing_expenses = []
       12.times do |i|
         d = Date.new(year, month[:month], 1) - (i + 1).months
-        total = expense_totals_by_month[[d.year, d.month]]
+        total = expense_totals_by_month[[ d.year, d.month ]]
         trailing_expenses << total if total
       end
 
@@ -292,13 +309,16 @@ class DashboardController < ApplicationController
   end
 
   def calculate_category_breakdown(type, year, month = nil)
-    scope = type == :income ? Transaction.income : Transaction.expense
-    scope = month ? scope.in_month(year, month) : scope.in_year(year)
+    scope = month ? Transaction.in_month(year, month) : Transaction.in_year(year)
 
+    # Filter by category type and compute signed amounts
+    positive_type = type == :income ? "income" : "expense"
     scope.joins(:category)
+         .where(categories: { category_type: positive_type })
          .group("categories.id", "categories.name")
-         .sum(:amount_in_default_currency)
+         .sum(Transaction.signed_amount_sql(positive_type))
          .map { |(id, name), amount| { id: id, name: name, amount: amount } }
+         .select { |c| c[:amount] != 0 }
          .sort_by { |c| -c[:amount] }
   end
 
@@ -306,11 +326,13 @@ class DashboardController < ApplicationController
   # Returns array of { category:, spent:, budget:, budget_amount:, pct: } for all categories
   # that have either transactions or budgets in the period, sorted by percentage descending
   def build_category_spending(year, month = nil)
-    # Get all expense transactions grouped by category for the period
-    scope = month ? Transaction.expense.in_month(year, month) : Transaction.expense.in_year(year)
+    # Get all transactions on expense categories, with signed amounts
+    # (expense transactions add to spent, income/refund transactions subtract)
+    scope = month ? Transaction.in_month(year, month) : Transaction.in_year(year)
     spending_by_category = scope.joins(:category)
+                                .where(categories: { category_type: "expense" })
                                 .group("categories.id")
-                                .sum(:amount_in_default_currency)
+                                .sum(Transaction.signed_amount_sql("expense"))
 
     # Get relevant budgets (monthly if month selected, yearly if full year)
     budgets = month ? Budget.monthly.includes(:category) : Budget.yearly.includes(:category)
@@ -341,16 +363,19 @@ class DashboardController < ApplicationController
     end.compact
 
     # Sort by percentage descending (highest spending first), tiebreak by amount
-    result.sort_by { |r| [-r[:pct], -r[:spent]] }
+    result.sort_by { |r| [ -r[:pct], -r[:spent] ] }
   end
 
   # Build income category data with percentage of total income
   # Returns array of { category:, earned:, pct: } sorted by percentage descending
   def build_income_category_spending(year, month = nil)
-    scope = month ? Transaction.income.in_month(year, month) : Transaction.income.in_year(year)
+    # Get all transactions on income categories, with signed amounts
+    # (income transactions add to earned, expense transactions subtract)
+    scope = month ? Transaction.in_month(year, month) : Transaction.in_year(year)
     income_by_category = scope.joins(:category)
+                              .where(categories: { category_type: "income" })
                               .group("categories.id")
-                              .sum(:amount_in_default_currency)
+                              .sum(Transaction.signed_amount_sql("income"))
 
     return [] if income_by_category.empty?
 
@@ -370,6 +395,6 @@ class DashboardController < ApplicationController
       }
     end.compact
 
-    result.sort_by { |r| [-r[:pct], -r[:earned]] }
+    result.sort_by { |r| [ -r[:pct], -r[:earned] ] }
   end
 end

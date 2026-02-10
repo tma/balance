@@ -16,6 +16,30 @@ class Transaction < ApplicationRecord
 
   scope :needs_exchange_rate, -> { where(exchange_rate: nil).where.not(account: Account.where(currency: Currency.default&.code)) }
 
+  # SQL expression for signed amount based on a positive direction.
+  # Returns positive when transaction_type matches positive_type, negative otherwise.
+  # Use for aggregating net amounts by category type (e.g., refunds reduce expenses).
+  #   positive_type: "income" or "expense" — the transaction_type that counts as positive
+  def self.signed_amount_sql(positive_type)
+    Arel.sql(
+      "CASE WHEN transactions.transaction_type = #{connection.quote(positive_type)} " \
+      "THEN transactions.amount_in_default_currency " \
+      "ELSE -transactions.amount_in_default_currency END"
+    )
+  end
+
+  # SQL expression for signed amount matching transaction_type against the joined
+  # category's category_type. Returns positive when they match (normal flow),
+  # negative when they differ (refunds/corrections).
+  # Requires the query to join :category.
+  def self.signed_amount_by_category_type_sql
+    Arel.sql(
+      "CASE WHEN transactions.transaction_type = categories.category_type " \
+      "THEN transactions.amount_in_default_currency " \
+      "ELSE -transactions.amount_in_default_currency END"
+    )
+  end
+
   before_save :calculate_default_currency_amount
   before_save :calculate_duplicate_hash
   after_create :update_account_balance_on_create
