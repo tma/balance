@@ -341,7 +341,47 @@
     <% end %>
   </div>
 
-  <!-- Categories -->
+  <!-- Income Categories -->
+  <% if @income_category_spending.any? %>
+  <div class="<%= ui_card_table_class %>">
+    <table class="min-w-full">
+      <thead class="<%= ui_table_header_class %>">
+        <tr>
+            <th class="<%= ui_table_th_class %>">Income</th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 60px;"></th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 120px;">Earned</th>
+        </tr>
+      </thead>
+      <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
+        <% @income_category_spending.each do |item| %>
+          <%
+            category = item[:category]
+            earned = item[:earned]
+
+            if @selected_month
+              tx_path = transactions_path(month: Date.new(@selected_year, @selected_month, 1).strftime("%Y-%m"), category_id: category.id)
+            else
+              tx_path = transactions_path(start_date: "#{@selected_year}-01-01", end_date: "#{@selected_year}-12-31", category_id: category.id)
+            end
+          %>
+          <tr class="<%= ui_table_row_class %>">
+            <td class="<%= ui_table_td_class %>">
+              <%= link_to category.name, tx_path, class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" %>
+            </td>
+            <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+              <%= item[:pct] %>%
+            </td>
+            <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+              <%= format_currency(earned) %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% end %>
+
+  <!-- Expense Categories -->
   <div class="<%= ui_card_table_class %>">
     <% if @category_spending.empty? %>
       <div class="p-8 text-center">
@@ -350,11 +390,12 @@
     <% else %>
       <table class="min-w-full">
         <thead class="<%= ui_table_header_class %>">
-          <tr>
-            <th class="<%= ui_table_th_class %>">Category</th>
-            <th class="<%= ui_table_th_class %> text-right pr-2">Spent</th>
-            <th class="<%= ui_table_th_class %> text-right pl-0">Budget</th>
+           <tr>
+            <th class="<%= ui_table_th_class %>">Expenses</th>
             <th class="<%= ui_table_th_class %>" style="min-width: 200px;"></th>
+            <th class="<%= ui_table_th_class %> text-right pl-0" style="width: 120px;">Budget</th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 60px;"></th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 120px;">Spent</th>
           </tr>
         </thead>
         <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
@@ -371,16 +412,30 @@
                 tx_path = transactions_path(start_date: "#{@selected_year}-01-01", end_date: "#{@selected_year}-12-31", category_id: category.id)
               end
               
-              # Calculate percentage if budget exists
-              percentage = budget_amount && budget_amount > 0 ? (spent / budget_amount * 100).round : nil
-              is_over_budget = percentage && percentage > 100
+              # Calculate budget usage percentage if budget exists
+              budget_pct = budget_amount && budget_amount > 0 ? (spent / budget_amount * 100).round : nil
+              is_over_budget = budget_pct && budget_pct > 100
             %>
             <tr class="<%= ui_table_row_class %>">
               <td class="<%= ui_table_td_class %>">
                 <%= link_to category.name, tx_path, class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" %>
               </td>
-              <td class="<%= ui_table_td_class %> text-right tabular-nums pr-2 <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_muted_class %>">
-                <%= format_currency(spent) %>
+              <td class="<%= ui_table_td_class %>">
+                <% if budget_pct %>
+                  <% bar_pct = [budget_pct, 100].min %>
+                  <%= link_to budget_path(item[:budget]), class: "block no-underline" do %>
+                    <div style="height: 20px; display: flex;" class="text-xs overflow-hidden hover:opacity-80 transition">
+                      <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                        <% if bar_pct > 25 %><span class="text-white"><%= budget_pct %>%</span><% end %>
+                      </div>
+                      <% if budget_pct <= 100 %>
+                        <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
+                      <% end %>
+                    </div>
+                  <% end %>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
               </td>
               <td class="<%= ui_table_td_class %> text-right <%= ui_text_muted_class %> tabular-nums pl-0">
                 <% if budget_amount %>
@@ -389,22 +444,11 @@
                   <span class="<%= ui_text_subtle_class %>">-</span>
                 <% end %>
               </td>
-              <td class="<%= ui_table_td_class %>">
-                <% if percentage %>
-                  <% bar_pct = [percentage, 100].min %>
-                  <%= link_to budget_path(item[:budget]), class: "block no-underline" do %>
-                    <div style="height: 20px; display: flex;" class="text-xs overflow-hidden hover:opacity-80 transition">
-                      <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
-                        <% if bar_pct > 25 %><span class="text-white"><%= percentage %>%</span><% end %>
-                      </div>
-                      <% if percentage <= 100 %>
-                        <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
-                      <% end %>
-                    </div>
-                  <% end %>
-                <% else %>
-                  <span class="<%= ui_text_subtle_class %>">-</span>
-                <% end %>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+                <%= item[:pct] %>%
+              </td>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_muted_class %>">
+                <%= format_currency(spent) %>
               </td>
             </tr>
           <% end %>

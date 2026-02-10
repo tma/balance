@@ -38,8 +38,9 @@ class DashboardController < ApplicationController
     @income_by_category = calculate_category_breakdown(:income, @selected_year, @selected_month)
     @expense_by_category = calculate_category_breakdown(:expense, @selected_year, @selected_month)
 
-    # Combined categories with spending and budgets
+    # Combined categories with spending and budgets (sorted by % descending)
     @category_spending = build_category_spending(@selected_year, @selected_month)
+    @income_category_spending = build_income_category_spending(@selected_year, @selected_month)
 
     # Budgets separated by period (kept for reference)
     @monthly_budgets = Budget.monthly.includes(:category).order("categories.name")
@@ -247,9 +248,9 @@ class DashboardController < ApplicationController
          .sort_by { |c| -c[:amount] }
   end
 
-  # Build combined category spending with budget info
-  # Returns array of { category:, spent:, budget:, budget_amount: } for all categories
-  # that have either transactions or budgets in the period
+  # Build combined category spending with budget info and percentage of total expenses
+  # Returns array of { category:, spent:, budget:, budget_amount:, pct: } for all categories
+  # that have either transactions or budgets in the period, sorted by percentage descending
   def build_category_spending(year, month = nil)
     # Get all expense transactions grouped by category for the period
     scope = month ? Transaction.expense.in_month(year, month) : Transaction.expense.in_year(year)
@@ -265,6 +266,8 @@ class DashboardController < ApplicationController
     category_ids = (spending_by_category.keys + budgets_by_category.keys).uniq
     categories = Category.where(id: category_ids).index_by(&:id)
 
+    total_expenses = spending_by_category.values.sum
+
     # Build result array
     result = category_ids.map do |cat_id|
       category = categories[cat_id]
@@ -272,16 +275,47 @@ class DashboardController < ApplicationController
 
       spent = spending_by_category[cat_id] || 0
       budget = budgets_by_category[cat_id]
+      pct = total_expenses > 0 ? (spent.to_f / total_expenses * 100).round : 0
 
       {
         category: category,
         spent: spent,
         budget: budget,
-        budget_amount: budget&.amount
+        budget_amount: budget&.amount,
+        pct: pct
       }
     end.compact
 
-    # Sort alphabetically by category name
-    result.sort_by { |r| r[:category].name }
+    # Sort by percentage descending (highest spending first), tiebreak by amount
+    result.sort_by { |r| [-r[:pct], -r[:spent]] }
+  end
+
+  # Build income category data with percentage of total income
+  # Returns array of { category:, earned:, pct: } sorted by percentage descending
+  def build_income_category_spending(year, month = nil)
+    scope = month ? Transaction.income.in_month(year, month) : Transaction.income.in_year(year)
+    income_by_category = scope.joins(:category)
+                              .group("categories.id")
+                              .sum(:amount_in_default_currency)
+
+    return [] if income_by_category.empty?
+
+    total_income = income_by_category.values.sum
+    categories = Category.where(id: income_by_category.keys).index_by(&:id)
+
+    result = income_by_category.map do |cat_id, earned|
+      category = categories[cat_id]
+      next unless category
+
+      pct = total_income > 0 ? (earned.to_f / total_income * 100).round : 0
+
+      {
+        category: category,
+        earned: earned,
+        pct: pct
+      }
+    end.compact
+
+    result.sort_by { |r| [-r[:pct], -r[:earned]] }
   end
 end
