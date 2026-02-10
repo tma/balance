@@ -207,7 +207,7 @@ module UiHelper
 
   # Danger badge (rose)
   def ui_badge_danger_class
-    "px-2 py-0.5 text-xs bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300"
+    "px-2 py-0.5 text-xs rounded-sm text-[#fb7185] bg-[rgba(251,113,133,0.15)]"
   end
 
   # Info badge (cyan)

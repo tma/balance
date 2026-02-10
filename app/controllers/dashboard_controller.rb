@@ -29,6 +29,7 @@ class DashboardController < ApplicationController
 
     # Monthly data for selected calendar year (Jan-Dec)
     @monthly_data = calculate_monthly_data_for_year(@selected_year)
+    enrich_monthly_data_with_averages(@monthly_data, @selected_year)
     @year_totals = calculate_year_totals(@selected_year)
 
     # Period totals (respects month filter)
@@ -235,6 +236,59 @@ class DashboardController < ApplicationController
     saving_rate = income > 0 ? ((net / income) * 100).round(1) : 0
 
     { income: income, expenses: expenses, net: net, saving_rate: saving_rate }
+  end
+
+  # Enrich monthly data with trailing 12-month average expenses and anomaly flags.
+  # For each month, looks back up to 12 months (excluding the month itself) to compute
+  # the average expense baseline. Flags months where expenses exceed the average by >= 20%.
+  # Only months with actual expense transactions contribute to the average.
+  def enrich_monthly_data_with_averages(monthly_data, year)
+    # Batch-fetch all monthly expense totals for the full lookback window in a single query.
+    # The earliest trailing month needed is 12 months before January of the selected year.
+    lookback_start = Date.new(year, 1, 1) - 12.months
+    lookback_end = Date.new(year, 12, 31)
+
+    expense_totals_by_month = Transaction.expense
+      .where(date: lookback_start..lookback_end)
+      .group("strftime('%Y', date)", "strftime('%m', date)")
+      .sum(:amount_in_default_currency)
+      .transform_keys { |y, m| [y.to_i, m.to_i] }
+
+    monthly_data.each do |month|
+      if month[:is_future] || (month[:income] == 0 && month[:expenses] == 0)
+        month[:trailing_average] = nil
+        month[:delta_percent] = nil
+        month[:anomaly] = false
+        next
+      end
+
+      # Collect trailing 12 months of expenses (excluding current month).
+      # Only months that have expense transactions contribute to the average.
+      trailing_expenses = []
+      12.times do |i|
+        d = Date.new(year, month[:month], 1) - (i + 1).months
+        total = expense_totals_by_month[[d.year, d.month]]
+        trailing_expenses << total if total
+      end
+
+      if trailing_expenses.empty?
+        month[:trailing_average] = nil
+        month[:delta_percent] = nil
+        month[:anomaly] = false
+      else
+        average = trailing_expenses.sum.to_f / trailing_expenses.size
+        month[:trailing_average] = average.round(2)
+
+        if average > 0
+          delta = ((month[:expenses] - average) / average * 100).round(1)
+          month[:delta_percent] = delta
+          month[:anomaly] = delta >= 20.0
+        else
+          month[:delta_percent] = nil
+          month[:anomaly] = false
+        end
+      end
+    end
   end
 
   def calculate_category_breakdown(type, year, month = nil)
