@@ -24,7 +24,9 @@
 <div class="space-y-6"
      data-controller="month-navigation"
      <%= "data-month-navigation-prev-url-value=#{cash_flow_path(year: nav_prev_year, month: nav_prev_month)}" if nav_can_go_prev %>
-     <%= "data-month-navigation-next-url-value=#{cash_flow_path(year: nav_next_year, month: nav_next_month)}" if nav_can_go_next %>>
+     <%= "data-month-navigation-next-url-value=#{cash_flow_path(year: nav_next_year, month: nav_next_month)}" if nav_can_go_next %>
+     <%= "data-month-navigation-prev-year-url-value=#{cash_flow_path(year: @selected_year - 1)}" if @selected_year > @min_year %>
+     <%= "data-month-navigation-next-year-url-value=#{cash_flow_path(year: @selected_year + 1)}" if @selected_year < @max_year %>>
   <!-- Navigation -->
   <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 py-3 -mx-4 px-4 flex flex-wrap items-center justify-between gap-4">
     <!-- Month Filter Tabs with Navigation Arrows -->
@@ -341,6 +343,237 @@
     <% end %>
   </div>
 
+  <!-- Monthly Bar Chart + Breakdown Table (only shown in full year view) -->
+  <% unless @selected_month %>
+
+  <%# ── Monthly Income vs Expenses Bar Chart ── %>
+  <% chart_height = 150 %>
+  <% max_value = @monthly_data.map { |m| [m[:income], m[:expenses]].max }.max || 0 %>
+  <% y_ticks = chart_y_ticks(max_value) %>
+  <% y_tick_max = y_ticks.last.to_f %>
+  <div class="<%= ui_card_class %> p-6">
+    <div class="flex w-full">
+      <%# Y-axis labels %>
+      <div class="flex flex-col justify-between text-right pr-2 flex-shrink-0" style="height: <%= chart_height %>px; font-size: 9px;">
+        <% y_ticks.reverse.each do |tick| %>
+          <span class="<%= ui_text_subtle_class %> leading-none"><%= format_y_axis_value(tick) %></span>
+        <% end %>
+      </div>
+      <%# Chart area %>
+      <div class="flex-1 min-w-0" data-controller="chart-tooltip" data-chart-tooltip-always-above-value="true" style="position: relative;">
+        <svg class="w-full" height="<%= chart_height %>" viewBox="0 0 100 <%= chart_height %>" preserveAspectRatio="none">
+          <%# Grid lines %>
+          <% y_ticks.each do |tick| %>
+            <% grid_y = y_tick_max > 0 ? chart_height - (tick.to_f / y_tick_max * chart_height) : chart_height %>
+            <% is_baseline = tick == 0 %>
+            <line x1="0" y1="<%= grid_y %>" x2="100" y2="<%= grid_y %>"
+                  stroke="currentColor" class="<%= is_baseline ? 'text-slate-300 dark:text-slate-600' : 'text-slate-200 dark:text-slate-700' %>" stroke-width="<%= is_baseline ? 2 : 1 %>" vector-effect="non-scaling-stroke" />
+          <% end %>
+
+          <%# Grouped bars: income + expenses per month %>
+          <% bar_w = 3.3 %>
+          <% pair_gap = 0.4 %>
+          <% month_gap = 1.4 %>
+          <% pair_w = bar_w * 2 + pair_gap %>
+          <% total_w = 12 * pair_w + 11 * month_gap %>
+          <% start_offset = (100 - total_w) / 2.0 %>
+
+          <%# Trailing 12-month average smooth curve (rendered first = behind bars) %>
+          <% avg_points = [] %>
+          <% @monthly_data.each_with_index do |month, idx| %>
+            <% if month[:trailing_average] && y_tick_max > 0 %>
+              <% x = start_offset + idx * (pair_w + month_gap) + bar_w + pair_gap + bar_w / 2.0 %>
+              <% y = chart_height - (month[:trailing_average].to_f / y_tick_max * chart_height) %>
+              <% avg_points << { x: x, y: y, month: month } %>
+            <% end %>
+          <% end %>
+          <% if avg_points.size >= 2 %>
+            <%
+              # Build a smooth cubic bezier path through the points
+              # Uses Catmull-Rom to Bezier conversion for natural curves
+              path_d = "M #{avg_points[0][:x]},#{avg_points[0][:y]}"
+              avg_points.each_with_index do |pt, i|
+                next if i == 0
+                p0 = avg_points[[i - 2, 0].max]
+                p1 = avg_points[i - 1]
+                p2 = pt
+                p3 = avg_points[[i + 1, avg_points.size - 1].min]
+                # Tension factor (0.25 = gentle curves)
+                t = 0.25
+                cp1x = p1[:x] + (p2[:x] - p0[:x]) * t
+                cp1y = p1[:y] + (p2[:y] - p0[:y]) * t
+                cp2x = p2[:x] - (p3[:x] - p1[:x]) * t
+                cp2y = p2[:y] - (p3[:y] - p1[:y]) * t
+                path_d += " C #{cp1x},#{cp1y} #{cp2x},#{cp2y} #{p2[:x]},#{p2[:y]}"
+              end
+            %>
+            <path d="<%= path_d %>"
+                  fill="none" stroke="#fda4af" stroke-width="1.5" stroke-opacity="0.5"
+                  vector-effect="non-scaling-stroke" />
+          <% end %>
+
+          <% @monthly_data.each_with_index do |month, idx| %>
+            <% x_base = start_offset + idx * (pair_w + month_gap) %>
+            <% x_income = x_base %>
+            <% x_expense = x_base + bar_w + pair_gap %>
+
+            <%# Income bar %>
+            <% if month[:income] > 0 && y_tick_max > 0 %>
+              <% h = (month[:income].to_f / y_tick_max * chart_height).round %>
+              <% y = chart_height - h %>
+              <rect x="<%= x_income %>%" y="<%= y %>" width="<%= bar_w %>%" height="<%= h %>"
+                    fill="#60a5fa" data-bar-group="cf<%= idx %>"
+                    data-tooltip="<%= Date::ABBR_MONTHNAMES[month[:month]] %> <%= @selected_year %> · Income: <%= format_currency_plain(month[:income], precision: 0) %>">
+              </rect>
+            <% end %>
+
+            <%# Expenses bar %>
+            <% if month[:expenses] > 0 && y_tick_max > 0 %>
+              <% h = (month[:expenses].to_f / y_tick_max * chart_height).round %>
+              <% y = chart_height - h %>
+              <rect x="<%= x_expense %>%" y="<%= y %>" width="<%= bar_w %>%" height="<%= h %>"
+                    fill="#fb7185" data-bar-group="cf<%= idx %>"
+                    data-tooltip="<%= Date::ABBR_MONTHNAMES[month[:month]] %> <%= @selected_year %> · Expenses: <%= format_currency_plain(month[:expenses], precision: 0) %>">
+              </rect>
+            <% end %>
+
+            <%# Invisible overlay for combined tooltip %>
+            <% if y_tick_max > 0 && (month[:income] > 0 || month[:expenses] > 0) %>
+              <% max_h = ([month[:income], month[:expenses]].max.to_f / y_tick_max * chart_height).round %>
+              <% gap_top = chart_height - max_h %>
+              <% net = month[:income] - month[:expenses] %>
+              <% if gap_top > 0 %>
+                <rect x="<%= x_base %>%" y="0" width="<%= pair_w %>%" height="<%= gap_top %>"
+                      fill="transparent" data-bar-group="cf<%= idx %>"
+                      data-tooltip="<%= Date::ABBR_MONTHNAMES[month[:month]] %> <%= @selected_year %> · Income: <%= format_currency_plain(month[:income], precision: 0) %> / Expenses: <%= format_currency_plain(month[:expenses], precision: 0) %> / Net: <%= net >= 0 ? '+' : '' %><%= format_currency_plain(net, precision: 0) %>">
+                </rect>
+              <% end %>
+            <% end %>
+          <% end %>
+        </svg>
+        <%= render "shared/chart_tooltip" %>
+        <%# X-axis month labels %>
+        <div class="flex" style="font-size: 9px;">
+          <% @monthly_data.each_with_index do |month, idx| %>
+            <% label_w = pair_w + (idx < 11 ? month_gap : 0) %>
+            <% ml = idx == 0 ? "margin-left: #{start_offset}%" : "" %>
+            <div style="width: <%= label_w %>%; text-align: center; <%= ml %>">
+              <span class="<%= ui_text_muted_class %>"><%= Date::ABBR_MONTHNAMES[month[:month]][0..2] %></span>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="<%= ui_card_table_class %>">
+    <div class="overflow-x-auto">
+      <table class="min-w-full">
+        <thead class="<%= ui_table_header_class %>">
+          <tr>
+            <th class="<%= ui_table_th_class %>">Month</th>
+            <th class="<%= ui_table_th_class %> text-right">Income</th>
+            <th class="<%= ui_table_th_class %> text-right">Expenses</th>
+            <th class="<%= ui_table_th_class %> text-right">Net</th>
+            <th class="<%= ui_table_th_class %>" style="min-width: 200px;">Breakdown</th>
+          </tr>
+        </thead>
+        <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
+          <% @monthly_data.each do |month| %>
+            <% is_selected = @selected_month == month[:month] %>
+            <% is_current = month[:date].year == Date.current.year && month[:date].month == Date.current.month %>
+            <tr class="<%= is_selected ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border-l-2 border-cyan-500' : (is_current ? 'bg-slate-50/50 dark:bg-slate-700/30' : ui_table_row_class) %>">
+              <td class="<%= ui_table_td_class %> whitespace-nowrap">
+                <%= link_to cash_flow_path(year: @selected_year, month: month[:month]), class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" do %>
+                  <%= Date::MONTHNAMES[month[:month]] %>
+                <% end %>
+                <% if is_current %>
+                  <span class="ml-2 <%= ui_badge_info_class %>">Current</span>
+                <% end %>
+                <% if month[:is_future] %>
+                  <span class="ml-2 <%= ui_text_subtle_class %> text-xs">Future</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
+                <% if month[:income] > 0 %>
+                  <%= format_currency(month[:income]) %>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
+                <% if month[:expenses] > 0 %>
+                  <% if month[:anomaly] %>
+                    <span class="<%= ui_badge_danger_class %> mr-1 border-0" title="<%= month[:delta_percent] %>% above 12-month average">High</span>
+                  <% end %>
+                  <%= format_currency(month[:expenses]) %>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
+              </td>
+
+              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? ui_positive_class : ui_negative_class %>">
+                <% if month[:income] > 0 || month[:expenses] > 0 %>
+                  <%= month[:net] >= 0 ? '+' : '' %><%= format_currency(month[:net]) %>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> whitespace-nowrap">
+                <% if month[:income] > 0 %>
+                  <% expense_pct = (month[:expenses].to_f / month[:income] * 100).round %>
+                  <% is_over = expense_pct > 100 %>
+                  <% bar_pct = [expense_pct, 100].min %>
+                  <% saved_pct = 100 - bar_pct %>
+                  <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
+                    <div style="width: <%= bar_pct %>%; background: <%= is_over ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                      <% if bar_pct > 20 %><span class="text-white"><%= expense_pct %>%</span><% end %>
+                    </div>
+                    <% if saved_pct > 0 %>
+                      <div style="width: <%= saved_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full flex items-center justify-end pr-1">
+                        <% if saved_pct > 20 %><span class="text-slate-400"><%= saved_pct %>%</span><% end %>
+                      </div>
+                    <% end %>
+                  </div>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+          <tr class="bg-slate-200 dark:bg-slate-700 <%= ui_table_group_separator_class %>">
+            <td class="px-4 py-3 font-bold <%= ui_text_class %>"><%= @selected_year %> Total</td>
+            <td class="px-4 py-3 text-right font-bold <%= ui_text_class %>"><%= format_currency(@year_totals[:income]) %></td>
+            <td class="px-4 py-3 text-right font-bold <%= ui_text_class %>"><%= format_currency(@year_totals[:expenses]) %></td>
+
+            <td class="px-4 py-3 text-right font-bold <%= @year_totals[:net] >= 0 ? ui_positive_class : ui_negative_class %>">
+              <%= @year_totals[:net] >= 0 ? '+' : '' %><%= format_currency(@year_totals[:net]) %>
+            </td>
+            <td class="px-4 py-3">
+              <% if @year_totals[:income] > 0 %>
+                <% expense_pct = (@year_totals[:expenses].to_f / @year_totals[:income] * 100).round %>
+                <% is_over = expense_pct > 100 %>
+                <% bar_pct = [expense_pct, 100].min %>
+                <% saved_pct = 100 - bar_pct %>
+                <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
+                  <div style="width: <%= bar_pct %>%; background: <%= is_over ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                    <% if bar_pct > 20 %><span class="text-white"><%= expense_pct %>%</span><% end %>
+                  </div>
+                  <% if saved_pct > 0 %>
+                    <div style="width: <%= saved_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full flex items-center justify-end pr-1">
+                      <% if saved_pct > 20 %><span class="text-slate-400"><%= saved_pct %>%</span><% end %>
+                    </div>
+                  <% end %>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <% end %>
+
   <!-- Income Categories -->
   <% if @income_category_spending.any? %>
   <div class="<%= ui_card_table_class %>">
@@ -456,103 +689,4 @@
       </table>
     <% end %>
   </div>
-
-  <!-- Monthly Breakdown Table (only shown in full year view) -->
-  <% unless @selected_month %>
-  <div class="<%= ui_card_table_class %>">
-    <div class="overflow-x-auto">
-      <table class="min-w-full">
-        <thead class="<%= ui_table_header_class %>">
-          <tr>
-            <th class="<%= ui_table_th_class %>">Month</th>
-            <th class="<%= ui_table_th_class %> text-right">Income</th>
-            <th class="<%= ui_table_th_class %> text-right">Expenses</th>
-            <th class="<%= ui_table_th_class %> text-right">Net</th>
-            <th class="<%= ui_table_th_class %>" style="min-width: 200px;">Breakdown</th>
-          </tr>
-        </thead>
-        <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
-          <% @monthly_data.each do |month| %>
-            <% is_selected = @selected_month == month[:month] %>
-            <% is_current = month[:date].year == Date.current.year && month[:date].month == Date.current.month %>
-            <tr class="<%= is_selected ? 'bg-cyan-50/50 dark:bg-cyan-900/20 border-l-2 border-cyan-500' : (is_current ? 'bg-slate-50/50 dark:bg-slate-700/30' : ui_table_row_class) %>">
-              <td class="<%= ui_table_td_class %> whitespace-nowrap">
-                <%= link_to cash_flow_path(year: @selected_year, month: month[:month]), class: "font-medium #{ui_text_class} hover:text-cyan-600 dark:hover:text-cyan-400 no-underline" do %>
-                  <%= Date::MONTHNAMES[month[:month]] %>
-                <% end %>
-                <% if is_current %>
-                  <span class="ml-2 <%= ui_badge_info_class %>">Current</span>
-                <% end %>
-                <% if month[:is_future] %>
-                  <span class="ml-2 <%= ui_text_subtle_class %> text-xs">Future</span>
-                <% end %>
-              </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
-                <% if month[:income] > 0 %>
-                  <%= format_currency(month[:income]) %>
-                <% else %>
-                  <span class="<%= ui_text_subtle_class %>">-</span>
-                <% end %>
-              </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right <%= ui_text_muted_class %>">
-                <% if month[:expenses] > 0 %>
-                  <%= format_currency(month[:expenses]) %>
-                <% else %>
-                  <span class="<%= ui_text_subtle_class %>">-</span>
-                <% end %>
-              </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap text-right font-medium <%= month[:net] >= 0 ? ui_positive_class : ui_negative_class %>">
-                <% if month[:income] > 0 || month[:expenses] > 0 %>
-                  <%= month[:net] >= 0 ? '+' : '' %><%= format_currency(month[:net]) %>
-                <% else %>
-                  <span class="<%= ui_text_subtle_class %>">-</span>
-                <% end %>
-              </td>
-              <td class="<%= ui_table_td_class %> whitespace-nowrap">
-                <% if month[:income] > 0 %>
-                  <% expense_pct = (month[:expenses].to_f / month[:income] * 100).round %>
-                  <% expense_pct = [expense_pct, 100].min %>
-                  <% saved_pct = [100 - expense_pct, 0].max %>
-                  <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
-                    <div style="width: <%= expense_pct %>%; background: #fb7185;" class="h-full flex items-center justify-start pl-1">
-                      <% if expense_pct > 25 %><span class="text-white"><%= expense_pct %>%</span><% end %>
-                    </div>
-                    <div style="width: <%= saved_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full flex items-center justify-end pr-1">
-                      <% if saved_pct > 25 %><span class="text-slate-400"><%= saved_pct %>%</span><% end %>
-                    </div>
-                  </div>
-                <% else %>
-                  <span class="<%= ui_text_subtle_class %>">-</span>
-                <% end %>
-              </td>
-            </tr>
-          <% end %>
-          <tr class="bg-slate-200 dark:bg-slate-700 <%= ui_table_group_separator_class %>">
-            <td class="px-4 py-3 font-bold <%= ui_text_class %>"><%= @selected_year %> Total</td>
-            <td class="px-4 py-3 text-right font-bold <%= ui_text_class %>"><%= format_currency(@year_totals[:income]) %></td>
-            <td class="px-4 py-3 text-right font-bold <%= ui_text_class %>"><%= format_currency(@year_totals[:expenses]) %></td>
-            <td class="px-4 py-3 text-right font-bold <%= @year_totals[:net] >= 0 ? ui_positive_class : ui_negative_class %>">
-              <%= @year_totals[:net] >= 0 ? '+' : '' %><%= format_currency(@year_totals[:net]) %>
-            </td>
-            <td class="px-4 py-3">
-              <% if @year_totals[:income] > 0 %>
-                <% expense_pct = (@year_totals[:expenses].to_f / @year_totals[:income] * 100).round %>
-                <% expense_pct = [expense_pct, 100].min %>
-                <% saved_pct = [100 - expense_pct, 0].max %>
-                <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
-                  <div style="width: <%= expense_pct %>%; background: #fb7185;" class="h-full flex items-center justify-start pl-1">
-                    <% if expense_pct > 25 %><span class="text-white"><%= expense_pct %>%</span><% end %>
-                  </div>
-                  <div style="width: <%= saved_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full flex items-center justify-end pr-1">
-                    <% if saved_pct > 25 %><span class="text-slate-400"><%= saved_pct %>%</span><% end %>
-                  </div>
-                </div>
-              <% end %>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <% end %>
 </div>

@@ -3,7 +3,9 @@ import { Controller } from "@hotwired/stimulus"
 export default class extends Controller {
   static values = {
     prevUrl: String,
-    nextUrl: String
+    nextUrl: String,
+    prevYearUrl: String,
+    nextYearUrl: String
   }
 
   connect() {
@@ -21,8 +23,20 @@ export default class extends Controller {
       return
     }
 
-    // Don't trigger if modifier keys are pressed (except shift for some cases)
+    // Don't trigger if modifier keys are pressed (except shift for year navigation)
     if (event.metaKey || event.ctrlKey || event.altKey) {
+      return
+    }
+
+    if (event.shiftKey) {
+      // Shift+Arrow: year navigation
+      if ((event.key === "ArrowLeft" || event.key === "K") && this.hasPrevYearUrlValue) {
+        event.preventDefault()
+        this.navigate(this.prevYearUrlValue)
+      } else if ((event.key === "ArrowRight" || event.key === "J") && this.hasNextYearUrlValue) {
+        event.preventDefault()
+        this.navigate(this.nextYearUrlValue)
+      }
       return
     }
 
@@ -65,6 +79,8 @@ export default class extends Controller {
         // Update controller values
         const prevUrl = newContent.dataset.monthNavigationPrevUrlValue
         const nextUrl = newContent.dataset.monthNavigationNextUrlValue
+        const prevYearUrl = newContent.dataset.monthNavigationPrevYearUrlValue
+        const nextYearUrl = newContent.dataset.monthNavigationNextYearUrlValue
         
         if (prevUrl) {
           this.prevUrlValue = prevUrl
@@ -76,6 +92,18 @@ export default class extends Controller {
           this.nextUrlValue = nextUrl
         } else {
           delete this.element.dataset.monthNavigationNextUrlValue
+        }
+
+        if (prevYearUrl) {
+          this.prevYearUrlValue = prevYearUrl
+        } else {
+          delete this.element.dataset.monthNavigationPrevYearUrlValue
+        }
+
+        if (nextYearUrl) {
+          this.nextYearUrlValue = nextYearUrl
+        } else {
+          delete this.element.dataset.monthNavigationNextYearUrlValue
         }
       }
     })
