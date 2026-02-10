@@ -83,22 +83,24 @@
           <% @monthly_cash_flow.each do |month| %>
             <div class="border-b border-slate-100 dark:border-slate-700 pb-3 last:border-0 last:pb-0">
               <div class="font-medium <%= ui_text_class %> mb-2"><%= month[:month_name] %></div>
-              <% total = [month[:income], month[:expenses]].max %>
-              <% if total > 0 %>
-                <% expense_pct = (month[:expenses].to_f / [month[:income], 1].max * 100).round(1) %>
-                <% expense_pct = [expense_pct, 100].min %>
-                <% saved_pct = [100 - expense_pct, 0].max %>
-                <div style="height: 24px; display: flex;" class="overflow-hidden text-xs">
-                  <div style="width: <%= expense_pct %>%; background: #fb7185;" class="dark:bg-rose-900/60 h-full flex items-center justify-start pl-2">
-                    <% if expense_pct > 20 %><span class="text-white">Expenses <%= expense_pct.round(0) %>%</span><% end %>
+              <% if month[:income] > 0 %>
+                <% expense_pct = (month[:expenses].to_f / month[:income] * 100).round %>
+                <% is_over = expense_pct > 100 %>
+                <% bar_pct = [expense_pct, 100].min %>
+                <% saved_pct = 100 - bar_pct %>
+                <div style="height: 20px; display: flex;" class="text-xs overflow-hidden">
+                  <div style="width: <%= bar_pct %>%; background: <%= is_over ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                    <% if bar_pct > 20 %><span class="text-white"><%= expense_pct %>%</span><% end %>
                   </div>
-                  <div style="width: <%= saved_pct %>%;" class="bg-emerald-200 dark:bg-emerald-900/60 h-full flex items-center justify-end pr-2">
-                    <% if saved_pct > 20 %><span class="text-emerald-700 dark:text-emerald-300">Saved <%= saved_pct.round(0) %>%</span><% end %>
-                  </div>
+                  <% if saved_pct > 0 %>
+                    <div style="width: <%= saved_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full flex items-center justify-end pr-1">
+                      <% if saved_pct > 20 %><span class="text-slate-400"><%= saved_pct %>%</span><% end %>
+                    </div>
+                  <% end %>
                 </div>
               <% end %>
               <div class="flex justify-between text-sm mt-2">
-                <span class="<%= ui_positive_class %>">+<%= format_currency(month[:income], precision: 0) %></span>
+                <span class="<%= ui_text_class %>"><%= format_currency(month[:income], precision: 0) %></span>
                 <span class="<%= ui_negative_class %>">-<%= format_currency(month[:expenses], precision: 0) %></span>
                 <span class="font-medium <%= month[:net] >= 0 ? ui_text_class : ui_negative_class %>">
                   = <%= format_currency(month[:net], precision: 0) %>
