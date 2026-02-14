@@ -75,7 +75,7 @@
         <%= link_to cash_flow_path, class: "hover:text-cyan-600 dark:hover:text-cyan-400" do %>
           <h2 class="<%= ui_heading_class %> hover:text-cyan-600 dark:hover:text-cyan-400">Cash Flow →</h2>
         <% end %>
-        <p class="text-xs <%= ui_text_subtle_class %>">Last 3 months</p>
+        <p class="text-xs <%= ui_text_subtle_class %>">Last 3 completed months</p>
       </div>
 
       <% if @monthly_cash_flow.any? %>
@@ -115,23 +115,42 @@
     </div>
   </div>
 
-  <%# Missing Transactions Panel - only show if there are coverage gaps %>
-  <% if @coverage_gaps.any? %>
+  <%# Coverage Gaps Panel - show if there are account gaps or incomplete months %>
+  <% if @coverage_gaps.any? || @incomplete_months.any? %>
     <div class="bg-white dark:bg-slate-800 p-6">
       <div class="mb-4">
         <%= link_to imports_path, class: "hover:text-cyan-600 dark:hover:text-cyan-400" do %>
-          <h2 class="<%= ui_heading_class %> hover:text-cyan-600 dark:hover:text-cyan-400">Missing Transactions →</h2>
+          <h2 class="<%= ui_heading_class %> hover:text-cyan-600 dark:hover:text-cyan-400">Coverage Gaps →</h2>
         <% end %>
         <p class="text-xs <%= ui_text_subtle_class %>">
-          <%= @coverage_gaps.size %> account<%= @coverage_gaps.size == 1 ? '' : 's' %> with gaps
+          <% parts = [] %>
+          <% parts << "#{@coverage_gaps.size} account#{@coverage_gaps.size == 1 ? '' : 's'} with gaps" if @coverage_gaps.any? %>
+          <% parts << "#{@incomplete_months.size} incomplete month#{@incomplete_months.size == 1 ? '' : 's'}" if @incomplete_months.any? %>
+          <%= parts.join(", ") %>
         </p>
       </div>
 
-      <div class="space-y-3">
-        <% @coverage_gaps.each do |coverage| %>
-          <%= render "shared/coverage_row", coverage: coverage %>
-        <% end %>
-      </div>
+      <% if @incomplete_months.any? %>
+        <div class="mb-3 pb-3 border-b border-slate-100 dark:border-slate-700">
+          <div class="space-y-0.5">
+            <% @incomplete_months.each do |ym| %>
+              <% month_date = Date.parse("#{ym}-01") %>
+              <%= link_to cash_flow_path(year: month_date.year, month: month_date.month),
+                    class: "block text-xs text-amber-600 dark:text-amber-400 hover:text-amber-700 dark:hover:text-amber-300" do %>
+                Incomplete: <%= month_date.strftime("%b %Y") %>
+              <% end %>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <% if @coverage_gaps.any? %>
+        <div class="space-y-3">
+          <% @coverage_gaps.each do |coverage| %>
+            <%= render "shared/coverage_row", coverage: coverage %>
+          <% end %>
+        </div>
+      <% end %>
     </div>
   <% end %>
 </div>

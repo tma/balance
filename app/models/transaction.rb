@@ -40,6 +40,38 @@ class Transaction < ApplicationRecord
     )
   end
 
+  # Detects months with unusually low transaction counts compared to the median.
+  # Excludes the current month (always incomplete) and flags past months where
+  # the transaction count is below 30% of the median.
+  # Returns a hash: { excluded_months: ["2025-03", ...], scope: <ActiveRecord::Relation> }
+  # Requires at least 4 completed months of data to detect outliers.
+  def self.detect_incomplete_months(scope: nil)
+    base = scope || all
+    completed = base.where("date < ?", Date.current.beginning_of_month)
+
+    monthly_counts = completed.group("strftime('%Y-%m', date)").count
+    excluded = []
+
+    if monthly_counts.size >= 4
+      sorted_counts = monthly_counts.values.sort
+      median = if sorted_counts.size.odd?
+        sorted_counts[sorted_counts.size / 2]
+      else
+        (sorted_counts[sorted_counts.size / 2 - 1] + sorted_counts[sorted_counts.size / 2]) / 2.0
+      end
+      threshold = median * 0.3
+      excluded = monthly_counts.select { |_, count| count < threshold }.keys
+    end
+
+    filtered = if excluded.any?
+      completed.where("strftime('%Y-%m', date) NOT IN (?)", excluded)
+    else
+      completed
+    end
+
+    { excluded_months: excluded.sort, scope: filtered }
+  end
+
   before_save :calculate_default_currency_amount
   before_save :calculate_duplicate_hash
   after_create :update_account_balance_on_create

@@ -14,6 +14,10 @@ class DashboardController < ApplicationController
 
     # Coverage gaps for data health panel
     @coverage_gaps = Account.active.filter_map(&:coverage_analysis).reject { |c| c[:complete?] }
+
+    # Incomplete months detection
+    detection = Transaction.detect_incomplete_months
+    @incomplete_months = detection[:excluded_months]
   end
 
   def cash_flow
@@ -184,7 +188,7 @@ class DashboardController < ApplicationController
 
   def calculate_monthly_data(months)
     data = []
-    current = Date.current.beginning_of_month
+    current = Date.current.beginning_of_month - 1.month  # Skip current incomplete month
 
     months.times do |i|
       month_start = current - i.months
@@ -408,28 +412,10 @@ class DashboardController < ApplicationController
   # ── Annual Projection ──────────────────────────────────────────────────
 
   def calculate_annual_projection
-    # Exclude current month as it is most likely incomplete
-    completed_scope = Transaction.where("date < ?", Date.current.beginning_of_month)
-
-    # Detect and exclude incomplete past months based on transaction count
-    excluded_months = []
-    monthly_counts = completed_scope.group("strftime('%Y-%m', date)").count
-    if monthly_counts.size >= 4
-      sorted_counts = monthly_counts.values.sort
-      median = if sorted_counts.size.odd?
-        sorted_counts[sorted_counts.size / 2]
-      else
-        (sorted_counts[sorted_counts.size / 2 - 1] + sorted_counts[sorted_counts.size / 2]) / 2.0
-      end
-      threshold = median * 0.3
-      excluded_months = monthly_counts.select { |_, count| count < threshold }.keys
-    end
-
-    projection_scope = if excluded_months.any?
-      completed_scope.where("strftime('%Y-%m', date) NOT IN (?)", excluded_months)
-    else
-      completed_scope
-    end
+    # Exclude current month and detect incomplete past months
+    detection = Transaction.detect_incomplete_months
+    projection_scope = detection[:scope]
+    excluded_months = detection[:excluded_months]
 
     active_months = projection_scope.distinct.count("strftime('%Y-%m', date)")
     total_transactions = projection_scope.count
