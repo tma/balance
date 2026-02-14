@@ -436,9 +436,33 @@ if Rails.env.development?
   }
 
   # Generate 12 months of transactions
+  # Months 8 and 10 are intentionally sparse to simulate incomplete data imports
+  incomplete_months = [ 8, 10 ]
   12.times do |months_ago|
     month_start = (today - months_ago.months).beginning_of_month
     month_num = month_start.month
+
+    # Simulate incomplete month: only create a few subscription transactions
+    if incomplete_months.include?(months_ago)
+      create_transaction(
+        account: accounts[:visa],
+        category: expense_categories["subscriptions"],
+        amount: 15.99,
+        transaction_type: "expense",
+        date: month_start + 1.day,
+        description: "Netflix"
+      )
+      create_transaction(
+        account: accounts[:visa],
+        category: expense_categories["subscriptions"],
+        amount: 10.99,
+        transaction_type: "expense",
+        date: month_start + 1.day,
+        description: "Spotify"
+      )
+      puts "  Month #{month_start.strftime('%B %Y')}: INCOMPLETE (only subscriptions - simulating partial import)"
+      next
+    end
 
     # Get profile for this month (default to normal for months 7-11)
     profile = monthly_profiles[months_ago] || { description: "Normal month", extra_income: 0, extra_expense: 0, extra_category: nil }
