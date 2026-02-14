@@ -408,12 +408,35 @@ class DashboardController < ApplicationController
   # ── Annual Projection ──────────────────────────────────────────────────
 
   def calculate_annual_projection
-    active_months = Transaction.distinct.count("strftime('%Y-%m', date)")
-    total_transactions = Transaction.count
+    # Exclude current month as it is most likely incomplete
+    completed_scope = Transaction.where("date < ?", Date.current.beginning_of_month)
+
+    # Detect and exclude incomplete past months based on transaction count
+    excluded_months = []
+    monthly_counts = completed_scope.group("strftime('%Y-%m', date)").count
+    if monthly_counts.size >= 4
+      sorted_counts = monthly_counts.values.sort
+      median = if sorted_counts.size.odd?
+        sorted_counts[sorted_counts.size / 2]
+      else
+        (sorted_counts[sorted_counts.size / 2 - 1] + sorted_counts[sorted_counts.size / 2]) / 2.0
+      end
+      threshold = median * 0.3
+      excluded_months = monthly_counts.select { |_, count| count < threshold }.keys
+    end
+
+    projection_scope = if excluded_months.any?
+      completed_scope.where("strftime('%Y-%m', date) NOT IN (?)", excluded_months)
+    else
+      completed_scope
+    end
+
+    active_months = projection_scope.distinct.count("strftime('%Y-%m', date)")
+    total_transactions = projection_scope.count
 
     return nil if active_months == 0
 
-    categories_data = calculate_projected_categories(active_months)
+    categories_data = calculate_projected_categories(active_months, projection_scope)
 
     income_categories = categories_data.select { |c| c[:category_type] == "income" }
     expense_categories = categories_data.select { |c| c[:category_type] == "expense" }
@@ -442,10 +465,11 @@ class DashboardController < ApplicationController
 
     {
       active_months: active_months,
+      excluded_months: excluded_months.sort,
       total_transactions: total_transactions,
       date_range: {
-        from: Transaction.minimum(:date),
-        to: Transaction.maximum(:date)
+        from: projection_scope.minimum(:date),
+        to: projection_scope.maximum(:date)
       },
       income: total_income,
       expenses: total_expenses,
@@ -461,10 +485,10 @@ class DashboardController < ApplicationController
     }
   end
 
-  def calculate_projected_categories(active_months)
+  def calculate_projected_categories(active_months, scope)
     # Get monthly totals per category, using signed amounts by category type.
     # Groups by (category_id, year-month) so we can compute per-month variability.
-    monthly_totals_raw = Transaction.joins(:category)
+    monthly_totals_raw = scope.joins(:category)
       .group(
         "transactions.category_id",
         "categories.name",

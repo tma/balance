@@ -87,7 +87,8 @@
       <p class="<%= ui_text_subtle_class %> text-xs mb-4">
         Based on <%= @projection[:active_months] %> months of data
         (<%= number_with_delimiter(@projection[:total_transactions]) %> transactions,
-        <%= @projection[:date_range][:from]&.strftime("%b %Y") %>&ndash;<%= @projection[:date_range][:to]&.strftime("%b %Y") %>)
+        <%= @projection[:date_range][:from]&.strftime("%b %Y") %>&ndash;<%= @projection[:date_range][:to]&.strftime("%b %Y") %><% if @projection[:excluded_months].any? %>;
+        <%= @projection[:excluded_months].size %> month<%= @projection[:excluded_months].size > 1 ? "s" : "" %> excluded as likely incomplete<% end %>)
       </p>
 
       <div class="flex flex-col items-center">
