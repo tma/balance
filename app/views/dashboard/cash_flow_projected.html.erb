@@ -1,0 +1,456 @@
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Reports" %>
+    <%= ui_breadcrumb_item "Cash Flow", cash_flow_path %>
+    <%= ui_breadcrumb_item "Projected", cash_flow_path(view: "projected") %>
+  <% end %>
+<% end %>
+
+<div class="space-y-6">
+  <!-- Navigation (same structure as cash_flow.html.erb for visual stability) -->
+  <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 py-3 -mx-4 px-4 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <%# Projected tab (active) %>
+      <span class="px-3 py-1.5 text-sm font-medium bg-violet-500 text-white mr-2">Projected</span>
+
+      <%# Year tab (link back) %>
+      <%= link_to "Year", cash_flow_path(year: @selected_year),
+          class: "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 mr-2" %>
+
+      <%# Arrow placeholders (disabled, matching regular view layout) %>
+      <span class="pl-3 pr-1 py-1.5 text-sm text-slate-300 dark:text-slate-600">←</span>
+
+      <%# Month tabs (all clickable, none selected) %>
+      <div class="flex flex-wrap gap-1">
+        <% (1..12).each do |m| %>
+          <% is_future = Date.new(@selected_year, m, 1) > Date.current %>
+          <%= link_to Date::ABBR_MONTHNAMES[m], cash_flow_path(year: @selected_year, month: m),
+              class: [
+                "px-3 py-1.5 text-sm",
+                "#{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600",
+                is_future ? "opacity-50" : ""
+              ].join(" ") %>
+        <% end %>
+      </div>
+
+      <%# Right arrow placeholder (disabled) %>
+      <span class="pl-1 pr-3 py-1.5 text-sm text-slate-300 dark:text-slate-600">→</span>
+    </div>
+
+    <!-- Year Navigation (matching regular cash flow view) -->
+    <div class="flex items-center space-x-4">
+      <% if @selected_year > @min_year %>
+        <%= link_to cash_flow_path(year: @selected_year - 1), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
+          ← <%= @selected_year - 1 %>
+        <% end %>
+      <% else %>
+        <span class="text-slate-300 dark:text-slate-600">← <%= @selected_year - 1 %></span>
+      <% end %>
+
+      <span class="font-semibold <%= ui_text_class %>"><%= @selected_year %></span>
+
+      <% if @selected_year < @max_year %>
+        <%= link_to cash_flow_path(year: @selected_year + 1), class: "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300" do %>
+          <%= @selected_year + 1 %> →
+        <% end %>
+      <% else %>
+        <span class="text-slate-300 dark:text-slate-600">Now →</span>
+      <% end %>
+    </div>
+  </div>
+
+  <% if @projection.nil? %>
+    <!-- Empty state -->
+    <div class="<%= ui_card_class %> p-8 text-center">
+      <p class="<%= ui_text_muted_class %>">Import some transactions to see annual projections.</p>
+      <%= link_to "Import Transactions", new_import_path, class: ui_btn_primary_class %>
+    </div>
+  <% else %>
+
+  <%
+    income = @projection[:income]
+    expenses = @projection[:expenses]
+    net = @projection[:net]
+    saving_rate = @projection[:saving_rate]
+    expense_pct = income > 0 ? [(expenses.to_f / income * 100).round, 100].min : 0
+    saved_pct = income > 0 ? [100 - expense_pct, 0].max : 0
+  %>
+
+  <!-- Summary and Donut Chart side by side -->
+  <% chart_data = build_nested_donut_data(@projection[:income_by_category], @projection[:expense_by_category],
+       { income: income, expenses: expenses, net: net, saving_rate: saving_rate }, scheme: :blue_red) %>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Summary Donut (Saving Rate) -->
+    <div class="<%= ui_card_class %> p-6">
+      <h3 class="<%= ui_subheading_class %> mb-1">Annual Projection</h3>
+      <p class="<%= ui_text_subtle_class %> text-xs mb-4">
+        Based on <%= @projection[:active_months] %> months of data
+        (<%= number_with_delimiter(@projection[:total_transactions]) %> transactions,
+        <%= @projection[:date_range][:from]&.strftime("%b %Y") %>&ndash;<%= @projection[:date_range][:to]&.strftime("%b %Y") %>)
+      </p>
+
+      <div class="flex flex-col items-center">
+        <!-- Saving Rate Donut -->
+        <div data-controller="chart-tooltip" style="position: relative;">
+          <svg width="300" height="300" viewBox="0 0 300 300" class="flex-shrink-0">
+            <% circumference_outer = 2 * Math::PI * 120 %>
+            <% circumference_inner = 2 * Math::PI * 70 %>
+
+            <!-- Outer ring: Expenses + Savings (relative to income) -->
+            <% if income > 0 %>
+              <!-- Expenses arc (rose) -->
+              <circle cx="150" cy="150" r="120" fill="none"
+                      stroke="#fb7185"
+                      stroke-width="40"
+                      stroke-dasharray="<%= expense_pct / 100.0 * circumference_outer %> <%= circumference_outer %>"
+                      transform="rotate(-90 150 150)"
+                      style="pointer-events: stroke;"
+                      data-tooltip="Spent: <%= format_currency_plain(expenses, precision: 0) %>/year (<%= expense_pct %>%)">
+              </circle>
+              <% if saved_pct > 0 %>
+                <circle cx="150" cy="150" r="120" fill="none"
+                        stroke="#94a3b8" stroke-opacity="0.15"
+                        stroke-width="40"
+                        stroke-dasharray="<%= saved_pct / 100.0 * circumference_outer %> <%= circumference_outer %>"
+                        transform="rotate(<%= -90 + (expense_pct / 100.0 * 360) %> 150 150)"
+                        style="pointer-events: stroke;"
+                        data-tooltip="Saved: <%= format_currency_plain(net, precision: 0) %>/year (<%= saved_pct %>%)">
+                </circle>
+              <% end %>
+            <% else %>
+              <circle cx="150" cy="150" r="120" fill="none"
+                      class="stroke-slate-200 dark:stroke-slate-700"
+                      stroke-width="40"/>
+            <% end %>
+
+            <!-- Inner ring: Full income -->
+            <% if income > 0 %>
+              <circle cx="150" cy="150" r="70" fill="none"
+                      stroke="#60a5fa"
+                      stroke-width="35"
+                      stroke-dasharray="<%= circumference_inner %> 0"
+                      transform="rotate(-90 150 150)"
+                      style="pointer-events: stroke;"
+                      data-tooltip="Income: <%= format_currency_plain(income, precision: 0) %>/year">
+              </circle>
+            <% else %>
+              <circle cx="150" cy="150" r="70" fill="none"
+                      class="stroke-slate-200 dark:stroke-slate-700"
+                      stroke-width="35"/>
+            <% end %>
+
+            <!-- Center text -->
+            <text x="150" y="145" text-anchor="middle"
+                  class="text-xl font-bold <%= net >= 0 ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-rose-500 dark:fill-rose-400' %>">
+              <%= saving_rate %>%
+            </text>
+            <text x="150" y="165" text-anchor="middle" class="text-xs fill-slate-400">
+              <%= net >= 0 ? 'Saving Rate' : 'Deficit' %>
+            </text>
+          </svg>
+          <%= render "shared/chart_tooltip" %>
+        </div>
+
+        <!-- Legend: Income / Expenses / Savings — annual + monthly -->
+        <div class="mt-4 text-sm w-full space-y-2">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: #60a5fa;"></span>
+              <span class="<%= ui_text_muted_class %>">Income</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="<%= ui_text_subtle_class %> tabular-nums text-right whitespace-nowrap w-36"><%= format_currency(@projection[:monthly_income], precision: 0) %>/month</span>
+              <span class="<%= ui_text_class %> tabular-nums font-medium text-right whitespace-nowrap w-36"><%= format_currency(income, precision: 0) %>/year</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: #fb7185;"></span>
+              <span class="<%= ui_text_muted_class %>">Expenses</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="<%= ui_text_subtle_class %> tabular-nums text-right whitespace-nowrap w-36"><%= format_currency(@projection[:monthly_expenses], precision: 0) %>/month</span>
+              <span class="<%= ui_text_class %> tabular-nums font-medium text-right whitespace-nowrap w-36"><%= format_currency(expenses, precision: 0) %>/year</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: <%= net >= 0 ? '#10b981' : '#e11d48' %>; border: 1px solid <%= net >= 0 ? '#10b981' : '#e11d48' %>;"></span>
+              <span class="<%= ui_text_muted_class %> font-medium"><%= net >= 0 ? 'Savings' : 'Deficit' %></span>
+            </div>
+            <div class="flex items-center gap-4">
+              <span class="<%= ui_text_subtle_class %> tabular-nums text-right whitespace-nowrap w-36"><%= net >= 0 ? '+' : '' %><%= format_currency(@projection[:monthly_net], precision: 0) %>/month</span>
+              <span class="font-bold tabular-nums text-right whitespace-nowrap w-36 <%= net >= 0 ? ui_positive_class : ui_negative_class %>"><%= net >= 0 ? '+' : '' %><%= format_currency(net, precision: 0) %>/year</span>
+            </div>
+          </div>
+          <div class="flex items-center justify-between pt-1 border-t border-slate-200 dark:border-slate-700">
+            <span class="<%= ui_text_muted_class %>">Saving Rate</span>
+            <span class="font-bold tabular-nums <%= net >= 0 ? ui_positive_class : ui_negative_class %>"><%= saving_rate %>%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Breakdown Donut -->
+    <% if chart_data[:income].any? || chart_data[:expenses].any? %>
+      <div class="<%= ui_card_class %> p-6">
+        <h3 class="<%= ui_subheading_class %> mb-4">Projected Categories</h3>
+        <div class="flex flex-col md:flex-row items-start gap-8">
+          <!-- SVG Donut -->
+          <div data-controller="chart-tooltip" style="position: relative;" class="flex-shrink-0">
+            <svg width="300" height="300" viewBox="0 0 300 300">
+              <!-- Outer ring (expenses) -->
+              <% circumference_outer = 2 * Math::PI * 120 %>
+              <% rotation_outer = -90 %>
+              <% chart_data[:expenses].each do |segment| %>
+                <% next if segment[:name] == "Savings" %>
+                <% arc_length = (segment[:pct] / 100.0 * circumference_outer) %>
+                <circle cx="150" cy="150" r="120" fill="none"
+                        stroke="<%= segment[:color] %>"
+                        stroke-width="40"
+                        stroke-dasharray="<%= arc_length %> <%= circumference_outer - arc_length %>"
+                        transform="rotate(<%= rotation_outer %> 150 150)"
+                        class="transition-opacity duration-150"
+                        style="pointer-events: stroke;"
+                        data-tooltip="<%= segment[:name] %>: <%= format_currency_plain(segment[:value], precision: 0) %>/year (<%= segment[:pct] %>%)">
+                </circle>
+                <% rotation_outer += (segment[:pct] / 100.0 * 360) %>
+              <% end %>
+
+              <!-- Inner ring (income) -->
+              <% circumference_inner = 2 * Math::PI * 70 %>
+              <% rotation_inner = -90 %>
+              <% chart_data[:income].each do |segment| %>
+                <% arc_length = (segment[:pct] / 100.0 * circumference_inner) %>
+                <circle cx="150" cy="150" r="70" fill="none"
+                        stroke="<%= segment[:color] %>"
+                        stroke-width="35"
+                        stroke-dasharray="<%= arc_length %> <%= circumference_inner - arc_length %>"
+                        transform="rotate(<%= rotation_inner %> 150 150)"
+                        class="transition-opacity duration-150"
+                        style="pointer-events: stroke;"
+                        data-tooltip="<%= segment[:name] %>: <%= format_currency_plain(segment[:value], precision: 0) %>/year (<%= segment[:pct] %>%)">
+                </circle>
+                <% rotation_inner += (segment[:pct] / 100.0 * 360) %>
+              <% end %>
+
+              <!-- Center text -->
+              <text x="150" y="145" text-anchor="middle"
+                    class="text-xl font-bold <%= net >= 0 ? 'fill-emerald-600 dark:fill-emerald-400' : 'fill-rose-500 dark:fill-rose-400' %>">
+                <%= net >= 0 ? '+' : '' %><%= number_to_currency(net.abs, unit: '', precision: 0, delimiter: ',') %>
+              </text>
+              <text x="150" y="165" text-anchor="middle" class="text-xs fill-slate-400">
+                <%= net >= 0 ? 'Annual Savings' : 'Annual Deficit' %>
+              </text>
+            </svg>
+            <%= render "shared/chart_tooltip" %>
+          </div>
+
+          <!-- Legend -->
+          <div class="space-y-4 text-sm max-w-64">
+            <% if chart_data[:income].any? %>
+              <div>
+                <h4 class="font-medium <%= ui_text_class %> mb-2">Income</h4>
+                <% chart_data[:income].each do |item| %>
+                  <div class="flex items-center justify-between py-0.5 gap-8">
+                    <div class="flex items-center">
+                      <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: <%= item[:color] %>"></span>
+                      <span class="<%= ui_text_muted_class %> truncate"><%= item[:name] %></span>
+                    </div>
+                    <span class="<%= ui_text_class %> tabular-nums"><%= item[:pct] %>%</span>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+            <% if chart_data[:expenses].any? %>
+              <div>
+                <h4 class="font-medium <%= ui_text_class %> mb-2">Expenses</h4>
+                <% chart_data[:expenses].reject { |item| item[:name] == 'Savings' }.each do |item| %>
+                  <div class="flex items-center justify-between py-0.5 gap-8">
+                    <div class="flex items-center">
+                      <span class="w-3 h-3 mr-2 flex-shrink-0" style="background: <%= item[:color] %>"></span>
+                      <span class="<%= ui_text_muted_class %> truncate"><%= item[:name] %></span>
+                    </div>
+                    <span class="<%= ui_text_class %> tabular-nums"><%= item[:pct] %>%</span>
+                  </div>
+                <% end %>
+              </div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+  </div>
+
+  <!-- Income Categories Table -->
+  <% if @projection[:income_categories].any? %>
+  <div class="<%= ui_card_table_class %>">
+    <table class="min-w-full">
+      <thead class="<%= ui_table_header_class %>">
+        <tr>
+          <th class="<%= ui_table_th_class %>">Income</th>
+          <th class="<%= ui_table_th_class %> text-right" style="width: 60px;"></th>
+          <th class="<%= ui_table_th_class %> text-right" style="width: 120px;">Per Month</th>
+          <th class="<%= ui_table_th_class %> text-right" style="width: 120px;">Per Year</th>
+          <th class="<%= ui_table_th_class %> text-center" style="width: 80px;">Confidence</th>
+        </tr>
+      </thead>
+      <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
+        <% total_income_annual = @projection[:income_categories].sum { |c| c[:annual] } %>
+        <% @projection[:income_categories].each do |cat| %>
+          <% pct = total_income_annual > 0 ? (cat[:annual].to_f / total_income_annual * 100).round : 0 %>
+          <tr class="<%= ui_table_row_class %>">
+            <td class="<%= ui_table_td_class %>">
+              <span class="font-medium <%= ui_text_class %>"><%= cat[:name] %></span>
+              <% if cat[:months_with_data] < @projection[:active_months] %>
+                <span class="<%= ui_text_subtle_class %> text-xs ml-1">(<%= cat[:months_with_data] %>/<%= @projection[:active_months] %> months)</span>
+              <% end %>
+            </td>
+            <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+              <%= pct %>%
+            </td>
+            <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+              <%= format_currency(cat[:monthly_avg], precision: 0) %>
+            </td>
+            <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_class %> font-medium">
+              <%= format_currency(cat[:annual], precision: 0) %>
+            </td>
+            <td class="<%= ui_table_td_class %> text-center">
+              <% if cat[:confidence] == :variable %>
+                <span class="<%= ui_badge_warning_class %>">Variable</span>
+              <% elsif cat[:confidence] == :erratic %>
+                <span class="<%= ui_badge_danger_class %>">Erratic</span>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+  <% end %>
+
+  <!-- Expense Categories Table -->
+  <div class="<%= ui_card_table_class %>">
+    <% if @projection[:expense_categories].empty? %>
+      <div class="p-8 text-center">
+        <p class="<%= ui_text_muted_class %>">No expense data available for projection.</p>
+      </div>
+    <% else %>
+      <table class="min-w-full">
+        <thead class="<%= ui_table_header_class %>">
+          <tr>
+            <th class="<%= ui_table_th_class %>">Expenses</th>
+            <th class="<%= ui_table_th_class %>" style="min-width: 160px;"></th>
+            <th class="<%= ui_table_th_class %> text-right pl-0" style="width: 120px;">Annual Budget</th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 60px;"></th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 120px;">Per Month</th>
+            <th class="<%= ui_table_th_class %> text-right" style="width: 120px;">Per Year</th>
+            <th class="<%= ui_table_th_class %> text-center" style="width: 80px;">Confidence</th>
+          </tr>
+        </thead>
+        <tbody class="border-t-[6px] border-slate-100 dark:border-slate-900">
+          <% total_expense_annual = @projection[:expense_categories].sum { |c| c[:annual] } %>
+          <% @projection[:expense_categories].each do |cat| %>
+            <%
+              pct = total_expense_annual > 0 ? (cat[:annual].to_f / total_expense_annual * 100).round : 0
+              annual_budget = cat[:annual_budget]
+              budget_pct = annual_budget && annual_budget > 0 ? (cat[:annual] / annual_budget * 100).round : nil
+              is_over_budget = budget_pct && budget_pct > 100
+            %>
+            <tr class="<%= ui_table_row_class %>">
+              <td class="<%= ui_table_td_class %>">
+                <span class="font-medium <%= ui_text_class %>"><%= cat[:name] %></span>
+                <% if cat[:months_with_data] < @projection[:active_months] %>
+                  <span class="<%= ui_text_subtle_class %> text-xs ml-1">(<%= cat[:months_with_data] %>/<%= @projection[:active_months] %> months)</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %>">
+                <% if budget_pct %>
+                  <% bar_pct = [budget_pct, 100].min %>
+                  <% if cat[:budget] %>
+                    <%= link_to budget_path(cat[:budget]), class: "block no-underline" do %>
+                      <div style="height: 20px; display: flex;" class="text-xs overflow-hidden hover:opacity-80 transition">
+                        <div style="width: <%= bar_pct %>%; background: <%= is_over_budget ? '#e11d48' : '#94a3b8' %>;" class="h-full flex items-center justify-start pl-1">
+                          <% if bar_pct > 25 %><span class="text-white"><%= budget_pct %>%</span><% end %>
+                        </div>
+                        <% if budget_pct <= 100 %>
+                          <div style="width: <%= 100 - bar_pct %>%; background: rgba(148, 163, 184, 0.15);" class="h-full"></div>
+                        <% end %>
+                      </div>
+                    <% end %>
+                  <% end %>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> text-right <%= ui_text_muted_class %> tabular-nums whitespace-nowrap pl-0">
+                <% if annual_budget %>
+                  <% if cat[:budget]&.monthly? %>
+                    <span class="<%= ui_text_subtle_class %> text-xs">(12x)</span>
+                  <% end %>
+                  <%= format_currency(annual_budget, precision: 0) %>
+                <% else %>
+                  <span class="<%= ui_text_subtle_class %>">-</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+                <%= pct %>%
+              </td>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= ui_text_muted_class %>">
+                <%= format_currency(cat[:monthly_avg], precision: 0) %>
+              </td>
+              <td class="<%= ui_table_td_class %> text-right tabular-nums whitespace-nowrap <%= is_over_budget ? ui_negative_class + ' font-medium' : ui_text_class + ' font-medium' %>">
+                <%= format_currency(cat[:annual], precision: 0) %>
+              </td>
+              <td class="<%= ui_table_td_class %> text-center">
+                <% if cat[:confidence] == :variable %>
+                  <span class="<%= ui_badge_warning_class %>">Variable</span>
+                <% elsif cat[:confidence] == :erratic %>
+                  <span class="<%= ui_badge_danger_class %>">Erratic</span>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+
+          <!-- Totals row -->
+          <tr class="bg-slate-200 dark:bg-slate-700 <%= ui_table_group_separator_class %>">
+            <td class="px-4 py-3 font-bold <%= ui_text_class %>" colspan="3">Total Expenses</td>
+            <td class="px-4 py-3 text-right font-bold <%= ui_text_class %>">100%</td>
+            <td class="px-4 py-3 text-right font-bold tabular-nums <%= ui_text_class %>"><%= format_currency(@projection[:monthly_expenses], precision: 0) %></td>
+            <td class="px-4 py-3 text-right font-bold tabular-nums <%= ui_text_class %>"><%= format_currency(expenses, precision: 0) %></td>
+            <td class="px-4 py-3"></td>
+          </tr>
+        </tbody>
+      </table>
+    <% end %>
+  </div>
+
+  <!-- Savings Summary Footer -->
+  <div class="<%= ui_card_class %> p-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <div>
+        <p class="<%= ui_text_subtle_class %> text-xs uppercase tracking-wide mb-1">Annual Income</p>
+        <p class="<%= ui_text_class %> text-lg font-bold tabular-nums"><%= format_currency(income, precision: 0) %></p>
+        <p class="<%= ui_text_subtle_class %> text-xs tabular-nums"><%= format_currency(@projection[:monthly_income], precision: 0) %>/month</p>
+      </div>
+      <div>
+        <p class="<%= ui_text_subtle_class %> text-xs uppercase tracking-wide mb-1">Annual Expenses</p>
+        <p class="<%= ui_text_class %> text-lg font-bold tabular-nums"><%= format_currency(expenses, precision: 0) %></p>
+        <p class="<%= ui_text_subtle_class %> text-xs tabular-nums"><%= format_currency(@projection[:monthly_expenses], precision: 0) %>/month</p>
+      </div>
+      <div>
+        <p class="<%= ui_text_subtle_class %> text-xs uppercase tracking-wide mb-1">Annual <%= net >= 0 ? 'Savings' : 'Deficit' %></p>
+        <p class="text-lg font-bold tabular-nums <%= net >= 0 ? ui_positive_class : ui_negative_class %>"><%= net >= 0 ? '+' : '' %><%= format_currency(net, precision: 0) %></p>
+        <p class="<%= ui_text_subtle_class %> text-xs tabular-nums"><%= net >= 0 ? '+' : '' %><%= format_currency(@projection[:monthly_net], precision: 0) %>/month</p>
+      </div>
+      <div>
+        <p class="<%= ui_text_subtle_class %> text-xs uppercase tracking-wide mb-1">Saving Rate</p>
+        <p class="text-lg font-bold tabular-nums <%= net >= 0 ? ui_positive_class : ui_negative_class %>"><%= saving_rate %>%</p>
+        <p class="<%= ui_text_subtle_class %> text-xs">of income saved</p>
+      </div>
+    </div>
+  </div>
+
+  <% end %>
+</div>

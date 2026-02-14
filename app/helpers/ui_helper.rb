@@ -202,7 +202,7 @@ module UiHelper
 
   # Warning badge (amber)
   def ui_badge_warning_class
-    "px-2 py-0.5 text-xs bg-amber-100 dark:bg-slate-700 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-400/50"
+    "px-2 py-0.5 text-xs bg-amber-100 dark:bg-slate-700 text-amber-700 dark:text-amber-300"
   end
 
   # Danger badge (rose)

@@ -19,13 +19,20 @@ class DashboardController < ApplicationController
   def cash_flow
     @default_currency = Currency.default_code
 
-    # Parse year/month from params
+    # Parse year/month from params (needed for navigation in all views)
     @selected_year = (params[:year] || Date.current.year).to_i
     @selected_month = params[:month]&.to_i  # nil = full year
 
     # Year range for navigation (based on available transactions)
     @min_year = Transaction.minimum(:date)&.year || Date.current.year
     @max_year = Date.current.year
+
+    # Handle projected view
+    if params[:view] == "projected"
+      @projection = calculate_annual_projection
+      render "dashboard/cash_flow_projected"
+      return
+    end
 
     # Monthly data for selected calendar year (Jan-Dec)
     @monthly_data = calculate_monthly_data_for_year(@selected_year)
@@ -396,5 +403,126 @@ class DashboardController < ApplicationController
     end.compact
 
     result.sort_by { |r| [ -r[:pct], -r[:earned] ] }
+  end
+
+  # ── Annual Projection ──────────────────────────────────────────────────
+
+  def calculate_annual_projection
+    active_months = Transaction.distinct.count("strftime('%Y-%m', date)")
+    total_transactions = Transaction.count
+
+    return nil if active_months == 0
+
+    categories_data = calculate_projected_categories(active_months)
+
+    income_categories = categories_data.select { |c| c[:category_type] == "income" }
+    expense_categories = categories_data.select { |c| c[:category_type] == "expense" }
+
+    total_income = income_categories.sum { |c| c[:annual] }
+    total_expenses = expense_categories.sum { |c| c[:annual] }
+    net = total_income - total_expenses
+    saving_rate = total_income > 0 ? ((net / total_income) * 100).round(1) : 0
+
+    # Build category breakdown data for donut chart (reuse existing helper format)
+    income_by_category = income_categories.map { |c| { id: c[:id], name: c[:name], amount: c[:annual] } }
+    expense_by_category = expense_categories.map { |c| { id: c[:id], name: c[:name], amount: c[:annual] } }
+
+    # Budget comparison: annualize all budgets for projection context
+    budgets_by_category = Budget.includes(:category).index_by(&:category_id)
+
+    expense_categories_with_budgets = expense_categories.map do |cat|
+      budget = budgets_by_category[cat[:id]]
+      annual_budget = if budget
+        budget.yearly? ? budget.amount : budget.amount * 12
+      end
+      cat.merge(budget: budget, annual_budget: annual_budget)
+    end
+
+    income_categories_with_budgets = income_categories
+
+    {
+      active_months: active_months,
+      total_transactions: total_transactions,
+      date_range: {
+        from: Transaction.minimum(:date),
+        to: Transaction.maximum(:date)
+      },
+      income: total_income,
+      expenses: total_expenses,
+      net: net,
+      saving_rate: saving_rate,
+      monthly_income: total_income / 12.0,
+      monthly_expenses: total_expenses / 12.0,
+      monthly_net: net / 12.0,
+      income_categories: income_categories_with_budgets.sort_by { |c| -c[:annual] },
+      expense_categories: expense_categories_with_budgets.sort_by { |c| -c[:annual] },
+      income_by_category: income_by_category,
+      expense_by_category: expense_by_category
+    }
+  end
+
+  def calculate_projected_categories(active_months)
+    # Get monthly totals per category, using signed amounts by category type.
+    # Groups by (category_id, year-month) so we can compute per-month variability.
+    monthly_totals_raw = Transaction.joins(:category)
+      .group(
+        "transactions.category_id",
+        "categories.name",
+        "categories.category_type",
+        "strftime('%Y-%m', date)"
+      )
+      .sum(Transaction.signed_amount_by_category_type_sql)
+
+    # Reorganize into { category_id => { meta + monthly_totals hash } }
+    categories = {}
+    monthly_totals_raw.each do |(cat_id, cat_name, cat_type, _year_month), amount|
+      categories[cat_id] ||= {
+        id: cat_id, name: cat_name, category_type: cat_type,
+        monthly_totals: Hash.new(0)
+      }
+      categories[cat_id][:monthly_totals][_year_month] = amount
+    end
+
+    categories.values.map do |cat|
+      months_with_data = cat[:monthly_totals].size
+      totals = cat[:monthly_totals].values
+
+      # Pad with zeros for active months where this category had no transactions
+      padded = totals + Array.new([ active_months - months_with_data, 0 ].max, 0)
+
+      total = padded.sum
+      monthly_avg = total.to_f / active_months
+      annual = monthly_avg * 12
+
+      # Coefficient of variation for confidence indicator
+      cv = calculate_cv(padded, monthly_avg)
+
+      confidence = if cv <= 0.5
+        :stable
+      elsif cv <= 1.0
+        :variable
+      else
+        :erratic
+      end
+
+      {
+        id: cat[:id],
+        name: cat[:name],
+        category_type: cat[:category_type],
+        monthly_avg: monthly_avg.round(2),
+        annual: annual.round(2),
+        cv: cv,
+        confidence: confidence,
+        months_with_data: months_with_data
+      }
+    end
+  end
+
+  def calculate_cv(values, mean)
+    return 0.0 if mean == 0 || values.size <= 1
+
+    variance = values.sum { |v| (v - mean)**2 } / values.size.to_f
+    stddev = Math.sqrt(variance)
+    (stddev / mean.abs).round(2)
   end
 end
