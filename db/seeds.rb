@@ -71,8 +71,16 @@ income_category_data = {
 }
 income_category_data.each do |name, patterns|
   category = Category.find_or_initialize_by(name: name, category_type: "income")
-  category.match_patterns = patterns
   category.save!
+
+  if patterns.present?
+    patterns.lines.map(&:strip).reject(&:blank?).each do |pattern|
+      CategoryPattern.find_or_create_by!(
+        category: category, pattern: pattern, source: "human"
+      )
+    end
+  end
+
   income_categories[name.downcase] = category
 end
 
@@ -80,16 +88,16 @@ end
 puts "Creating expense categories..."
 expense_categories = {}
 expense_category_data = {
-  "Rent" => "rent\nlease payment",
+  "Rent" => "rent payment\nlease payment",
   "Mortgage" => "mortgage\nhome loan",
   "Utilities" => "electric\ngas bill\nwater bill\nsewer\ntrash\nutility",
   "Groceries" => "whole foods\ntrader joe\nsafeway\nkroger\nwalmart\ncostco\naldi\ntarget\ngrocery\nsupermarket",
   "Dining" => "restaurant\ncafe\ndiner\nbistro\neatery\ntakeout\ndelivery\ngrubhub\ndoordash\nubereats",
-  "Transportation" => "uber\nlyft\ntaxi\nmetro\nbus\ntrain\nsubway\nparking\ntoll",
-  "Gas" => "shell\nchevron\nmobil\nbp\narco\nexxon\ngas station\nfuel",
-  "Insurance" => "insurance\npremium\ncoverage",
-  "Healthcare" => "pharmacy\ncvs\nwalgreens\ndoctor\nmedical\nhospital\nclinic\nhealth",
-  "Entertainment" => "movie\ncinema\ntheater\nconcert\nticket\nmuseum\namusement",
+  "Transportation" => "uber\nlyft\ntaxi\nmetro transit\nbus fare\ntrain fare\nsubway\nparking\ntoll",
+  "Gas" => "shell\nchevron\nexxonmobil\nbp\narco\nexxon\ngas station\nfuel",
+  "Insurance" => "insurance\ncoverage\ngeico\nstate farm\nallstate\nprogressive",
+  "Healthcare" => "pharmacy\ncvs\nwalgreens\ndoctor\nmedical\nhospital\nclinic",
+  "Entertainment" => "movie\ncinema\ntheater\nconcert\nmuseum\namusement",
   "Subscriptions" => "netflix\nspotify\nhulu\ndisney\namazon prime\napple\nyoutube\nsubscription",
   "Clothing" => "clothing\napparel\nshoes\nfashion\nnordstrom\nmacy\ngap\nzara",
   "Education" => "tuition\ncourse\nclass\ntraining\nudemy\ncoursera\neducation",
@@ -105,8 +113,16 @@ expense_category_data = {
 }
 expense_category_data.each do |name, patterns|
   category = Category.find_or_initialize_by(name: name, category_type: "expense")
-  category.match_patterns = patterns
   category.save!
+
+  if patterns.present?
+    patterns.lines.map(&:strip).reject(&:blank?).each do |pattern|
+      CategoryPattern.find_or_create_by!(
+        category: category, pattern: pattern, source: "human"
+      )
+    end
+  end
+
   expense_categories[name.downcase] = category
 end
 

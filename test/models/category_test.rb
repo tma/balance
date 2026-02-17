@@ -2,70 +2,55 @@ require "test_helper"
 
 class CategoryTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
-  test "match_patterns_list returns empty array when blank" do
+  test "match_patterns_list returns empty array for new record" do
     category = Category.new(name: "Test", category_type: "expense")
     assert_equal [], category.match_patterns_list
   end
 
-  test "match_patterns_list parses newline-separated patterns" do
-    category = Category.new(
-      name: "Test",
-      category_type: "expense",
-      match_patterns: "Amazon\nWhole Foods\nTrader Joe's"
-    )
-    assert_equal [ "Amazon", "Whole Foods", "Trader Joe's" ], category.match_patterns_list
+  test "match_patterns_list returns human patterns from CategoryPattern table" do
+    category = categories(:groceries)
+    # Fixtures have human patterns: "Whole Foods", "Trader Joe"
+    patterns = category.match_patterns_list
+    assert_includes patterns, "Whole Foods"
+    assert_includes patterns, "Trader Joe"
   end
 
-  test "match_patterns_list strips whitespace and rejects blank lines" do
-    category = Category.new(
-      name: "Test",
-      category_type: "expense",
-      match_patterns: "  Amazon  \n\n  Whole Foods  \n  "
-    )
-    assert_equal [ "Amazon", "Whole Foods" ], category.match_patterns_list
+  test "match_patterns_list excludes machine patterns" do
+    category = categories(:groceries)
+    patterns = category.match_patterns_list
+    # Fixture has machine pattern "COSTCO WHSE" — should not be in match_patterns_list
+    assert_not_includes patterns, "COSTCO WHSE"
   end
 
   test "has_match_patterns? returns false when empty" do
-    category = Category.new(name: "Test", category_type: "expense")
+    category = Category.create!(name: "No Patterns", category_type: "expense")
     assert_not category.has_match_patterns?
   end
 
   test "has_match_patterns? returns true when patterns exist" do
-    category = Category.new(
-      name: "Test",
-      category_type: "expense",
-      match_patterns: "Amazon"
-    )
+    category = categories(:groceries)
     assert category.has_match_patterns?
   end
 
   test "matches_description? returns true for matching pattern" do
-    category = Category.new(
-      name: "Test",
-      category_type: "expense",
-      match_patterns: "Amazon\nWhole Foods"
-    )
-    assert category.matches_description?("Payment to Amazon Prime")
-    assert category.matches_description?("WHOLE FOODS MARKET")
+    category = categories(:groceries)
+    assert category.matches_description?("Payment to Whole Foods Market")
+    assert category.matches_description?("TRADER JOE #123")
   end
 
   test "matches_description? returns false for non-matching description" do
-    category = Category.new(
-      name: "Test",
-      category_type: "expense",
-      match_patterns: "Amazon"
-    )
+    category = categories(:groceries)
     assert_not category.matches_description?("Payment to Netflix")
   end
 
   test "matches_description? returns false when no patterns" do
-    category = Category.new(name: "Test", category_type: "expense")
+    category = Category.create!(name: "Bare", category_type: "expense")
     assert_not category.matches_description?("Anything")
   end
 
-  test "find_by_pattern returns matching category" do
+  test "find_by_pattern returns matching category via CategoryPattern" do
     category = categories(:groceries)
-    category.update!(match_patterns: "Whole Foods\nTrader Joe")
+    # Fixtures have "Whole Foods" as human pattern
 
     result = Category.find_by_pattern("WHOLE FOODS MARKET #123", "expense")
     assert_equal category, result
@@ -81,13 +66,12 @@ class CategoryTest < ActiveSupport::TestCase
     assert_equal "Groceries (expense)", category.embedding_text
   end
 
-  test "embedding_text includes match patterns when present" do
-    category = Category.new(
-      name: "Groceries",
-      category_type: "expense",
-      match_patterns: "Whole Foods\nTrader Joe"
-    )
-    assert_equal "Groceries (expense) - Whole Foods, Trader Joe", category.embedding_text
+  test "embedding_text includes patterns when present" do
+    category = categories(:groceries)
+    text = category.embedding_text
+    assert_includes text, "groceries (expense)"
+    assert_includes text, "Whole Foods"
+    assert_includes text, "Trader Joe"
   end
 
   test "embedding_vector returns nil when embedding is blank" do
@@ -130,15 +114,7 @@ class CategoryTest < ActiveSupport::TestCase
     end
   end
 
-  test "schedule_embedding_update is called when match_patterns changes" do
-    category = categories(:groceries)
-
-    assert_enqueued_with(job: CategoryEmbeddingJob, args: [ category.id ]) do
-      category.update!(match_patterns: "new pattern")
-    end
-  end
-
-  test "schedule_embedding_update is not called when other fields change" do
+  test "schedule_embedding_update is not called for non-name changes" do
     category = categories(:groceries)
 
     assert_no_enqueued_jobs(only: CategoryEmbeddingJob) do
