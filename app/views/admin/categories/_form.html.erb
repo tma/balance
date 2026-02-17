@@ -20,65 +20,74 @@
     <%= form.select :category_type, [["Income", "income"], ["Expense", "expense"]], {}, class: ui_input_class %>
   </div>
 
-  <% if category.persisted? %>
-    <div class="mb-4">
-      <label class="<%= ui_label_class %>">Match Patterns</label>
-      <% human_patterns = category.category_patterns.human.order(:pattern) %>
+  <div class="flex space-x-4 mb-6">
+    <%= form.submit "Save", class: ui_btn_primary_class + " cursor-pointer" %>
+    <%= link_to "Cancel", admin_categories_path, class: ui_btn_secondary_class %>
+  </div>
+<% end %>
+
+<% if category.persisted? %>
+  <h2 class="<%= ui_heading_class %> mb-4">Patterns</h2>
+
+  <div class="mb-4">
+    <label class="<%= ui_label_class %>">Manual</label>
+    <% human_patterns = category.category_patterns.human.order(:pattern) %>
+    <div class="<%= ui_card_class %> p-3">
       <% if human_patterns.any? %>
-        <div class="space-y-1 mb-2">
+        <div class="space-y-1 mb-3">
           <% human_patterns.each do |pattern| %>
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-sm <%= ui_text_class %>">
               <code class="font-mono"><%= pattern.pattern %></code>
-              <%= button_to admin_category_pattern_path(category, pattern),
-                  method: :delete, class: "text-gray-400 hover:text-red-500",
-                  data: { turbo_confirm: "Remove this pattern?" } do %>
-                <span class="text-xs">&times;</span>
-              <% end %>
+              <%= button_to "Delete", admin_category_pattern_path(category, pattern),
+                  method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300",
+                  form: { data: { turbo_confirm: "Remove this pattern?" }, class: "inline" } %>
             </div>
           <% end %>
         </div>
+      <% else %>
+        <p class="text-sm <%= ui_text_muted_class %> mb-3">No patterns yet.</p>
       <% end %>
       <%= form_with url: admin_category_patterns_path(category), method: :post, class: "flex space-x-2" do |f| %>
         <%= f.text_field :pattern, placeholder: "Add a pattern...", class: ui_input_class + " font-mono flex-1" %>
         <%= f.submit "Add", class: ui_btn_secondary_class + " cursor-pointer text-xs" %>
       <% end %>
-      <p class="mt-1 text-xs <%= ui_text_muted_class %>">Transactions containing these texts will be assigned to this category during import.</p>
     </div>
-  <% end %>
+    <p class="mt-1 text-xs <%= ui_text_muted_class %>">Transactions matching these patterns will be auto-assigned to this category.</p>
+  </div>
 
-  <% if category.persisted? %>
-    <% machine_patterns = category.category_patterns.machine.by_match_count %>
-    <% if machine_patterns.any? %>
-      <div class="mb-4">
-        <label class="<%= ui_label_class %>">Learned Patterns</label>
-        <div class="<%= ui_card_class %> p-3 space-y-1">
+  <% machine_patterns = category.category_patterns.machine.by_match_count %>
+  <div class="mb-4">
+    <label class="<%= ui_label_class %>">Learned</label>
+    <div class="<%= ui_card_class %> p-3">
+      <% if machine_patterns.any? %>
+        <div class="space-y-1 mb-3">
           <% machine_patterns.each do |pattern| %>
-            <div class="flex items-center justify-between text-sm">
+            <div class="flex items-center justify-between text-sm <%= ui_text_class %>">
               <code class="font-mono"><%= pattern.pattern %></code>
               <div class="flex items-center space-x-3">
                 <span class="<%= ui_text_muted_class %>"><%= pattern.match_count %> matches</span>
-                <%= button_to admin_category_pattern_path(category, pattern),
-                    method: :delete, class: "text-gray-400 hover:text-red-500",
-                    data: { turbo_confirm: "Remove this pattern?" } do %>
-                  <span class="text-xs">&times;</span>
-                <% end %>
+                <%= button_to "Delete", admin_category_pattern_path(category, pattern),
+                    method: :delete, class: "text-rose-500 dark:text-rose-400 hover:text-rose-600 dark:hover:text-rose-300",
+                    form: { data: { turbo_confirm: "Remove this pattern?" }, class: "inline" } %>
               </div>
             </div>
           <% end %>
         </div>
-        <div class="mt-2">
-          <%= button_to "Clear & Regenerate",
+        <%= button_to "Clear & Relearn",
+            regenerate_admin_category_patterns_path(category),
+            method: :post,
+            class: ui_btn_secondary_class + " text-xs",
+            data: { turbo_confirm: "Delete all learned patterns and relearn from transaction history?" } %>
+      <% else %>
+        <p class="text-sm <%= ui_text_muted_class %> <%= category.transactions.any? ? 'mb-3' : '' %>">No patterns yet.</p>
+        <% if category.transactions.any? %>
+          <%= button_to "Learn",
               regenerate_admin_category_patterns_path(category),
               method: :post,
-              class: ui_btn_secondary_class + " text-xs",
-              data: { turbo_confirm: "Delete all learned patterns and regenerate from transaction history?" } %>
-        </div>
-      </div>
-    <% end %>
-  <% end %>
-
-  <div class="flex space-x-4">
-    <%= form.submit category.persisted? ? "Update Category" : "Create Category", class: ui_btn_primary_class + " cursor-pointer" %>
-    <%= link_to "Cancel", admin_categories_path, class: ui_btn_secondary_class %>
+              class: ui_btn_secondary_class + " text-xs" %>
+        <% end %>
+      <% end %>
+    </div>
+    <p class="mt-1 text-xs <%= ui_text_muted_class %>">Patterns are learned automatically when transactions are categorized.</p>
   </div>
 <% end %>

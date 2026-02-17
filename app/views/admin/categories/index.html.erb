@@ -9,7 +9,10 @@
 <div class="w-full">
   <div class="flex justify-between items-center h-10 mb-6">
     <h1 class="<%= ui_title_class %>">Categories</h1>
-    <%= link_to "New", new_admin_category_path, class: ui_btn_primary_class %>
+    <div class="flex items-center gap-2">
+      <%= button_to "Learn Patterns", regenerate_all_admin_categories_path, method: :post, class: ui_btn_secondary_class, form: { data: { turbo_confirm: "Clear and relearn all learned patterns from transaction history?" } } %>
+      <%= link_to "New", new_admin_category_path, class: ui_btn_primary_class %>
+    </div>
   </div>
 
   <div class="<%= ui_card_class %> overflow-hidden">
@@ -19,6 +22,7 @@
           <tr>
             <th class="<%= ui_table_th_class %> text-left">Name</th>
             <th class="<%= ui_table_th_class %> text-left">Type</th>
+            <th class="<%= ui_table_th_class %> text-right">Manual / Learned</th>
             <th class="<%= ui_table_th_class %> text-right w-24"></th>
           </tr>
         </thead>
@@ -31,6 +35,15 @@
                   <span class="<%= ui_badge_success_class %>">Income</span>
                 <% else %>
                   <span class="<%= ui_badge_danger_class %>">Expense</span>
+                <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> text-right <%= ui_text_muted_class %> text-sm whitespace-nowrap">
+                <% human = category.human_patterns_count.to_i %>
+                <% machine = category.machine_patterns_count.to_i %>
+                <% if human > 0 || machine > 0 %>
+                  <%= human %> / <%= machine %>
+                <% else %>
+                  &mdash;
                 <% end %>
               </td>
               <td class="<%= ui_table_td_class %> text-right whitespace-nowrap">
