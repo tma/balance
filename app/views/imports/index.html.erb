@@ -27,7 +27,7 @@
   <% show_attention = @needs_attention.any? && !@filter_account %>
   <% show_coverage = @account_coverage.any? && !@filter_account %>
   <% if show_attention || show_coverage %>
-    <% has_processing = show_attention && @needs_attention.any?(&:processing?) %>
+    <% has_processing = show_attention && @needs_attention.any? { |i| i.pending? || i.processing? } %>
     <% gaps_count = show_coverage ? @account_coverage.count { |c| !c[:complete?] } : 0 %>
     <% sections_open = has_processing || gaps_count > 0 %>
     <div class="<%= show_attention && show_coverage ? 'grid grid-cols-1 lg:grid-cols-2 gap-4' : '' %> mb-4">
