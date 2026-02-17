@@ -1,5 +1,5 @@
 # Background job to compute and store embedding for a category
-# Triggered automatically when category name or match_patterns change
+# Triggered automatically when category name changes
 class CategoryEmbeddingJob < ApplicationJob
   queue_as :default
 

@@ -28,3 +28,17 @@ production:
     class: ExchangeRateRetryJob
     queue: default
     schedule: every 6 hours
+
+  # Extract merchant patterns from categorized transactions
+  # Backfills missing embeddings and creates machine-learned patterns
+  hourly_pattern_extraction:
+    class: PatternExtractionJob
+    queue: default
+    schedule: every hour
+
+  # Daily data quality maintenance for categorization pipeline
+  # Prunes stale patterns, detects drift, resolves conflicts
+  daily_categorization_maintenance:
+    class: CategorizationMaintenanceJob
+    queue: default
+    schedule: every day at 3am UTC

@@ -16,7 +16,7 @@ class CategoryEmbeddingJobTest < ActiveJob::TestCase
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "nomic-embed-text:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     stub_request(:post, "#{@ollama_host}/api/embeddings")
       .to_return(status: 200, body: { embedding: mock_vector }.to_json, headers: { "Content-Type" => "application/json" })
@@ -48,12 +48,12 @@ class CategoryEmbeddingJobTest < ActiveJob::TestCase
   end
 
   test "uses category embedding_text for embedding" do
-    @category.update!(match_patterns: "test pattern")
+    CategoryPattern.find_or_create_by!(category: @category, pattern: "test pattern", source: "human")
     expected_text = @category.embedding_text
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "nomic-embed-text:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     # Capture the request to verify embedding_text is used
     embedding_request = stub_request(:post, "#{@ollama_host}/api/embeddings")

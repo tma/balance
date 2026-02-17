@@ -21,6 +21,9 @@ class TransactionImportJob < ApplicationJob
       transactions = DuplicateDetectionService.mark_duplicates(transactions)
       import.mark_completed!(transactions)
 
+      # Enqueue pattern extraction to learn from newly imported transactions
+      PatternExtractionJob.perform_later
+
     rescue PdfTextExtractorService::Error, CsvParserService::Error => e
       import.mark_failed!("File parsing error: #{e.message}")
     rescue CsvMappingAnalyzerService::AnalysisError => e
