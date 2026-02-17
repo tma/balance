@@ -2,7 +2,7 @@ class PatternExtractionJob < ApplicationJob
   queue_as :default
 
   MINIMUM_OCCURRENCES = 2 # Merchant must appear 2+ times to become a pattern
-  BATCH_SIZE = 20 # Max descriptions per LLM call
+  BATCH_SIZE = 10 # Max descriptions per LLM call
 
   def perform(category_id: nil, full_rebuild: false)
     # Self-healing: backfill any missing transaction embeddings first
@@ -39,15 +39,26 @@ class PatternExtractionJob < ApplicationJob
          .where.not(category_id: nil)
          .group_by(&:category_id)
          .each do |cat_id, transactions|
-      descriptions = transactions.map(&:description).compact.uniq
-      uncovered = descriptions.reject { |d| covered_by_pattern?(d, cat_id) }
+      # Count how many transactions have each description
+      description_counts = transactions.map(&:description).compact.tally
+      unique_descriptions = description_counts.keys
+      uncovered = unique_descriptions.reject { |d| covered_by_pattern?(d, cat_id) }
       next if uncovered.empty?
 
-      # Process in batches to avoid oversized LLM prompts
+      # Extract merchant names from uncovered descriptions via LLM
+      # Build description -> merchant mapping, then weight by transaction count
+      merchant_counts = Hash.new(0)
+
       uncovered.each_slice(BATCH_SIZE) do |batch|
         merchants = extract_merchant_names(batch)
-        create_patterns(cat_id, merchants, descriptions)
+        batch.zip(merchants).each do |desc, merchant|
+          next if merchant.blank?
+          # Weight by how many transactions have this description
+          merchant_counts[merchant] += description_counts[desc]
+        end
       end
+
+      create_patterns(cat_id, merchant_counts, transactions.size)
     end
   end
 
@@ -66,16 +77,15 @@ class PatternExtractionJob < ApplicationJob
     PROMPT
 
     response = OllamaService.generate_json(prompt)
-    Array(response).map(&:to_s).map(&:strip)
+    # LLM may return a plain array or wrap it in a hash like {"merchants" => [...]}
+    result = response.is_a?(Hash) ? response.values.flatten : Array(response)
+    result.map { |r| r.is_a?(String) ? r.strip : nil }.compact
   rescue OllamaService::Error => e
     Rails.logger.warn "PatternExtractionJob: LLM extraction failed: #{e.message}"
     []
   end
 
-  def create_patterns(category_id, merchants, descriptions)
-    # Count occurrences of each merchant across descriptions
-    merchant_counts = merchants.tally
-
+  def create_patterns(category_id, merchant_counts, total_transactions)
     merchant_counts.each do |merchant, count|
       next if merchant.blank? || count < MINIMUM_OCCURRENCES
 
@@ -90,7 +100,7 @@ class PatternExtractionJob < ApplicationJob
       )
       if existing
         existing.update!(
-          confidence: (count.to_f / descriptions.size).round(2),
+          confidence: (count.to_f / total_transactions).clamp(0, 1).round(2),
           match_count: [ existing.match_count, count ].max
         )
       else
@@ -98,7 +108,7 @@ class PatternExtractionJob < ApplicationJob
           pattern: merchant,
           source: "machine",
           category_id: category_id,
-          confidence: (count.to_f / descriptions.size).round(2),
+          confidence: (count.to_f / total_transactions).clamp(0, 1).round(2),
           match_count: count
         )
       end
