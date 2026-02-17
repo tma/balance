@@ -64,7 +64,13 @@ Rails.application.routes.draw do
     resources :currencies
     resources :account_types
     resources :asset_types
-    resources :categories
+    resources :categories do
+      resources :category_patterns, only: [ :create, :destroy ], path: "patterns", as: :patterns do
+        collection do
+          post :regenerate
+        end
+      end
+    end
     resources :broker_connections, path: "brokers" do
       collection do
         post :test_connection

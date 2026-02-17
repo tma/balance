@@ -20,14 +20,62 @@
     <%= form.select :category_type, [["Income", "income"], ["Expense", "expense"]], {}, class: ui_input_class %>
   </div>
 
-  <div class="mb-4">
-    <%= form.label :match_patterns, "Match Patterns", class: ui_label_class %>
-    <%= form.text_area :match_patterns,
-        rows: 5,
-        class: ui_input_class + " font-mono",
-        placeholder: "Amazon\nWhole Foods\nTrader Joe's" %>
-    <p class="mt-1 text-xs <%= ui_text_muted_class %>">One pattern per line. Transactions containing these texts will be assigned to this category during import.</p>
-  </div>
+  <% if category.persisted? %>
+    <div class="mb-4">
+      <label class="<%= ui_label_class %>">Match Patterns</label>
+      <% human_patterns = category.category_patterns.human.order(:pattern) %>
+      <% if human_patterns.any? %>
+        <div class="space-y-1 mb-2">
+          <% human_patterns.each do |pattern| %>
+            <div class="flex items-center justify-between text-sm">
+              <code class="font-mono"><%= pattern.pattern %></code>
+              <%= button_to admin_category_pattern_path(category, pattern),
+                  method: :delete, class: "text-gray-400 hover:text-red-500",
+                  data: { turbo_confirm: "Remove this pattern?" } do %>
+                <span class="text-xs">&times;</span>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      <% end %>
+      <%= form_with url: admin_category_patterns_path(category), method: :post, class: "flex space-x-2" do |f| %>
+        <%= f.text_field :pattern, placeholder: "Add a pattern...", class: ui_input_class + " font-mono flex-1" %>
+        <%= f.submit "Add", class: ui_btn_secondary_class + " cursor-pointer text-xs" %>
+      <% end %>
+      <p class="mt-1 text-xs <%= ui_text_muted_class %>">Transactions containing these texts will be assigned to this category during import.</p>
+    </div>
+  <% end %>
+
+  <% if category.persisted? %>
+    <% machine_patterns = category.category_patterns.machine.by_match_count %>
+    <% if machine_patterns.any? %>
+      <div class="mb-4">
+        <label class="<%= ui_label_class %>">Learned Patterns</label>
+        <div class="<%= ui_card_class %> p-3 space-y-1">
+          <% machine_patterns.each do |pattern| %>
+            <div class="flex items-center justify-between text-sm">
+              <code class="font-mono"><%= pattern.pattern %></code>
+              <div class="flex items-center space-x-3">
+                <span class="<%= ui_text_muted_class %>"><%= pattern.match_count %> matches</span>
+                <%= button_to admin_category_pattern_path(category, pattern),
+                    method: :delete, class: "text-gray-400 hover:text-red-500",
+                    data: { turbo_confirm: "Remove this pattern?" } do %>
+                  <span class="text-xs">&times;</span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+        </div>
+        <div class="mt-2">
+          <%= button_to "Clear & Regenerate",
+              regenerate_admin_category_patterns_path(category),
+              method: :post,
+              class: ui_btn_secondary_class + " text-xs",
+              data: { turbo_confirm: "Delete all learned patterns and regenerate from transaction history?" } %>
+        </div>
+      </div>
+    <% end %>
+  <% end %>
 
   <div class="flex space-x-4">
     <%= form.submit category.persisted? ? "Update Category" : "Create Category", class: ui_btn_primary_class + " cursor-pointer" %>
