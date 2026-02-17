@@ -63,11 +63,11 @@ class CategoryMatchingService
   def preload_transaction_embeddings
     %w[income expense].each do |type|
       @transaction_embeddings_cache[type] = Transaction.joins(:category)
+        .preload(:category)
         .where(categories: { category_type: type })
         .where.not(embedding: nil)
         .order(date: :desc)
         .limit(MAX_EMBEDDING_TRANSACTIONS)
-        .select(:id, :category_id, :embedding, :description)
         .to_a
     end
   end
@@ -92,7 +92,7 @@ class CategoryMatchingService
 
     # Phase 3: LLM with top candidates and few-shot examples
     if result[:candidates]&.any?
-      category = llm_categorize_single(txn, result[:candidates])
+      category = llm_categorize_single(txn, result[:candidates], query_vector: result[:query_vector])
       assign_category(txn, category, phase: 3) if category
     end
   end
@@ -116,23 +116,23 @@ class CategoryMatchingService
 
     if txn_candidates.any? && txn_candidates.first[:similarity] >= transaction_confidence_threshold
       # Strong match from history — return directly
-      return { category: txn_candidates.first[:category], candidates: nil }
+      return { category: txn_candidates.first[:category], candidates: nil, query_vector: query_vector }
     end
 
     # Fall back to category embeddings (coarse, always available)
     cat_candidates = nearest_category_neighbors(query_vector, type, k: TOP_K_CANDIDATES)
 
     if cat_candidates.any? && cat_candidates.first[:similarity] >= category_confidence_threshold
-      return { category: cat_candidates.first[:category], candidates: nil }
+      return { category: cat_candidates.first[:category], candidates: nil, query_vector: query_vector }
     end
 
     # Low confidence — pass all candidates to Phase 3
     all_candidates = (txn_candidates.map { |c| c[:category] } +
                       cat_candidates.map { |c| c[:category] }).uniq
-    { category: nil, candidates: all_candidates }
+    { category: nil, candidates: all_candidates, query_vector: query_vector }
   rescue OllamaService::Error => e
     Rails.logger.warn "CategoryMatchingService: Embedding failed for '#{description}': #{e.message}"
-    { category: nil, candidates: nil }
+    { category: nil, candidates: nil, query_vector: nil }
   end
 
   # Find nearest transaction neighbors using preloaded embeddings
@@ -176,10 +176,10 @@ class CategoryMatchingService
   end
 
   # Phase 3: LLM categorization with reduced candidate set
-  def llm_categorize_single(txn, candidates)
+  def llm_categorize_single(txn, candidates, query_vector: nil)
     return nil if candidates.empty?
 
-    prompt = build_llm_prompt(txn, candidates)
+    prompt = build_llm_prompt(txn, candidates, query_vector: query_vector)
     response = OllamaService.generate_json(prompt)
     category_name = parse_llm_response(response)
 
@@ -189,9 +189,9 @@ class CategoryMatchingService
     nil
   end
 
-  def build_llm_prompt(txn, candidates)
+  def build_llm_prompt(txn, candidates, query_vector: nil)
     # Retrieve similar historical transactions as few-shot examples
-    examples = retrieve_few_shot_examples(txn[:description], txn[:transaction_type], limit: FEW_SHOT_LIMIT)
+    examples = retrieve_few_shot_examples(txn[:description], txn[:transaction_type], limit: FEW_SHOT_LIMIT, query_vector: query_vector)
 
     candidate_names = candidates.map(&:name)
 
@@ -215,11 +215,11 @@ class CategoryMatchingService
   end
 
   # Retrieve similar historical transactions as few-shot examples for LLM prompts
-  def retrieve_few_shot_examples(description, type, limit:)
+  def retrieve_few_shot_examples(description, type, limit:, query_vector: nil)
     cached = @transaction_embeddings_cache[type]
     return [] if cached.nil? || cached.empty?
 
-    query_vector = OllamaService.embed(description)
+    query_vector ||= OllamaService.embed(description)
 
     cached
       .filter_map { |t|
@@ -258,7 +258,7 @@ class CategoryMatchingService
   end
 
   # Transaction-level embedding confidence threshold
-  # Slightly higher than category-level since transaction embeddings are more specific
+  # Currently the same as category-level; can be tuned independently
   def transaction_confidence_threshold
     category_confidence_threshold
   end

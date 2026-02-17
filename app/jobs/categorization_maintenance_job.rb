@@ -38,7 +38,8 @@ class CategorizationMaintenanceJob < ApplicationJob
   # have been re-categorized by the user to a different category.
   def detect_recategorization_drift
     CategoryPattern.machine.where("match_count > 0").find_each do |pattern|
-      matching_txns = Transaction.where("LOWER(description) LIKE ?", "%#{pattern.pattern.downcase}%")
+      sanitized = ActiveRecord::Base.sanitize_sql_like(pattern.pattern.downcase)
+      matching_txns = Transaction.where("LOWER(description) LIKE ?", "%#{sanitized}%")
       next if matching_txns.empty?
 
       # Count how many still belong to the pattern's category vs. others
