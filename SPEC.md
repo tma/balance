@@ -50,7 +50,27 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Manual fallback when AI extraction fails
 - Max file size: 5MB
 
-### 5. Budgets
+### 5. AI Auto-Categorization
+- Automatic category suggestion for new transactions using a 3-phase hybrid approach:
+  1. **Pattern Matching** - Instant matching against category patterns (manual and learned) using word-boundary regex
+  2. **Embedding Similarity** - Semantic matching using vector embeddings when patterns don't match
+  3. **LLM Fallback** - For ambiguous cases, the LLM picks from the top 3 embedding candidates
+- **Category Patterns:**
+  - Two sources: "Manual" (user-created) and "Learned" (extracted by LLM from transaction history)
+  - Managed in Admin → Categories, with inline CRUD for manual patterns
+  - Learned patterns extracted hourly via background job (`CategoryPatternExtractionJob`)
+  - Pattern learning also triggered after import confirmation (scoped to categories used in the import)
+  - Conflicting learned patterns resolved by highest confidence, then highest match count
+- **Embeddings:**
+  - Categories and transactions get vector embeddings via Ollama (`mxbai-embed-large`)
+  - Embeddings computed asynchronously via background jobs (`CategoryEmbeddingJob`, `TransactionEmbeddingJob`)
+  - Cosine similarity used for matching; configurable confidence threshold (default: 0.75)
+- **UI Integration:**
+  - Transaction form shows AI-suggested category with accept/dismiss controls
+  - Suggestion fetched via Stimulus controller calling `suggest_category` endpoint
+- Reduces LLM calls by ~70-80% compared to pure LLM categorization
+
+### 6. Budgets
 - Set recurring budgets per expense category
 - Two budget periods:
   - **Monthly:** Track spending per calendar month (e.g., $500/month for groceries)
@@ -60,7 +80,7 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Track spending vs budget with visual progress indicators
 - View budget status for any month/year
 
-### 6. Dashboard
+### 7. Dashboard
 Split into two views:
 
 #### Cash Flow View (root path)
@@ -98,7 +118,7 @@ Split into two views:
   - Each asset shows current value and liability badge if applicable
 - **Totals Footer** - Assets - Liabilities = Net
 
-### 7. Broker Integration
+### 8. Broker Integration
 - Connect brokerage accounts to auto-sync portfolio positions
 - Currently supports Interactive Brokers via Flex Web Service API
 - **Setup:**
@@ -118,12 +138,12 @@ Split into two views:
   - "Broker" badge shown on assets with mapped positions
   - Position history viewable on individual position pages
 
-### 8. Admin
+### 9. Admin
 - Manage master data: 
   - **Currencies** - ISO 4217 codes (e.g., USD, EUR, GBP)
   - **Account Types** - name (e.g., checking, savings, credit, cash)
   - **Asset Types** - name, is_liability flag (e. g., property, mortgage)
-  - **Categories** - name, category_type (income/expense)
+  - **Categories** - name, category_type (income/expense), category patterns (manual/learned)
 - Seed file populates defaults
 - Admin UI to add/edit/delete master data
 
@@ -149,6 +169,15 @@ AssetGroup
 Category
 - name:string
 - category_type:string (income, expense)
+- embedding:binary (vector embedding for semantic matching)
+
+CategoryPattern
+- category_id:references
+- pattern:string (e.g., "AMAZON", "WHOLE FOODS")
+- source:string (manual, learned)
+- confidence:decimal (0.0-1.0, for learned patterns)
+- match_count:integer (how many transactions matched)
+- unique index on [pattern, source, category_id]
 
 # User Data
 Account
@@ -181,6 +210,7 @@ Transaction
 - exchange_rate:decimal (rate at transaction date)
 - amount_in_default_currency:decimal (for reporting)
 - duplicate_hash:string (SHA256 for import duplicate detection)
+- embedding:binary (vector embedding for semantic matching)
 
 Budget
 - category_id:references
@@ -261,7 +291,9 @@ PositionValuation
 - Auto-pulls configured model on first start
 - Environment variables:
   - `OLLAMA_HOST` - Ollama API endpoint (default: http://ollama:11434)
-  - `OLLAMA_MODEL` - LLM model to use (default: mistral)
+  - `OLLAMA_MODEL` - LLM model to use (default: llama3.1:8b)
+  - `OLLAMA_EMBEDDING_MODEL` - Embedding model (default: mxbai-embed-large)
+  - `OLLAMA_EMBEDDING_CONFIDENCE` - Cosine similarity threshold (default: 0.75)
   - `OLLAMA_TIMEOUT` - Request timeout in seconds (default: 120)
 
 ## Implementation Notes
@@ -282,6 +314,8 @@ PositionValuation
 - Transaction exchange rates captured at transaction date for accurate historical reporting
 - Transaction import uses Ollama LLM for extraction and categorization
 - Import services: OllamaService, PdfTextExtractorService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
+- Categorization services: CategoryMatchingService (3-phase pipeline), CategoryPatternExtractionJob (learns patterns from history)
+- Background jobs: TransactionEmbeddingJob, CategoryEmbeddingJob, CategoryPatternExtractionJob (hourly), CategorizationMaintenanceJob (daily), EmbeddingModelMigrationJob
 - Broker integration uses factory pattern (BrokerSyncService) for multi-broker support
 - IBKR uses Flex Web Service API (2-step: SendRequest → GetStatement)
 - IbkrSyncService handles API calls, XML parsing, and asset value sync

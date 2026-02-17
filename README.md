@@ -78,9 +78,9 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
    # Ollama host for AI-powered transaction import (optional)
    OLLAMA_HOST=http://ollama.example.com:11434
-   # OLLAMA_MODEL=llama3.1:8b                    # LLM model (default: llama3.1:8b)
-    # OLLAMA_EMBEDDING_MODEL=mxbai-embed-large    # Embedding model (default: mxbai-embed-large)
-   # OLLAMA_EMBEDDING_CONFIDENCE=0.85           # Confidence threshold (default: 0.85)
+   # OLLAMA_MODEL=llama3.1:8b                  # LLM model (default: llama3.1:8b)
+   # OLLAMA_EMBEDDING_MODEL=mxbai-embed-large  # Embedding model (default: mxbai-embed-large)
+   # OLLAMA_EMBEDDING_CONFIDENCE=0.75          # Confidence threshold (default: 0.75)
    ```
 
    > **Important:** Save these values securely. If you lose the encryption keys, any encrypted data (like broker API tokens) will become unreadable.
@@ -98,6 +98,8 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 
 The `worker` service runs scheduled jobs including:
 - **Daily broker sync** (4am) - Fetches latest positions from connected brokers (e.g., Interactive Brokers)
+- **Hourly pattern learning** - Extracts category patterns from transaction history using LLM
+- **Daily categorization maintenance** - Prunes stale patterns and refreshes embeddings
 
 ### AI-Powered Transaction Import
 

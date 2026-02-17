@@ -49,6 +49,9 @@ When using Playwright to access the dev server, use `http://host.docker.internal
 - Run `rails`, `ruby`, or `bundle` commands directly on the host machine
 - Use system Ruby (it's outdated and incompatible)
 
+### Ollama Access
+Ollama runs on the host machine, not inside the devcontainer. From inside the container, access it via `host.docker.internal:11434` (not `localhost`). The `OLLAMA_HOST` env var is pre-configured in the devcontainer.
+
 ## Planning
 
 **IMPORTANT: Always create a plan document BEFORE implementing any feature or fix.**
@@ -91,6 +94,12 @@ When using Playwright to access the dev server, use `http://host.docker.internal
 - Use migrations for all schema changes
 - Use `db/seeds.rb` for default master data
 - Validate foreign keys at model level
+- Seeds must not depend on Ollama — AI features work at runtime, not during seeding
+
+### AI / Categorization
+- Use "Manual" and "Learned" terminology for category pattern sources (not "Generate", "Human/Machine", etc.)
+- Run `rails categorization:benchmark` after changing categorization logic to verify accuracy
+- Pattern matching uses word-boundary regex (`CategoryPattern#matches?`) — use this method, not raw `include?`
 
 ### Frontend
 - Tailwind CSS for all styling
@@ -98,6 +107,7 @@ When using Playwright to access the dev server, use `http://host.docker.internal
 - Turbo Frames for inline editing
 - Turbo Streams for real-time updates
 - No additional JavaScript frameworks
+- Use `ui_helper.rb` for consistent dark mode styling (e.g., `ui_text_class`, `ui_text_muted_class`, `ui_card_class`) — don't hardcode Tailwind dark mode classes directly in views
 
 ### Testing
 - Use Minitest (Rails default)
