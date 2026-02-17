@@ -156,6 +156,14 @@ class ImportsController < ApplicationController
       @import.update!(status: "done")
     end
 
+    # Trigger pattern learning for categories used in this import
+    if imported_count > 0
+      category_ids = @import.transactions.where.not(category_id: nil).distinct.pluck(:category_id)
+      category_ids.each do |cat_id|
+        CategoryPatternExtractionJob.perform_later(category_id: cat_id)
+      end
+    end
+
     if errors.any?
       flash[:alert] = "Imported #{imported_count} transactions. #{errors.size} failed: #{errors.first(3).join('; ')}"
     else
