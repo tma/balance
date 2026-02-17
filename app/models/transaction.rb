@@ -77,6 +77,22 @@ class Transaction < ApplicationRecord
   after_create :update_account_balance_on_create
   after_update :update_account_balance_on_update, if: :saved_change_to_amount_or_type?
   after_destroy :update_account_balance_on_destroy
+  after_commit :schedule_embedding, on: [ :create, :update ], if: :needs_embedding?
+
+  # Get embedding as array of floats (unpacked from binary)
+  # @return [Array<Float>, nil] The embedding vector or nil if not set
+  def embedding_vector
+    return nil if embedding.blank?
+    embedding.unpack("f*")
+  rescue StandardError
+    nil
+  end
+
+  # Set embedding from array of floats (packed to binary)
+  # @param vector [Array<Float>, nil] The embedding vector
+  def embedding_vector=(vector)
+    self.embedding = vector&.pack("f*")
+  end
 
   def currency
     account&.currency
@@ -87,6 +103,14 @@ class Transaction < ApplicationRecord
   end
 
   private
+
+  def needs_embedding?
+    saved_change_to_description? || saved_change_to_category_id? || embedding.blank?
+  end
+
+  def schedule_embedding
+    TransactionEmbeddingJob.perform_later(id)
+  end
 
   def calculate_default_currency_amount
     default_curr = default_currency
