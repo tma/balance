@@ -65,6 +65,9 @@ Rails.application.routes.draw do
     resources :account_types
     resources :asset_types
     resources :categories do
+      collection do
+        post :regenerate_all
+      end
       resources :category_patterns, only: [ :create, :destroy ], path: "patterns", as: :patterns do
         collection do
           post :regenerate

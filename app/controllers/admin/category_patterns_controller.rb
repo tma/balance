@@ -20,7 +20,7 @@ class Admin::CategoryPatternsController < ApplicationController
   def regenerate
     @category.category_patterns.machine.delete_all
     PatternExtractionJob.perform_later(category_id: @category.id, full_rebuild: true)
-    redirect_to edit_admin_category_path(@category), notice: "Learned patterns cleared. Regeneration queued.", status: :see_other
+    redirect_to edit_admin_category_path(@category), notice: "Learned patterns cleared. Learning queued.", status: :see_other
   end
 
   private
