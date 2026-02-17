@@ -29,7 +29,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
   test "create redirects without file" do
     post imports_path, params: { account_id: @account.id }
     assert_redirected_to new_import_path
-    assert_equal "Please select a file to import.", flash[:alert]
+    assert_equal "Please select at least one file to import.", flash[:alert]
   end
 
   test "create with file creates import record and enqueues job" do
@@ -37,7 +37,7 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
       assert_difference("Import.count", 1) do
         post imports_path, params: {
           account_id: @account.id,
-          file: fixture_file_upload("sample_upload.csv", "text/csv")
+          files: [ fixture_file_upload("sample_upload.csv", "text/csv") ]
         }
       end
     end
@@ -48,6 +48,22 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal @account.id, import.account_id
     assert_equal "sample_upload.csv", import.original_filename
     assert_equal "text/csv", import.file_content_type
+  end
+
+  test "create with multiple files creates multiple import records and enqueues jobs" do
+    assert_difference("Import.count", 2) do
+      post imports_path, params: {
+        account_id: @account.id,
+        files: [
+          fixture_file_upload("sample_upload.csv", "text/csv"),
+          fixture_file_upload("sample_upload.csv", "text/csv")
+        ]
+      }
+    end
+
+    assert_redirected_to imports_path
+    assert_match(/Started processing 2 files/, flash[:notice])
+    assert_equal 2, enqueued_jobs.count { |j| j["job_class"] == "TransactionImportJob" }
   end
 
   test "confirm imports selected transactions" do

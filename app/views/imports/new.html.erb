@@ -29,11 +29,13 @@
           </div>
 
           <div>
-            <%= form.label :file, "Statement", class: ui_label_class %>
-            <p class="text-sm <%= ui_text_muted_class %> mb-2">CSV file (max 5MB)</p>
+            <%= form.label :files, "Statements", class: ui_label_class %>
+            <p class="text-sm <%= ui_text_muted_class %> mb-2">CSV files (max 5MB each)</p>
             <div class="flex items-center gap-3">
-              <%= form.file_field :file, 
+              <%= form.file_field :files, 
                   accept: ".csv,text/csv",
+                  multiple: true,
+                  name: "files[]",
                   class: "block w-full text-sm #{ui_text_muted_class} file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-medium file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-300 hover:file:bg-slate-200 dark:hover:file:bg-slate-600 file:cursor-pointer",
                   required: true %>
             </div>
@@ -41,7 +43,7 @@
         </div>
 
         <div class="mt-6 flex items-center justify-end">
-          <%= form.submit "Process Transactions", class: "#{ui_btn_primary_class} cursor-pointer" %>
+          <%= form.submit "Process", class: "#{ui_btn_primary_class} cursor-pointer" %>
         </div>
       </div>
     <% end %>

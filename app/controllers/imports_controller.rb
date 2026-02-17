@@ -87,30 +87,43 @@ class ImportsController < ApplicationController
     redirect_to import_path(@import), alert: "Failed to save changes."
   end
 
-  # Create the import record and enqueue the job
+  # Create import records and enqueue jobs (one per file)
   def create
     @account = Account.find(params[:account_id])
-    file = params[:file]
+    files = Array(params[:files]).reject(&:blank?)
 
-    unless file.present?
-      redirect_to new_import_path, alert: "Please select a file to import."
+    if files.empty?
+      redirect_to new_import_path, alert: "Please select at least one file to import."
       return
     end
 
-    # Create import record with file data
-    @import = Import.new(
-      account: @account,
-      original_filename: file.original_filename,
-      file_content_type: determine_content_type(file),
-      file_data: file.read
-    )
+    imports = []
+    errors = []
 
-    if @import.save
-      # Enqueue the background job
-      TransactionImportJob.perform_later(@import.id)
-      redirect_to import_path(@import), notice: "Import started. Processing your file..."
+    files.each do |file|
+      import = Import.new(
+        account: @account,
+        original_filename: file.original_filename,
+        file_content_type: determine_content_type(file),
+        file_data: file.read
+      )
+
+      if import.save
+        TransactionImportJob.perform_later(import.id)
+        imports << import
+      else
+        errors << "#{file.original_filename}: #{import.errors.full_messages.join(', ')}"
+      end
+    end
+
+    if imports.size == 1 && errors.empty?
+      redirect_to import_path(imports.first), notice: "Import started. Processing your file..."
+    elsif imports.any?
+      message = "Started processing #{imports.size} file#{'s' if imports.size > 1}."
+      message += " #{errors.size} failed: #{errors.join('; ')}" if errors.any?
+      redirect_to imports_path, notice: message
     else
-      redirect_to new_import_path, alert: "Failed to create import: #{@import.errors.full_messages.join(', ')}"
+      redirect_to new_import_path, alert: "Failed to create imports: #{errors.join('; ')}"
     end
   end
 
