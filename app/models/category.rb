@@ -29,8 +29,7 @@ class Category < ApplicationRecord
   def matches_description?(description)
     return false unless has_match_patterns?
 
-    desc_lower = description.to_s.downcase
-    match_patterns_list.any? { |pattern| desc_lower.include?(pattern.downcase) }
+    category_patterns.human.any? { |p| p.matches?(description) }
   end
 
   # Find a category that matches the description using pattern matching
@@ -39,23 +38,23 @@ class Category < ApplicationRecord
   # @param type [String] "income" or "expense"
   # @return [Category, nil] Matching category or nil
   def self.find_by_pattern(description, type)
-    desc_lower = description.to_s.downcase
     category_ids = where(category_type: type).pluck(:id)
 
     # Human patterns first (priority)
     human_match = CategoryPattern
       .where(category_id: category_ids, source: "human")
-      .find { |p| desc_lower.include?(p.pattern.downcase) }
+      .find { |p| p.matches?(description) }
 
     if human_match
       human_match.increment_match_count!
       return human_match.category
     end
 
-    # Machine patterns second
+    # Machine patterns second — highest confidence wins, match_count as tiebreaker
     machine_match = CategoryPattern
       .where(category_id: category_ids, source: "machine")
-      .find { |p| desc_lower.include?(p.pattern.downcase) }
+      .order(confidence: :desc, match_count: :desc)
+      .find { |p| p.matches?(description) }
 
     if machine_match
       machine_match.increment_match_count!

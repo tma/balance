@@ -91,7 +91,7 @@ class CategoryPatternExtractionJob < ApplicationJob
 
       # Skip if a human pattern already covers this
       next if CategoryPattern.human.where(category_id: category_id)
-                              .any? { |p| merchant.downcase.include?(p.pattern.downcase) }
+                              .any? { |p| p.matches?(merchant) }
 
       existing = CategoryPattern.find_by(
         pattern: merchant,
@@ -120,6 +120,6 @@ class CategoryPatternExtractionJob < ApplicationJob
 
   def covered_by_pattern?(description, category_id)
     CategoryPattern.where(category_id: category_id)
-                   .any? { |p| description.downcase.include?(p.pattern.downcase) }
+                   .any? { |p| p.matches?(description) }
   end
 end

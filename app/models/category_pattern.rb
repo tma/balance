@@ -10,6 +10,12 @@ class CategoryPattern < ApplicationRecord
 
   after_commit :schedule_category_embedding_update
 
+  # Check if this pattern matches a description using word-boundary matching.
+  # "AMAZON" matches "AMAZON PRIME" and "MY AMAZON ORDER" but not "AMAZONAS".
+  def matches?(description)
+    description.to_s.match?(/\b#{Regexp.escape(pattern)}\b/i)
+  end
+
   def increment_match_count!
     increment!(:match_count)
   end
