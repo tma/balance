@@ -1,0 +1,20 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+groceries_whole_foods:
+  category: groceries
+  pattern: Whole Foods
+  source: human
+  match_count: 5
+
+groceries_trader_joe:
+  category: groceries
+  pattern: Trader Joe
+  source: human
+  match_count: 3
+
+groceries_machine_costco:
+  category: groceries
+  pattern: COSTCO WHSE
+  source: machine
+  match_count: 12
+  confidence: 0.85
