@@ -132,7 +132,7 @@ if OllamaService.embedding_model_available?
   Rake::Task["categories:compute_embeddings"].invoke
 else
   puts "Skipping category embeddings (embedding model not available)"
-  puts "  To enable: ollama pull nomic-embed-text"
+  puts "  To enable: ollama pull mxbai-embed-large"
 end
 
 # Asset Groups

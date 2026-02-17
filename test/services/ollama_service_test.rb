@@ -23,8 +23,8 @@ class OllamaServiceTest < ActiveSupport::TestCase
     assert_not_nil config.host
     assert_not_nil config.model
     assert_kind_of Integer, config.timeout
-    assert_equal "nomic-embed-text", config.embedding_model
-    assert_equal 0.85, config.embedding_confidence_threshold
+    assert_equal "mxbai-embed-large", config.embedding_model
+    assert_equal 0.75, config.embedding_confidence_threshold
   end
 
   test "available? returns true when Ollama responds" do
@@ -57,7 +57,7 @@ class OllamaServiceTest < ActiveSupport::TestCase
 
   test "embedding_model_available? returns true when embedding model is present" do
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "nomic-embed-text:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     assert OllamaService.embedding_model_available?
   end

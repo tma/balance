@@ -79,7 +79,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
    # Ollama host for AI-powered transaction import (optional)
    OLLAMA_HOST=http://ollama.example.com:11434
    # OLLAMA_MODEL=llama3.1:8b                    # LLM model (default: llama3.1:8b)
-   # OLLAMA_EMBEDDING_MODEL=nomic-embed-text    # Embedding model (default: nomic-embed-text)
+    # OLLAMA_EMBEDDING_MODEL=mxbai-embed-large    # Embedding model (default: mxbai-embed-large)
    # OLLAMA_EMBEDDING_CONFIDENCE=0.85           # Confidence threshold (default: 0.85)
    ```
 
@@ -106,7 +106,7 @@ To enable AI-powered transaction import from bank statements:
 1. Install and run [Ollama](https://ollama.ai) on your host machine
 2. Pull the required models:
    ```bash
-   ollama pull nomic-embed-text  # Required for categorization
+    ollama pull mxbai-embed-large  # Required for categorization
    ollama pull llama3.1:8b       # Required for CSV format detection and PDF parsing
    ```
 3. Set `OLLAMA_HOST` in your `.env` file to point to your Ollama instance

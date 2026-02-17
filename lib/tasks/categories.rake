@@ -1,5 +1,5 @@
 namespace :categories do
-  desc "Compute embeddings for all categories (requires Ollama with nomic-embed-text model)"
+  desc "Compute embeddings for all categories (requires Ollama with embedding model (default: mxbai-embed-large))"
   task compute_embeddings: :environment do
     unless OllamaService.available?
       puts "Error: Ollama is not available at #{Rails.application.config.ollama.host}"
