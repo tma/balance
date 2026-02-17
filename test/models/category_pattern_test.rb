@@ -40,15 +40,25 @@ class CategoryPatternTest < ActiveSupport::TestCase
     assert pattern.valid?
   end
 
-  test "pattern must be unique within source" do
+  test "pattern must be unique within source and category" do
     existing = category_patterns(:groceries_whole_foods)
     duplicate = CategoryPattern.new(
-      category: categories(:entertainment),
+      category: existing.category,
       pattern: existing.pattern,
       source: existing.source
     )
     assert_not duplicate.valid?
     assert_includes duplicate.errors[:pattern], "has already been taken"
+  end
+
+  test "same pattern and source can exist for different categories" do
+    existing = category_patterns(:groceries_whole_foods)
+    different_category = CategoryPattern.new(
+      category: categories(:entertainment),
+      pattern: existing.pattern,
+      source: existing.source
+    )
+    assert different_category.valid?
   end
 
   test "same pattern can exist with different sources" do

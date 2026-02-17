@@ -83,16 +83,16 @@ class PatternExtractionJob < ApplicationJob
       next if CategoryPattern.human.where(category_id: category_id)
                               .any? { |p| merchant.downcase.include?(p.pattern.downcase) }
 
-      existing = CategoryPattern.find_by(pattern: merchant, source: "machine")
+      existing = CategoryPattern.find_by(
+        pattern: merchant,
+        source: "machine",
+        category_id: category_id
+      )
       if existing
-        # Update category if this one has more evidence
-        if count > existing.match_count
-          existing.update!(
-            category_id: category_id,
-            confidence: (count.to_f / descriptions.size).round(2),
-            match_count: count
-          )
-        end
+        existing.update!(
+          confidence: (count.to_f / descriptions.size).round(2),
+          match_count: [ existing.match_count, count ].max
+        )
       else
         CategoryPattern.create!(
           pattern: merchant,
@@ -103,7 +103,7 @@ class PatternExtractionJob < ApplicationJob
         )
       end
     rescue ActiveRecord::RecordNotUnique
-      # Already exists, skip
+      # Race condition: another process created it, skip
       next
     end
   end

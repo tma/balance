@@ -9,7 +9,7 @@ class CreateCategoryPatterns < ActiveRecord::Migration[8.1]
       t.timestamps
     end
 
-    add_index :category_patterns, [ :pattern, :source ], unique: true
+    add_index :category_patterns, [ :pattern, :source, :category_id ], unique: true
     add_index :category_patterns, [ :category_id, :source ]
   end
 end

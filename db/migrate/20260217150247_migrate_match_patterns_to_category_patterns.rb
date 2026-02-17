@@ -2,15 +2,11 @@ class MigrateMatchPatternsToCategoryPatterns < ActiveRecord::Migration[8.1]
   def up
     Category.where.not(match_patterns: [ nil, "" ]).find_each do |category|
       category.match_patterns.lines.map(&:strip).reject(&:blank?).each do |pattern|
-        CategoryPattern.create!(
+        CategoryPattern.find_or_create_by!(
           category: category,
           pattern: pattern,
-          source: "human",
-          match_count: 0
+          source: "human"
         )
-      rescue ActiveRecord::RecordNotUnique
-        # Pattern already exists (idempotent)
-        next
       end
     end
   end

@@ -4,7 +4,7 @@ class CategoryPattern < ApplicationRecord
   enum :source, { human: "human", machine: "machine" }
 
   validates :pattern, presence: true
-  validates :pattern, uniqueness: { scope: :source }
+  validates :pattern, uniqueness: { scope: [ :source, :category_id ] }
 
   scope :by_match_count, -> { order(match_count: :desc) }
 

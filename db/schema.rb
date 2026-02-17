@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_164817) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_173033) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -137,7 +137,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_164817) do
     t.datetime "updated_at", null: false
     t.index ["category_id", "source"], name: "index_category_patterns_on_category_id_and_source"
     t.index ["category_id"], name: "index_category_patterns_on_category_id"
-    t.index ["pattern", "source"], name: "index_category_patterns_on_pattern_and_source", unique: true
+    t.index ["pattern", "source", "category_id"], name: "index_category_patterns_on_pattern_and_source_and_category_id", unique: true
   end
 
   create_table "currencies", force: :cascade do |t|
