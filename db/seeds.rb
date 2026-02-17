@@ -126,15 +126,6 @@ expense_category_data.each do |name, patterns|
   expense_categories[name.downcase] = category
 end
 
-# Compute category embeddings (required for AI-powered categorization)
-if OllamaService.embedding_model_available?
-  Rails.application.load_tasks
-  Rake::Task["categories:compute_embeddings"].invoke
-else
-  puts "Skipping category embeddings (embedding model not available)"
-  puts "  To enable: ollama pull mxbai-embed-large"
-end
-
 # Asset Groups
 puts "Creating asset groups..."
 asset_groups = {}
@@ -451,10 +442,10 @@ if Rails.env.development?
     # Months 7-11 will use default (normal) profile
   }
 
-  # Generate 12 months of transactions
-  # Months 8 and 10 are intentionally sparse to simulate incomplete data imports
-  incomplete_months = [ 8, 10 ]
-  12.times do |months_ago|
+  # Generate 6 months of transactions
+  # Month 4 is intentionally sparse to simulate incomplete data imports
+  incomplete_months = [ 4 ]
+  6.times do |months_ago|
     month_start = (today - months_ago.months).beginning_of_month
     month_num = month_start.month
 
@@ -1036,7 +1027,7 @@ if Rails.env.development?
   # Find assets and create historical valuations
   primary_residence = Asset.find_by(name: "Primary Residence")
   if primary_residence
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: primary_residence, date: valuation_date) do |v|
         # House appreciated ~5% over year
@@ -1047,7 +1038,7 @@ if Rails.env.development?
 
   stock_portfolio = Asset.find_by(name: "Stock Portfolio")
   if stock_portfolio
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: stock_portfolio, date: valuation_date) do |v|
         # Stocks grew ~15% over year with fluctuation
@@ -1059,7 +1050,7 @@ if Rails.env.development?
 
   bitcoin = Asset.find_by(name: "Bitcoin Holdings")
   if bitcoin
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: bitcoin, date: valuation_date) do |v|
         # Crypto very volatile - can swing 30%+ either way
@@ -1077,7 +1068,7 @@ if Rails.env.development?
 
   retirement = Asset.find_by(name: "401(k)")
   if retirement
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: retirement, date: valuation_date) do |v|
         # Steady growth ~10% per year plus contributions
@@ -1088,7 +1079,7 @@ if Rails.env.development?
 
   swiss_fund = Asset.find_by(name: "Swiss Investment Fund")
   if swiss_fund
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: swiss_fund, date: valuation_date) do |v|
         # Steady growth ~6% per year
@@ -1106,7 +1097,7 @@ if Rails.env.development?
 
   home_mortgage = Asset.find_by(name: "Home Mortgage")
   if home_mortgage
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: home_mortgage, date: valuation_date) do |v|
         # Mortgage decreases slowly (principal payments)
@@ -1117,7 +1108,7 @@ if Rails.env.development?
 
   car_value = Asset.find_by(name: "Toyota Camry")
   if car_value
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: car_value, date: valuation_date) do |v|
         # Car depreciates ~10% per year
@@ -1128,119 +1119,13 @@ if Rails.env.development?
 
   car_loan = Asset.find_by(name: "Car Loan")
   if car_loan
-    12.times do |i|
+    6.times do |i|
       valuation_date = (today - (i + 1).months).end_of_month
       AssetValuation.find_or_create_by!(asset: car_loan, date: valuation_date) do |v|
         # Loan balance decreases with payments
         v.value = 15000 + ((i + 1) * 250)
       end
     end
-  end
-
-  # ---------------------------------------------------------------------------
-  # Import Sample Transactions via CSV Import Feature
-  # ---------------------------------------------------------------------------
-  if OllamaService.available?
-    puts "\nImporting transactions via CSV Import feature..."
-
-    # Helper to import a CSV file and create transactions
-    import_csv = lambda do |csv_path, account, mark_done: true|
-      return unless File.exist?(csv_path)
-
-      filename = File.basename(csv_path)
-      puts "  Importing #{filename} → #{account.name}..."
-
-      import = Import.create!(
-        account: account,
-        original_filename: filename,
-        file_content_type: "text/csv",
-        file_data: File.read(csv_path),
-        status: "pending"
-      )
-
-      begin
-        TransactionImportJob.perform_now(import.id)
-        import.reload
-
-        if import.completed?
-          puts "    ✓ Extracted #{import.extracted_transactions.size} transactions"
-
-          if mark_done
-            imported_count = 0
-            import.extracted_transactions.each do |txn_data|
-              next if txn_data[:is_duplicate]
-
-              category_id = txn_data[:category_id]
-              unless category_id
-                fallback = txn_data[:transaction_type] == "income" ? "Other Income" : "Other Expense"
-                category_id = Category.find_by(name: fallback, category_type: txn_data[:transaction_type])&.id
-              end
-
-              begin
-                Transaction.create!(
-                  account: account,
-                  import: import,
-                  category_id: category_id,
-                  date: txn_data[:date],
-                  description: txn_data[:description],
-                  amount: txn_data[:amount],
-                  transaction_type: txn_data[:transaction_type]
-                )
-                imported_count += 1
-              rescue ActiveRecord::RecordInvalid
-                next
-              end
-            end
-
-            import.update!(status: "done")
-            puts "    ✓ Imported #{imported_count} transactions"
-          else
-            puts "    → Ready for review (#{import.extracted_transactions.size} transactions)"
-          end
-        elsif import.failed?
-          puts "    ✗ Failed: #{import.error_message}"
-        end
-      rescue StandardError => e
-        puts "    ✗ Error: #{e.message}"
-      end
-
-      import
-    end
-
-    csv_samples_dir = Rails.root.join("test/fixtures/files/csv_samples")
-
-    # US Standard format → Main Checking (USD)
-    import_csv.call(csv_samples_dir.join("us_standard.csv"), accounts[:main_checking])
-
-    # US with extra columns → Visa Credit Card (USD)
-    import_csv.call(csv_samples_dir.join("us_with_extra_columns.csv"), accounts[:visa])
-
-    # US split columns (debit/credit) → Amex Gold (USD)
-    import_csv.call(csv_samples_dir.join("us_split_columns.csv"), accounts[:amex])
-
-    # UK YNAB style (GBP amounts, but account is USD - amounts will be treated as USD)
-    import_csv.call(csv_samples_dir.join("uk_ynab_style.csv"), accounts[:emergency_fund])
-
-    # EU German format → Euro Account (EUR)
-    import_csv.call(csv_samples_dir.join("eu_german.csv"), accounts[:euro_checking])
-
-    # EU German split (Soll/Haben) → Euro Cash (EUR)
-    import_csv.call(csv_samples_dir.join("eu_split_german.csv"), accounts[:euro_cash])
-
-    # Credit card multi-currency (CHF) → Swiss Savings
-    import_csv.call(csv_samples_dir.join("credit_card_multi_currency.csv"), accounts[:swiss_savings])
-
-    # Leave one import in "ready for review" status for demo purposes
-    # Re-import us_standard to a different account, but don't auto-confirm
-    import_csv.call(csv_samples_dir.join("us_standard.csv"), accounts[:vacation_savings], mark_done: false)
-
-    # Import a CSV with rows that match ignore patterns (to demo ignored transactions feature)
-    # This will show ignored transactions dimmed in the import review UI
-    import_csv.call(csv_samples_dir.join("with_ignored_rows.csv"), accounts[:brokerage], mark_done: false)
-
-  else
-    puts "\nSkipping CSV import (Ollama not available)"
-    puts "  To enable: start Ollama in devcontainer or install locally"
   end
 
   # ---------------------------------------------------------------------------
