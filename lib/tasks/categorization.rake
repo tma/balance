@@ -7,7 +7,7 @@ namespace :categorization do
     end
 
     puts "Enqueuing full rebuild (embeddings + patterns)..."
-    puts "The hourly PatternExtractionJob handles this automatically,"
+    puts "The hourly CategoryPatternExtractionJob handles this automatically,"
     puts "but this triggers it immediately with a full rebuild."
 
     # Step 1: Embed all transactions without embeddings
@@ -19,7 +19,7 @@ namespace :categorization do
 
     # Step 2: Extract patterns (full rebuild)
     puts "Enqueuing pattern extraction (full rebuild)..."
-    PatternExtractionJob.perform_later(full_rebuild: true)
+    CategoryPatternExtractionJob.perform_later(full_rebuild: true)
 
     puts "Jobs enqueued. Monitor with: rails solid_queue:monitor"
   end

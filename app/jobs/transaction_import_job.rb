@@ -22,7 +22,7 @@ class TransactionImportJob < ApplicationJob
       import.mark_completed!(transactions)
 
       # Enqueue pattern extraction to learn from newly imported transactions
-      PatternExtractionJob.perform_later
+      CategoryPatternExtractionJob.perform_later
 
     rescue PdfTextExtractorService::Error, CsvParserService::Error => e
       import.mark_failed!("File parsing error: #{e.message}")

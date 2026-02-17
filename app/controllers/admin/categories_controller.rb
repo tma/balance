@@ -45,7 +45,7 @@ class Admin::CategoriesController < ApplicationController
 
   def regenerate_all
     CategoryPattern.machine.delete_all
-    PatternExtractionJob.perform_later(full_rebuild: true)
+    CategoryPatternExtractionJob.perform_later(full_rebuild: true)
     redirect_to admin_categories_path, notice: "All learned patterns cleared. Learning queued.", status: :see_other
   end
 

@@ -1,4 +1,4 @@
-class PatternExtractionJob < ApplicationJob
+class CategoryPatternExtractionJob < ApplicationJob
   queue_as :default
 
   MINIMUM_OCCURRENCES = 2 # Merchant must appear 2+ times to become a pattern
@@ -26,7 +26,7 @@ class PatternExtractionJob < ApplicationJob
     count = unembedded.count
     return if count.zero?
 
-    Rails.logger.info "PatternExtractionJob: backfilling #{count} missing embeddings"
+    Rails.logger.info "CategoryPatternExtractionJob: backfilling #{count} missing embeddings"
     unembedded.find_each do |txn|
       TransactionEmbeddingJob.perform_later(txn.id)
     end
@@ -81,7 +81,7 @@ class PatternExtractionJob < ApplicationJob
     result = response.is_a?(Hash) ? response.values.flatten : Array(response)
     result.map { |r| r.is_a?(String) ? r.strip : nil }.compact
   rescue OllamaService::Error => e
-    Rails.logger.warn "PatternExtractionJob: LLM extraction failed: #{e.message}"
+    Rails.logger.warn "CategoryPatternExtractionJob: LLM extraction failed: #{e.message}"
     []
   end
 

@@ -32,7 +32,7 @@ production:
   # Extract merchant patterns from categorized transactions
   # Backfills missing embeddings and creates machine-learned patterns
   hourly_pattern_extraction:
-    class: PatternExtractionJob
+    class: CategoryPatternExtractionJob
     queue: default
     schedule: every hour
 

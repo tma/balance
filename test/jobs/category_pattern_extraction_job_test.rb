@@ -1,6 +1,6 @@
 require "test_helper"
 
-class PatternExtractionJobTest < ActiveSupport::TestCase
+class CategoryPatternExtractionJobTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
 
   setup do
@@ -32,7 +32,7 @@ class PatternExtractionJobTest < ActiveSupport::TestCase
         response: '["SAFEWAY", "SAFEWAY", "SAFEWAY"]'
       }.to_json, headers: { "Content-Type" => "application/json" })
 
-    PatternExtractionJob.perform_now
+    CategoryPatternExtractionJob.perform_now
 
     pattern = CategoryPattern.machine.find_by(pattern: "SAFEWAY")
     assert_not_nil pattern, "Should create a machine pattern for SAFEWAY"
@@ -56,7 +56,7 @@ class PatternExtractionJobTest < ActiveSupport::TestCase
         response: '["RARE STORE"]'
       }.to_json, headers: { "Content-Type" => "application/json" })
 
-    PatternExtractionJob.perform_now
+    CategoryPatternExtractionJob.perform_now
 
     pattern = CategoryPattern.machine.find_by(pattern: "RARE STORE")
     assert_nil pattern, "Should not create pattern for merchants below threshold"
@@ -70,7 +70,7 @@ class PatternExtractionJobTest < ActiveSupport::TestCase
       .to_return(status: 200, body: { response: "[]" }.to_json,
                  headers: { "Content-Type" => "application/json" })
 
-    PatternExtractionJob.perform_now(full_rebuild: true)
+    CategoryPatternExtractionJob.perform_now(full_rebuild: true)
 
     assert_equal 0, CategoryPattern.machine.count
   end
@@ -89,7 +89,7 @@ class PatternExtractionJobTest < ActiveSupport::TestCase
       .to_return(status: 200, body: { response: "[]" }.to_json,
                  headers: { "Content-Type" => "application/json" })
 
-    PatternExtractionJob.perform_now(category_id: @groceries.id)
+    CategoryPatternExtractionJob.perform_now(category_id: @groceries.id)
 
     # Entertainment machine patterns should be untouched
     assert CategoryPattern.machine.where(category: other_category).exists?
@@ -105,7 +105,7 @@ class PatternExtractionJobTest < ActiveSupport::TestCase
                  headers: { "Content-Type" => "application/json" })
 
     assert_enqueued_with(job: TransactionEmbeddingJob, args: [ txn.id ]) do
-      PatternExtractionJob.perform_now
+      CategoryPatternExtractionJob.perform_now
     end
   end
 
@@ -124,7 +124,7 @@ class PatternExtractionJobTest < ActiveSupport::TestCase
       .to_return(status: 500, body: "Internal Server Error")
 
     assert_nothing_raised do
-      PatternExtractionJob.perform_now
+      CategoryPatternExtractionJob.perform_now
     end
   end
 
