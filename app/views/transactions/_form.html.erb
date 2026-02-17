@@ -1,4 +1,4 @@
-<%= form_with(model: transaction, class: "contents") do |form| %>
+<%= form_with(model: transaction, class: "contents", data: { controller: "category-suggest", category_suggest_url_value: suggest_category_transactions_path }) do |form| %>
   <% if transaction.errors.any? %>
     <div class="<%= ui_alert_error_class %> mb-4">
       <h2 class="font-medium"><%= pluralize(transaction.errors.count, "error") %> prohibited this transaction from being saved:</h2>
@@ -21,12 +21,16 @@
   </div>
 
   <div class="mb-4">
-    <%= form.label :category_id, "Category", class: ui_label_class %>
+    <div class="flex items-center gap-2">
+      <%= form.label :category_id, "Category", class: ui_label_class %>
+      <span class="hidden text-xs text-blue-600 dark:text-blue-400 font-medium" data-category-suggest-target="badge">AI suggested</span>
+    </div>
     <%= form.grouped_collection_select :category_id, 
         [["Income", Category.income.order(:name)], ["Expense", Category.expense.order(:name)]],
         :last, :first, :id, :name, 
         { prompt: "Select category" }, 
-        class: ui_input_class %>
+        class: ui_input_class,
+        data: { category_suggest_target: "category", action: "change->category-suggest#manualSelect" } %>
   </div>
 
   <div class="mb-4">
@@ -41,7 +45,8 @@
 
   <div class="mb-4">
     <%= form.label :description, class: ui_label_class %>
-    <%= form.text_field :description, class: ui_input_class, placeholder: "Optional description" %>
+    <%= form.text_field :description, class: ui_input_class, placeholder: "Optional description",
+        data: { category_suggest_target: "description", action: "input->category-suggest#suggest" } %>
   </div>
 
   <div class="flex space-x-4">

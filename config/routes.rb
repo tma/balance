@@ -37,7 +37,11 @@ Rails.application.routes.draw do
       patch :sort
     end
   end
-  resources :transactions
+  resources :transactions do
+    collection do
+      post :suggest_category
+    end
+  end
   resources :budgets
 
   # Transaction import

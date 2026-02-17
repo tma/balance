@@ -86,6 +86,35 @@ class TransactionsController < ApplicationController
     redirect_to transactions_path(filter_params), notice: "Transaction was successfully destroyed.", status: :see_other
   end
 
+  def suggest_category
+    description = params[:description].to_s.strip
+    transaction_type = params[:transaction_type].to_s.strip
+
+    if description.length < 3
+      render json: { category_id: nil }
+      return
+    end
+
+    txn = {
+      description: description,
+      transaction_type: transaction_type,
+      amount: 0,
+      category_id: nil,
+      category_name: nil
+    }
+
+    service = CategoryMatchingService.new([ txn ])
+    service.categorize
+
+    render json: {
+      category_id: txn[:category_id],
+      category_name: txn[:category_name]
+    }
+  rescue StandardError => e
+    Rails.logger.warn "Category suggestion failed: #{e.message}"
+    render json: { category_id: nil }
+  end
+
   private
 
   def set_transaction
