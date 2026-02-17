@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_03_200430) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_17_164817) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -123,9 +123,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_03_200430) do
     t.string "category_type"
     t.datetime "created_at", null: false
     t.binary "embedding"
-    t.text "match_patterns"
     t.string "name"
     t.datetime "updated_at", null: false
+  end
+
+  create_table "category_patterns", force: :cascade do |t|
+    t.integer "category_id", null: false
+    t.decimal "confidence"
+    t.datetime "created_at", null: false
+    t.integer "match_count", default: 0
+    t.string "pattern", null: false
+    t.string "source", default: "human", null: false
+    t.datetime "updated_at", null: false
+    t.index ["category_id", "source"], name: "index_category_patterns_on_category_id_and_source"
+    t.index ["category_id"], name: "index_category_patterns_on_category_id"
+    t.index ["pattern", "source"], name: "index_category_patterns_on_pattern_and_source", unique: true
   end
 
   create_table "currencies", force: :cascade do |t|
@@ -178,6 +190,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_03_200430) do
     t.date "date"
     t.string "description"
     t.string "duplicate_hash"
+    t.binary "embedding"
     t.decimal "exchange_rate"
     t.integer "import_id"
     t.string "transaction_type"
@@ -195,6 +208,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_03_200430) do
   add_foreign_key "broker_positions", "assets"
   add_foreign_key "broker_positions", "broker_connections"
   add_foreign_key "budgets", "categories"
+  add_foreign_key "category_patterns", "categories"
   add_foreign_key "imports", "accounts"
   add_foreign_key "position_valuations", "broker_positions"
   add_foreign_key "transactions", "accounts"
