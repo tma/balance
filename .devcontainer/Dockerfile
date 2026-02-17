@@ -15,8 +15,6 @@ RUN apt-get update -qq && \
     curl \
     pkg-config \
     libffi-dev \
-    # PDF text extraction (pdftotext)
-    poppler-utils \
     && rm -rf /var/lib/apt/lists/* /var/cache/apt/archives
 
 # Ensure tmp directory exists and has proper permissions for gem builds

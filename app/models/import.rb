@@ -40,14 +40,6 @@ class Import < ApplicationRecord
     status == "done"
   end
 
-  def pdf?
-    file_content_type == "application/pdf"
-  end
-
-  def csv?
-    file_content_type.in?(%w[text/csv text/plain application/csv])
-  end
-
   def extracted_transactions
     return [] if extracted_data.blank?
     JSON.parse(extracted_data, symbolize_names: true)

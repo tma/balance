@@ -193,7 +193,7 @@ class ImportsController < ApplicationController
     @import.update!(status: "pending", error_message: nil, extracted_data: "[]")
 
     # Clear cached CSV mapping to force re-analysis
-    @import.account.update!(csv_column_mapping: nil) if @import.file_content_type == "text/csv"
+    @import.account.update!(csv_column_mapping: nil)
 
     # Enqueue the background job again
     TransactionImportJob.perform_later(@import.id)
@@ -231,9 +231,7 @@ class ImportsController < ApplicationController
     content_type = file.content_type
     filename = file.original_filename.downcase
 
-    if content_type == "application/pdf" || filename.end_with?(".pdf")
-      "application/pdf"
-    elsif content_type == "text/csv" || filename.end_with?(".csv")
+    if content_type == "text/csv" || filename.end_with?(".csv")
       "text/csv"
     else
       "text/plain"

@@ -39,10 +39,10 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Add income/expense transactions
 - Fields: amount, date, description, category, account
 - Edit/delete transactions
-- **Import from bank statements:** Upload PDF or CSV files for AI-powered extraction
+- **Import from bank statements:** Upload CSV files for AI-powered extraction
 
 ### 4. Transaction Import
-- Upload PDF or CSV bank statements
+- Upload CSV bank statements
 - AI-powered extraction using Ollama LLM (configurable model)
 - Automatic category matching based on description
 - Duplicate detection via hash of date + amount + description
@@ -313,7 +313,7 @@ PositionValuation
 - ExchangeRateService returns nil on API failure; records retry via ExchangeRateRetryJob (every 6 hours)
 - Transaction exchange rates captured at transaction date for accurate historical reporting
 - Transaction import uses Ollama LLM for extraction and categorization
-- Import services: OllamaService, PdfTextExtractorService, CsvParserService, TransactionExtractorService, DuplicateDetectionService
+- Import services: OllamaService, CsvParserService, CsvMappingAnalyzerService, DeterministicCsvParserService, DuplicateDetectionService
 - Categorization services: CategoryMatchingService (3-phase pipeline), CategoryPatternExtractionJob (learns patterns from history)
 - Background jobs: TransactionEmbeddingJob, CategoryEmbeddingJob, CategoryPatternExtractionJob (hourly), CategorizationMaintenanceJob (daily), EmbeddingModelMigrationJob
 - Broker integration uses factory pattern (BrokerSyncService) for multi-broker support

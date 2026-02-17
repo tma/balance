@@ -14,9 +14,9 @@ one:
 two:
   account: savings_account
   status: pending
-  original_filename: statement.pdf
-  file_content_type: application/pdf
-  file_data: "fake pdf data"
+  original_filename: statement.csv
+  file_content_type: text/csv
+  file_data: "date,description,amount\n2026-02-01,Pending Test,50.00"
   extracted_data: 
   error_message: 
   started_at: 
@@ -25,8 +25,8 @@ two:
 three:
   account: checking_account
   status: failed
-  original_filename: bad_file.pdf
-  file_content_type: application/pdf
+  original_filename: bad_file.csv
+  file_content_type: text/csv
   file_data: "corrupt data"
   extracted_data: 
   error_message: "Unable to parse file"

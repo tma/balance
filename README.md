@@ -17,7 +17,7 @@ A personal finance budgeting application for tracking income, expenses, budgets,
 ### Cash Flow & Transactions
 - **Cash Flow Dashboard** - 12-month income/expense overview with saving rate tracking
 - **Transactions** - Record and categorize income and expenses across multiple accounts
-- **AI-Powered Import** *(experimental)* - Import transactions from bank statements (CSV/PDF) using local LLM
+- **AI-Powered Import** *(experimental)* - Import transactions from bank statements (CSV) using local LLM
 - **Budget Management** - Set monthly and yearly budgets with visual progress indicators
 
 ### General
@@ -109,7 +109,7 @@ To enable AI-powered transaction import from bank statements:
 2. Pull the required models:
    ```bash
     ollama pull mxbai-embed-large  # Required for categorization
-   ollama pull llama3.1:8b       # Required for CSV format detection and PDF parsing
+   ollama pull llama3.1:8b       # Required for CSV format detection
    ```
 3. Set `OLLAMA_HOST` in your `.env` file to point to your Ollama instance
 

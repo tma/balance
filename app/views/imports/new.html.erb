@@ -30,10 +30,10 @@
 
           <div>
             <%= form.label :file, "Statement", class: ui_label_class %>
-            <p class="text-sm <%= ui_text_muted_class %> mb-2">PDF or CSV file (max 5MB)</p>
+            <p class="text-sm <%= ui_text_muted_class %> mb-2">CSV file (max 5MB)</p>
             <div class="flex items-center gap-3">
               <%= form.file_field :file, 
-                  accept: ".pdf,.csv,application/pdf,text/csv",
+                  accept: ".csv,text/csv",
                   class: "block w-full text-sm #{ui_text_muted_class} file:mr-4 file:py-2 file:px-4 file:border-0 file:text-sm file:font-medium file:bg-slate-100 dark:file:bg-slate-700 file:text-slate-700 dark:file:text-slate-300 hover:file:bg-slate-200 dark:hover:file:bg-slate-600 file:cursor-pointer",
                   required: true %>
             </div>
@@ -51,7 +51,7 @@
   <div class="p-6 bg-amber-50 dark:bg-slate-800 border border-amber-200 dark:border-slate-700 border-l-4 border-l-amber-300 dark:border-l-amber-400">
     <h2 class="font-semibold text-amber-800 dark:text-slate-200 mb-2">How it works</h2>
     <ol class="list-decimal ml-5 text-sm text-amber-700 dark:text-slate-300 space-y-1">
-      <li>Upload a statement (PDF or CSV format)</li>
+      <li>Upload a bank statement (CSV format)</li>
       <li>AI processes your statement and matches transactions to categories</li>
       <li>Review the processed transactions and make any adjustments</li>
       <li>Select which transactions to import and click Import</li>
