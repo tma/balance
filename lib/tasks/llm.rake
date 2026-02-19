@@ -8,7 +8,7 @@ namespace :llm do
 
     require_relative "../../lib/llm_benchmark"
 
-    models = ENV.fetch("MODELS", "llama3.1:8b,nemotron-3-nano").split(",").map(&:strip)
+    models = ENV.fetch("MODELS", "llama3.1:8b,mistral:7b,mistral-nemo:12b,gemma3:4b,gemma3:12b,gemma3n:e4b,qwen3:4b,qwen3:8b").split(",").map(&:strip)
 
     benchmark = LlmBenchmark.new(models: models)
     results = benchmark.run
