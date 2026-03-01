@@ -485,4 +485,33 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     # Total should be 11: 7 detail rows + 4 standalone transactions (salary, IKEA, rent, interest)
     assert_equal 11, transactions.size, "Should have 11 transactions (7 details + 4 standalone)"
   end
+
+  test "parses grouped income details as income when header is a summary row" do
+    content = <<~CSV
+      Datum;Buchungstext;Belastung CHF;Gutschrift CHF;Zahlungszweck;Betrag Detail;Details
+      01.02.2026;Lohneingang;;1500.00;Gehalt Februar;;
+      ;;;;;1000.00;Grundlohn
+      ;;;;;500.00;Bonus
+    CSV
+
+    mapping = {
+      date_column: "Datum",
+      description_column: "Buchungstext",
+      description_secondary_column: "Zahlungszweck",
+      amount_type: "split",
+      debit_column: "Belastung CHF",
+      credit_column: "Gutschrift CHF",
+      date_format: "%d.%m.%Y",
+      amount_format: "plain"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, @account)
+    transactions = parser.parse
+
+    assert_equal 2, transactions.size
+    assert_equal [ "Grundlohn", "Bonus" ], transactions.map { |t| t[:description] }
+    assert_equal [ 1000.0, 500.0 ], transactions.map { |t| t[:amount] }
+    assert_equal [ "income", "income" ], transactions.map { |t| t[:transaction_type] }
+  end
+
 end

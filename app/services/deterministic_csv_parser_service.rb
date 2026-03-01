@@ -53,7 +53,7 @@ class DeterministicCsvParserService
           end
         elsif has_detail_columns? && current_group
           # Detail row in grouped format - use header's date
-          txn = parse_detail_row(row, current_group[:header_date])
+          txn = parse_detail_row(row, current_group[:header_date], current_group.dig(:header, :transaction_type))
           current_group[:details] << txn if txn
         end
       rescue => e
@@ -268,7 +268,7 @@ class DeterministicCsvParserService
   end
 
   # Parse a detail row (no date, inherits from header row)
-  def parse_detail_row(row, date)
+  def parse_detail_row(row, date, header_transaction_type = nil)
     description = build_description(row)
     return nil if description.blank?
 
@@ -278,8 +278,12 @@ class DeterministicCsvParserService
     amount = parse_amount_value(raw_amount)
     return nil unless amount && amount > 0
 
-    # Detail rows are typically expenses (sub-items of a grouped payment)
-    transaction_type = invert_type("expense")
+    transaction_type = if %w[income expense].include?(header_transaction_type)
+      header_transaction_type
+    else
+      # Detail rows are typically expenses (sub-items of a grouped payment)
+      invert_type("expense")
+    end
 
     {
       date: date,
