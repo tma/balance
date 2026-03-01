@@ -514,4 +514,33 @@ class DeterministicCsvParserServiceTest < ActiveSupport::TestCase
     assert_equal [ "income", "income" ], transactions.map { |t| t[:transaction_type] }
   end
 
+  test "parses grouped detail rows with negative detail amounts" do
+    content = <<~CSV
+      Datum;Buchungstext;Belastung CHF;Gutschrift CHF;Betrag Detail;Details
+      01.02.2026;Sammelüberweisung;100.00;;;
+      ;;;;-50.00;Rueckerstattung
+    CSV
+
+    mapping = {
+      date_column: "Datum",
+      description_column: "Buchungstext",
+      amount_type: "split",
+      debit_column: "Belastung CHF",
+      credit_column: "Gutschrift CHF",
+      detail_amount_column: "Betrag Detail",
+      detail_description_column: "Details",
+      date_format: "%d.%m.%Y",
+      amount_format: "plain"
+    }
+
+    parser = DeterministicCsvParserService.new(content, mapping, @account)
+    transactions = parser.parse
+
+    assert_equal 2, transactions.size
+
+    detail = transactions.find { |t| t[:description] == "Rueckerstattung" }
+    assert_not_nil detail
+    assert_equal 50.0, detail[:amount]
+    assert_equal "expense", detail[:transaction_type]
+  end
 end

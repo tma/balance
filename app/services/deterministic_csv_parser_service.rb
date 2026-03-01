@@ -229,7 +229,8 @@ class DeterministicCsvParserService
 
     primary = mapping[:description_column]
     excluded = [ primary, mapping[:date_column], mapping[:amount_column],
-                 mapping[:debit_column], mapping[:credit_column] ].compact
+                 mapping[:debit_column], mapping[:credit_column],
+                 mapping[:detail_amount_column], mapping[:detail_description_column] ].compact
 
     candidates = headers - excluded
 
@@ -276,7 +277,7 @@ class DeterministicCsvParserService
     return nil if raw_amount.blank?
 
     amount = parse_amount_value(raw_amount)
-    return nil unless amount && amount > 0
+    return nil unless amount && amount != 0
 
     transaction_type = if %w[income expense].include?(header_transaction_type)
       header_transaction_type
