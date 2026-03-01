@@ -12,17 +12,17 @@ class TransactionImportJob < ApplicationJob
     import.mark_processing!
 
     begin
-      transactions = process_csv(import)
+      transactions = process_import_file(import)
 
       transactions = DuplicateDetectionService.mark_duplicates(transactions)
       import.mark_completed!(transactions)
 
-    rescue CsvParserService::Error => e
+    rescue ImportFileNormalizerService::Error, CsvParserService::Error => e
       import.mark_failed!("File parsing error: #{e.message}")
     rescue CsvMappingAnalyzerService::AnalysisError => e
-      import.mark_failed!("CSV analysis error: #{e.message}")
+      import.mark_failed!("Format analysis error: #{e.message}")
     rescue DeterministicCsvParserService::ParseError => e
-      import.mark_failed!("CSV parsing error: #{e.message}")
+      import.mark_failed!("Transaction parsing error: #{e.message}")
     rescue OllamaService::Error => e
       import.mark_failed!("AI service error: #{e.message}")
     rescue StandardError => e
@@ -33,18 +33,22 @@ class TransactionImportJob < ApplicationJob
 
   private
 
-  def process_csv(import)
-    Rails.logger.info "Import #{import.id}: Processing CSV"
+  def process_import_file(import)
+    Rails.logger.info "Import #{import.id}: Processing file #{import.original_filename}"
 
     # Stage 1: Reading file (5%)
     import.update_progress!(5, 100, message: "Reading file...")
-    content = with_temp_file(import, ".csv") do |temp_file|
-      CsvParserService.read_content(temp_file)
+    content = with_temp_file(import, import_file_extension(import)) do |temp_file|
+      ImportFileNormalizerService.read_content(
+        temp_file,
+        content_type: import.file_content_type,
+        filename: import.original_filename
+      )
     end
 
     # Stage 2: Analyzing format (10-25%)
     cached = import.account.cached_csv_mapping.present?
-    import.update_progress!(10, 100, message: cached ? "Using saved format" : "Analyzing CSV format...")
+    import.update_progress!(10, 100, message: cached ? "Using saved format" : "Analyzing statement format...")
     mapping = get_or_analyze_csv_mapping(content, import.account)
     import.update_progress!(25, 100, message: "Format detected")
 
@@ -135,6 +139,17 @@ class TransactionImportJob < ApplicationJob
       temp_file.write(import.file_data)
       temp_file.rewind
       yield temp_file
+    end
+  end
+
+  def import_file_extension(import)
+    case import.file_content_type
+    when "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      ".xlsx"
+    when "application/vnd.ms-excel"
+      ".xls"
+    else
+      ".csv"
     end
   end
 end
