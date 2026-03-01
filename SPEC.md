@@ -39,10 +39,10 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - Add income/expense transactions
 - Fields: amount, date, description, category, account
 - Edit/delete transactions
-- **Import from bank statements:** Upload CSV files for AI-powered extraction
+- **Import from bank statements:** Upload CSV/XLS/XLSX files for AI-powered extraction
 
 ### 4. Transaction Import
-- Upload CSV bank statements
+- Upload CSV/XLS/XLSX bank statements
 - AI-powered extraction using Ollama LLM (configurable model)
 - Automatic category matching based on description
 - Duplicate detection via hash of date + amount + description
