@@ -241,11 +241,15 @@ class ImportsController < ApplicationController
   end
 
   def determine_content_type(file)
-    content_type = file.content_type
-    filename = file.original_filename.downcase
+    content_type = file.content_type.to_s.downcase
+    filename = file.original_filename.to_s.downcase
 
-    if content_type == "text/csv" || filename.end_with?(".csv")
+    if content_type == "text/csv" || content_type == "application/csv" || filename.end_with?(".csv")
       "text/csv"
+    elsif content_type == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" || filename.end_with?(".xlsx")
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    elsif content_type == "application/vnd.ms-excel" || filename.end_with?(".xls")
+      "application/vnd.ms-excel"
     else
       "text/plain"
     end

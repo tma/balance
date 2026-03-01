@@ -66,6 +66,32 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     assert_equal 2, enqueued_jobs.count { |j| j["job_class"] == "TransactionImportJob" }
   end
 
+  test "create with xlsx file stores xlsx content type" do
+    assert_difference("Import.count", 1) do
+      post imports_path, params: {
+        account_id: @account.id,
+        files: [ fixture_file_upload("sample_upload.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet") ]
+      }
+    end
+
+    import = Import.last
+    assert_equal "sample_upload.xlsx", import.original_filename
+    assert_equal "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", import.file_content_type
+  end
+
+  test "create with xls file stores xls content type" do
+    assert_difference("Import.count", 1) do
+      post imports_path, params: {
+        account_id: @account.id,
+        files: [ fixture_file_upload("sample_upload.xls", "application/vnd.ms-excel") ]
+      }
+    end
+
+    import = Import.last
+    assert_equal "sample_upload.xls", import.original_filename
+    assert_equal "application/vnd.ms-excel", import.file_content_type
+  end
+
   test "confirm imports selected transactions" do
     # Update fixture to have extracted data
     @completed_import.update!(
