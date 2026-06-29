@@ -6,7 +6,7 @@ updates:
     interval: weekly
   open-pull-requests-limit: 10
   groups:
-    all-dependencies:
+    bundler-dependencies:
       patterns:
         - "*"
 - package-ecosystem: github-actions
@@ -15,6 +15,6 @@ updates:
     interval: weekly
   open-pull-requests-limit: 10
   groups:
-    all-dependencies:
+    github-actions-dependencies:
       patterns:
         - "*"
