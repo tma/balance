@@ -36,10 +36,10 @@ class Admin::BrokerPositionsController < ApplicationController
 
   def update
     permitted_params = @connection.manual? ? position_manual_params : position_params
+    old_asset = @position.asset
 
     if @position.update(permitted_params)
-      # Sync value to asset if now mapped
-      @position.sync_to_asset! if @position.mapped?
+      sync_affected_assets(old_asset)
 
       redirect_to admin_broker_connection_path(@connection),
         notice: "Position updated.", status: :see_other
@@ -67,8 +67,9 @@ class Admin::BrokerPositionsController < ApplicationController
         new_asset_id = asset_id.presence
 
         if position.asset_id != new_asset_id&.to_i
+          old_asset = position.asset
           position.update!(asset_id: new_asset_id)
-          position.sync_to_asset! if position.mapped?
+          sync_affected_assets(old_asset, position: position)
           updated_count += 1
         end
       end
@@ -101,5 +102,15 @@ class Admin::BrokerPositionsController < ApplicationController
 
   def position_create_params
     params.expect(broker_position: [ :symbol, :description, :last_quantity, :currency ])
+  end
+
+  def sync_affected_assets(old_asset, position: @position)
+    new_asset = position.asset
+
+    if old_asset && old_asset != new_asset
+      old_asset.sync_from_broker_positions!
+    end
+
+    position.sync_to_asset! if position.mapped?
   end
 end

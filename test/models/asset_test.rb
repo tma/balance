@@ -60,4 +60,65 @@ class AssetTest < ActiveSupport::TestCase
     )
     assert_not asset.archived?
   end
+
+  test "sync_from_broker_positions creates zero valuation for current month when already zero" do
+    asset = Asset.create!(
+      name: "Closed Broker Asset",
+      asset_type: asset_types(:property),
+      asset_group: asset_groups(:real_estate),
+      currency: "USD",
+      value: 0
+    )
+    asset.asset_valuations.destroy_all
+
+    broker_connections(:one).broker_positions.create!(
+      symbol: "CLOSED_TEST",
+      description: "Closed Test",
+      currency: "USD",
+      last_value: 0,
+      last_quantity: 0,
+      closed_at: Time.current,
+      asset: asset
+    )
+
+    assert_difference "AssetValuation.count", 1 do
+      asset.sync_from_broker_positions!
+    end
+
+    valuation = asset.asset_valuations.find_by(date: Date.current.end_of_month)
+    assert_equal 0, valuation.value
+  end
+
+  test "sync_from_broker_positions keeps value when currency conversion fails" do
+    asset = Asset.create!(
+      name: "FX Failure Asset",
+      asset_type: asset_types(:property),
+      asset_group: asset_groups(:real_estate),
+      currency: "USD",
+      value: 1000
+    )
+    asset.asset_valuations.destroy_all
+
+    broker_connections(:one).broker_positions.create!(
+      symbol: "EUR_TEST",
+      description: "EUR Test",
+      currency: "EUR",
+      last_value: 500,
+      last_quantity: 5,
+      asset: asset
+    )
+
+    original_convert = ExchangeRateService.method(:convert)
+    ExchangeRateService.define_singleton_method(:convert) { |_amount, _from, _to, date:| nil }
+
+    assert_no_difference "AssetValuation.count" do
+      asset.sync_from_broker_positions!
+    end
+
+    assert_equal 1000, asset.reload.value
+  ensure
+    ExchangeRateService.define_singleton_method(:convert) do |*args, **kwargs, &block|
+      original_convert.call(*args, **kwargs, &block)
+    end
+  end
 end

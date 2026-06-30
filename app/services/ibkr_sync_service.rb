@@ -18,20 +18,21 @@ class IbkrSyncService < BrokerSyncService
       positions = fetch_positions(sync_date: sync_date)
       synced_symbols = []
 
-      # Update or create position mappings and record valuations
+      # Update current positions for today's sync; historical syncs only record valuations.
       positions.each do |position_data|
-        position = find_or_create_position(position_data)
-        update_position(position, position_data)
+        position = position_for_sync(position_data, date: valuation_date)
+        next unless position
+
         record_position_valuation!(position, position_data, date: valuation_date)
         result[:positions] << position
         synced_symbols << position_data[:symbol]
       end
 
-      # Close positions that weren't in the sync (no longer held)
-      result[:closed_count] = close_missing_positions(synced_symbols, date: valuation_date)
+      # Handle positions that weren't in the sync (no longer held for the sync date)
+      result[:closed_count] = handle_missing_positions(synced_symbols, date: valuation_date)
 
-      # Update all assets that have mappings from this connection
-      updated_assets = sync_mapped_assets
+      # Update linked assets only for today's sync. Past asset valuations are manually confirmed.
+      updated_assets = sync_mapped_assets_if_current(valuation_date)
       result[:updated_count] = updated_assets.count
 
       # Clear error and update sync time
@@ -241,6 +242,16 @@ class IbkrSyncService < BrokerSyncService
     positions
   end
 
+  def position_for_sync(position_data, date:)
+    if date == Date.current
+      position = find_or_create_position(position_data)
+      update_position(position, position_data)
+      position
+    else
+      @connection.broker_positions.find_by(symbol: position_data[:symbol])
+    end
+  end
+
   def find_or_create_position(position_data)
     position = @connection.broker_positions.find_or_create_by!(symbol: position_data[:symbol]) do |p|
       p.description = position_data[:description]
@@ -248,7 +259,7 @@ class IbkrSyncService < BrokerSyncService
       p.exchange = position_data[:exchange]
     end
 
-    # Reopen if previously closed (position reappeared)
+    # Reopen if previously closed (position reappeared in current holdings)
     position.reopen! if position.closed?
 
     position
@@ -280,14 +291,25 @@ class IbkrSyncService < BrokerSyncService
     valuation.save!
   end
 
-  # Close positions that weren't in the latest sync
-  # Returns the count of positions closed
-  def close_missing_positions(synced_symbols, date:)
+  # Handle positions that weren't in the sync.
+  # Historical syncs record zero valuations without changing current position/asset state.
+  # Today's sync updates current position state and linked current-month assets.
+  def handle_missing_positions(synced_symbols, date:)
     missing_positions = @connection.broker_positions.open.where.not(symbol: synced_symbols)
     count = missing_positions.count
 
-    missing_positions.find_each { |p| p.close!(date: date) }
+    if date == Date.current
+      missing_positions.find_each { |position| position.close!(date: date) }
+      count
+    else
+      missing_positions.find_each { |position| position.record_zero_valuation!(date: date) }
+      0
+    end
+  end
 
-    count
+  def sync_mapped_assets_if_current(date)
+    return Asset.none unless date == Date.current
+
+    sync_mapped_assets
   end
 end

@@ -86,6 +86,22 @@ class BrokerPositionTest < ActiveSupport::TestCase
     assert_equal 0, valuation.quantity
   end
 
+  test "historical close does not sync mapped asset valuation" do
+    asset = @position.asset
+    asset.asset_valuations.destroy_all
+    close_date = Date.new(2026, 1, 15)
+
+    travel_to Date.new(2026, 2, 10) do
+      @position.update!(last_value: 1000, last_quantity: 10, currency: "USD")
+      @position.close!(date: close_date, sync_asset: false)
+    end
+
+    asset.reload
+
+    assert_nil asset.asset_valuations.find_by(date: close_date.end_of_month)
+    assert_nil asset.asset_valuations.find_by(date: Date.current.end_of_month)
+  end
+
   test "close! is idempotent" do
     @position.update!(last_value: 1000, last_quantity: 10)
     @position.close!

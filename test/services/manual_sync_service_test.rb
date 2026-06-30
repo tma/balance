@@ -122,6 +122,17 @@ class ManualSyncServiceTest < ActiveSupport::TestCase
     assert_equal 0, result[:updated_count]
   end
 
+  test "perform_sync! updates connection when no crypto positions exist" do
+    @connection.broker_positions.destroy_all
+    @connection.update!(last_synced_at: nil, last_sync_error: "old error")
+
+    @service.perform_sync!
+
+    @connection.reload
+    assert @connection.last_synced_at.present?
+    assert_nil @connection.last_sync_error
+  end
+
   test "perform_sync! skips non-crypto positions" do
     stub_request(:get, %r{api\.coingecko\.com/api/v3/simple/price})
       .to_return(status: 200, body: coingecko_success_response, headers: { "Content-Type" => "application/json" })

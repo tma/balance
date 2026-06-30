@@ -60,6 +60,10 @@ class BrokerConnection < ApplicationRecord
     BrokerSyncBackfillService.missing_dates_for(self).count
   end
 
+  def supports_historical_sync?
+    ibkr?
+  end
+
   # Human-readable sync status for display
   def sync_status_label
     case sync_status

@@ -524,6 +524,57 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     assert result[:updated_count] > 0
     asset.reload
     assert_equal 8750.00, asset.value.to_f
+    assert_equal 8750.00, asset.asset_valuations.find_by(date: Date.current.end_of_month).value.to_f
+  end
+
+  test "historical sync records position valuations without updating asset valuations" do
+    asset_group = AssetGroup.first || AssetGroup.create!(name: "Test Group", color: "#000000")
+    asset_type = AssetType.first || AssetType.create!(name: "Test Type", is_liability: false)
+
+    asset = Asset.create!(
+      name: "Historical IBKR Portfolio",
+      asset_type: asset_type,
+      asset_group: asset_group,
+      currency: "USD",
+      value: 0
+    )
+    asset.asset_valuations.destroy_all
+
+    existing_position = @connection.broker_positions.create!(
+      symbol: "AAPL",
+      description: "Apple",
+      currency: "USD",
+      last_quantity: 10,
+      last_value: 1234,
+      asset: asset
+    )
+
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    stub_request(:get, %r{/GetStatement})
+      .to_return(status: 200, body: success_statement_response)
+
+    sync_date = Date.new(2026, 1, 15)
+
+    travel_to Date.new(2026, 2, 10) do
+      result = @service.sync!(sync_date: sync_date)
+
+      asset.reload
+
+      existing_position.reload
+
+      assert_equal 0, result[:updated_count]
+      assert_equal 0, asset.value
+      assert_equal 1234, existing_position.last_value
+      assert_equal 10, existing_position.last_quantity
+      assert_nil asset.asset_valuations.find_by(date: sync_date.end_of_month)
+      assert_nil asset.asset_valuations.find_by(date: Date.current.end_of_month)
+    end
+
+    position = @connection.broker_positions.find_by(symbol: "AAPL")
+    assert_equal 8750.00, position.position_valuations.find_by(date: sync_date).value.to_f
+    assert_nil @connection.broker_positions.find_by(symbol: "VTI")
   end
 
   test "sync records position valuations" do
@@ -548,11 +599,14 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     stub_request(:get, %r{/GetStatement})
       .to_return(status: 200, body: success_statement_response)
 
+    @connection.broker_positions.create!(symbol: "VTI", description: "Vanguard ETF", currency: "USD")
+    @connection.broker_positions.create!(symbol: "AAPL", description: "Apple", currency: "USD")
+
     sync_date = Date.new(2026, 1, 15)
 
     @service.sync!(sync_date: sync_date)
 
-    # Valuations should be recorded for the specified date
+    # Valuations should be recorded for existing positions on the specified date
     valuations = PositionValuation.where(date: sync_date)
     assert_equal 2, valuations.count
   end
@@ -561,7 +615,7 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
   # Position Closing Tests
   # ============================================================
 
-  test "perform_sync! closes positions that disappear from broker" do
+  test "perform_sync! closes positions that disappear from current broker sync" do
     # Create a position that won't be in the sync response
     old_position = @connection.broker_positions.create!(
       symbol: "GOOG",
@@ -579,12 +633,44 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
 
     result = @service.perform_sync!
 
-    # GOOG should be closed since it wasn't in the response
+    # GOOG should be closed since it wasn't in the current response
     old_position.reload
     assert old_position.closed?
     assert_equal 0, old_position.last_value
     assert_equal 0, old_position.last_quantity
     assert_equal 1, result[:closed_count]
+  end
+
+  test "historical sync records zero valuation for missing position without closing it" do
+    old_position = @connection.broker_positions.create!(
+      symbol: "GOOG",
+      description: "Alphabet Inc",
+      currency: "USD",
+      last_value: 5000,
+      last_quantity: 10
+    )
+
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    stub_request(:get, %r{/GetStatement})
+      .to_return(status: 200, body: success_statement_response)
+
+    sync_date = Date.new(2026, 1, 15)
+
+    travel_to Date.new(2026, 2, 10) do
+      result = @service.sync!(sync_date: sync_date)
+
+      old_position.reload
+      zero_valuation = old_position.position_valuations.find_by(date: sync_date)
+
+      assert old_position.open?
+      assert_equal 5000, old_position.last_value
+      assert_equal 10, old_position.last_quantity
+      assert_equal 0, result[:closed_count]
+      assert_equal 0, zero_valuation.value
+      assert_equal 0, zero_valuation.quantity
+    end
   end
 
   test "perform_sync! does not close positions that are in the sync" do

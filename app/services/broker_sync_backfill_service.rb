@@ -23,6 +23,8 @@ class BrokerSyncBackfillService
   end
 
   def self.missing_dates_for(connection, window_days: WINDOW_DAYS)
+    return [] unless connection.supports_historical_sync?
+
     end_date = Date.current
     start_date = end_date - (window_days - 1).days
     open_positions = connection.broker_positions.open

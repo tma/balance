@@ -54,7 +54,7 @@ class Asset < ApplicationRecord
   def total_broker_value
     # Only consider open positions (not closed/sold)
     positions = broker_positions.open.reload
-    return nil if positions.empty?
+    return 0 if positions.empty?
 
     total = 0
     positions.each do |position|
@@ -72,15 +72,14 @@ class Asset < ApplicationRecord
   end
 
   # Sync value from broker positions
-  # Creates/updates a valuation for end of current month
+  # Creates/updates a valuation for the end of the current month
   def sync_from_broker_positions!
     total = total_broker_value
 
-    # If no open positions or total is 0, set to 0
-    if total.nil? || total <= 0
-      return if value == 0 # No change needed
-      total = 0
-    end
+    # If conversion fails, keep the existing asset value rather than writing a misleading zero.
+    return if total.nil?
+
+    total = 0 if total <= 0
 
     date = Date.current.end_of_month
 

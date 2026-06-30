@@ -15,6 +15,16 @@ class IbkrConnectionTest < ActiveSupport::TestCase
     @connection.destroy if @connection.persisted?
   end
 
+  test "ibkr supports historical sync" do
+    assert @connection.supports_historical_sync?
+  end
+
+  test "manual broker does not support historical sync" do
+    connection = broker_connections(:manual_crypto)
+
+    assert_not connection.supports_historical_sync?
+  end
+
   # ============================================================
   # sync_status tests
   # ============================================================

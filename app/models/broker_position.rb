@@ -77,9 +77,19 @@ class BrokerPosition < ApplicationRecord
     valuation
   end
 
+  def record_zero_valuation!(date: Date.current)
+    valuation = position_valuations.find_or_initialize_by(date: date)
+    valuation.update!(
+      quantity: 0,
+      value: 0,
+      currency: currency
+    )
+    valuation
+  end
+
   # Mark position as closed (sold/transferred out)
   # Sets value to 0 and records a final valuation
-  def close!(date: Date.current)
+  def close!(date: Date.current, sync_asset: true)
     return if closed?
 
     update!(
@@ -89,10 +99,10 @@ class BrokerPosition < ApplicationRecord
     )
 
     # Record final zero valuation
-    record_valuation!(date: date)
+    record_zero_valuation!(date: date)
 
     # Update mapped asset to reflect the closure
-    sync_to_asset! if mapped?
+    sync_to_asset! if sync_asset && mapped?
   end
 
   # Reopen a closed position (if it reappears in broker)

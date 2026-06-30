@@ -57,6 +57,49 @@ class BrokerSyncBackfillServiceTest < ActiveSupport::TestCase
     connection&.destroy
   end
 
+  test "missing_dates_for returns empty for brokers without historical sync" do
+    connection = broker_connections(:manual_crypto)
+
+    travel_to Date.new(2026, 1, 19) do
+      assert_equal [], BrokerSyncBackfillService.missing_dates_for(connection)
+    end
+  end
+
+  test "sync_missing_dates only syncs today for brokers without historical sync" do
+    connection = broker_connections(:manual_crypto)
+    service = Class.new do
+      attr_reader :dates
+
+      def initialize
+        @dates = []
+      end
+
+      def sync!(sync_date:)
+        @dates << sync_date
+      end
+    end.new
+
+    original_pause = BrokerSyncBackfillService.method(:pause)
+    original_for = BrokerSyncService.method(:for)
+
+    BrokerSyncBackfillService.define_singleton_method(:pause) { |_seconds| }
+    BrokerSyncService.define_singleton_method(:for) { |_connection| service }
+
+    travel_to Date.new(2026, 1, 19) do
+      result = BrokerSyncBackfillService.sync_missing_dates!(connection)
+
+      assert_equal [ Date.current ], service.dates
+      assert_equal 1, result[:synced]
+    end
+  ensure
+    BrokerSyncBackfillService.define_singleton_method(:pause) do |*args, **kwargs, &block|
+      original_pause.call(*args, **kwargs, &block)
+    end
+    BrokerSyncService.define_singleton_method(:for) do |*args, **kwargs, &block|
+      original_for.call(*args, **kwargs, &block)
+    end
+  end
+
   test "missing_dates_for is strict across open positions" do
     connection = broker_connections(:one)
 

@@ -12,7 +12,10 @@ class ManualSyncService < BrokerSyncService
     begin
       # Get crypto positions that can be priced
       crypto_positions = @connection.broker_positions.open.select(&:crypto_position?)
-      return result if crypto_positions.empty?
+      if crypto_positions.empty?
+        @connection.update!(last_synced_at: Time.current, last_sync_error: nil)
+        return result
+      end
 
       # Batch fetch prices from CoinGecko
       coingecko_ids = crypto_positions.map(&:coingecko_id).uniq
@@ -38,7 +41,7 @@ class ManualSyncService < BrokerSyncService
 
       result[:updated_count] = result[:positions].count
 
-      # Update mapped assets
+      # Update mapped assets for today's cached broker values.
       sync_mapped_assets
 
       @connection.update!(last_synced_at: Time.current, last_sync_error: nil)
