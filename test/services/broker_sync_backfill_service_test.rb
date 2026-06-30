@@ -138,6 +138,7 @@ class BrokerSyncBackfillServiceTest < ActiveSupport::TestCase
 
       def sync!(sync_date:)
         @dates << sync_date
+        { positions: [], updated_count: 0, closed_count: 0 }
       end
     end.new
 
@@ -156,6 +157,50 @@ class BrokerSyncBackfillServiceTest < ActiveSupport::TestCase
 
       assert_equal missing_dates, service.dates
       assert_equal 2, result[:synced]
+      assert_equal missing_dates, result[:results].map { |entry| entry[:date] }
+    end
+  ensure
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|
+      original_missing.call(*args, **kwargs, &block)
+    end
+    BrokerSyncBackfillService.define_singleton_method(:pause) do |*args, **kwargs, &block|
+      original_pause.call(*args, **kwargs, &block)
+    end
+    BrokerSyncService.define_singleton_method(:for) do |*args, **kwargs, &block|
+      original_for.call(*args, **kwargs, &block)
+    end
+  end
+
+  test "sync_missing_dates can sync today first for manual sync" do
+    connection = broker_connections(:one)
+    service = Class.new do
+      attr_reader :dates
+
+      def initialize
+        @dates = []
+      end
+
+      def sync!(sync_date:)
+        @dates << sync_date
+        { positions: [], updated_count: 0, closed_count: 0 }
+      end
+    end.new
+
+    missing_dates = [ Date.new(2026, 1, 18), Date.new(2026, 1, 19) ]
+
+    original_missing = BrokerSyncBackfillService.method(:missing_dates_for)
+    original_pause = BrokerSyncBackfillService.method(:pause)
+    original_for = BrokerSyncService.method(:for)
+
+    BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) { |_conn, window_days:| missing_dates }
+    BrokerSyncBackfillService.define_singleton_method(:pause) { |_seconds| }
+    BrokerSyncService.define_singleton_method(:for) { |_connection| service }
+
+    travel_to Date.new(2026, 1, 19) do
+      result = BrokerSyncBackfillService.sync_missing_dates!(connection, current_first: true)
+
+      assert_equal [ Date.new(2026, 1, 19), Date.new(2026, 1, 18) ], service.dates
+      assert_equal service.dates, result[:results].map { |entry| entry[:date] }
     end
   ensure
     BrokerSyncBackfillService.define_singleton_method(:missing_dates_for) do |*args, **kwargs, &block|

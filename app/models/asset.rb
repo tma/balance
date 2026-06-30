@@ -63,7 +63,7 @@ class Asset < ApplicationRecord
       if position.currency == currency
         total += position.last_value
       else
-        converted = ExchangeRateService.convert(position.last_value, position.currency, currency, date: Date.current)
+        converted = converted_broker_position_value(position)
         return nil if converted.nil? # Can't calculate total without all rates
         total += converted
       end
@@ -98,6 +98,13 @@ class Asset < ApplicationRecord
   end
 
   private
+
+  def converted_broker_position_value(position)
+    broker_default_value = position.position_valuations.find_by(date: Date.current)&.value_in_default_currency
+    return broker_default_value if currency == default_currency && broker_default_value.present?
+
+    ExchangeRateService.convert(position.last_value, position.currency, currency, date: Date.current)
+  end
 
   def currency_must_exist
     return if currency.blank?

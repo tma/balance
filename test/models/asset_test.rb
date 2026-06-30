@@ -89,6 +89,49 @@ class AssetTest < ActiveSupport::TestCase
     assert_equal 0, valuation.value
   end
 
+  test "sync_from_broker_positions uses broker default valuation before external conversion" do
+    asset = Asset.create!(
+      name: "Broker FX Asset",
+      asset_type: asset_types(:property),
+      asset_group: asset_groups(:real_estate),
+      currency: "USD",
+      value: 0
+    )
+    asset.asset_valuations.destroy_all
+
+    position = broker_connections(:one).broker_positions.create!(
+      symbol: "EUR_DEFAULT_VALUE_TEST",
+      description: "EUR Default Value Test",
+      currency: "EUR",
+      last_value: 500,
+      last_quantity: 5,
+      asset: asset
+    )
+    position.position_valuations.create!(
+      date: Date.current,
+      quantity: 5,
+      value: 500,
+      currency: "EUR",
+      fx_rate_to_base: 1.2,
+      ibkr_base_currency: "USD"
+    )
+
+    original_convert = ExchangeRateService.method(:convert)
+    ExchangeRateService.define_singleton_method(:convert) { |_amount, _from, _to, date:| nil }
+
+    assert_difference "AssetValuation.count", 1 do
+      asset.sync_from_broker_positions!
+    end
+
+    valuation = asset.asset_valuations.find_by(date: Date.current.end_of_month)
+    assert_equal 600, asset.reload.value
+    assert_equal 600, valuation.value
+  ensure
+    ExchangeRateService.define_singleton_method(:convert) do |*args, **kwargs, &block|
+      original_convert.call(*args, **kwargs, &block)
+    end
+  end
+
   test "sync_from_broker_positions keeps value when currency conversion fails" do
     asset = Asset.create!(
       name: "FX Failure Asset",

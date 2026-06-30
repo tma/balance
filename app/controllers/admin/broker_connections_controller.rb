@@ -42,11 +42,11 @@ class Admin::BrokerConnectionsController < ApplicationController
   end
 
   def sync
-    result = BrokerSyncBackfillService.sync_missing_dates!(@connection)
+    result = BrokerSyncBackfillService.sync_missing_dates!(@connection, current_first: true)
     message = if result[:dates].empty?
       "Sync already up to date."
     else
-      "Sync completed for #{result[:synced]} day(s)."
+      sync_success_message(result)
     end
     redirect_to admin_broker_connection_path(@connection), notice: message
   rescue => e
@@ -84,5 +84,15 @@ class Admin::BrokerConnectionsController < ApplicationController
 
   def connection_params
     params.expect(broker_connection: [ :name, :flex_token, :flex_query_id, :broker_type ])
+  end
+
+  def sync_success_message(result)
+    today_result = result[:results].find { |entry| entry[:date] == Date.current }&.dig(:result)
+    return "Sync completed for #{result[:synced]} day(s)." unless today_result
+
+    "Sync completed for #{result[:synced]} day(s). Today: " \
+      "#{today_result[:positions].count} #{'position'.pluralize(today_result[:positions].count)}, " \
+      "#{today_result[:updated_count]} #{'asset'.pluralize(today_result[:updated_count])} updated, " \
+      "#{today_result[:closed_count]} #{'position'.pluralize(today_result[:closed_count])} closed."
   end
 end

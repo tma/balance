@@ -4,22 +4,25 @@ class BrokerSyncBackfillService
   WINDOW_DAYS = 14
   BACKFILL_DELAY = 5.seconds
 
-  def self.sync_missing_dates!(connection, window_days: WINDOW_DAYS)
+  def self.sync_missing_dates!(connection, window_days: WINDOW_DAYS, current_first: false)
     dates = missing_dates_for(connection, window_days: window_days)
 
     # Always include today to get latest values (markets may still be open)
     dates << Date.current unless dates.include?(Date.current)
+    dates = ordered_sync_dates(dates, current_first: current_first)
 
-    return { dates: [], synced: 0 } if dates.empty?
+    return { dates: [], synced: 0, results: [] } if dates.empty?
 
     service = BrokerSyncService.for(connection)
+    results = []
 
     dates.each_with_index do |date, index|
       pause(BACKFILL_DELAY) if index.positive?
-      service.sync!(sync_date: date)
+      sync_result = service.sync!(sync_date: date)
+      results << { date: date, result: sync_result }
     end
 
-    { dates: dates, synced: dates.count }
+    { dates: dates, synced: dates.count, results: results }
   end
 
   def self.missing_dates_for(connection, window_days: WINDOW_DAYS)
@@ -53,5 +56,12 @@ class BrokerSyncBackfillService
 
   def self.pause(seconds)
     sleep(seconds)
+  end
+
+  def self.ordered_sync_dates(dates, current_first:)
+    dates = dates.uniq
+    return dates unless current_first
+
+    [ Date.current, *dates.reject { |date| date == Date.current } ]
   end
 end
