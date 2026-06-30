@@ -806,7 +806,7 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     positions = @service.send(:parse_positions, xml_without_account_info)
 
     assert_equal 1, positions.count
-    assert_nil positions.first[:ibkr_base_currency]
+    assert_equal "USD", positions.first[:ibkr_base_currency]
   end
 
   test "parse_positions handles missing fxRateToBase gracefully" do
@@ -828,7 +828,204 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     positions = @service.send(:parse_positions, xml_without_fx_rate)
 
     assert_equal 1, positions.count
-    assert_nil positions.first[:fx_rate_to_base]
+    assert_equal 1.0, positions.first[:fx_rate_to_base].to_f
+  end
+
+  test "parse_positions uses ConversionRates when fxRateToBase is missing" do
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "CHF").update!(default: true)
+
+    xml_with_conversion_rates = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <AccountInformation accountId="U9999999" currency="USD"/>
+            <OpenPositions>
+              <OpenPosition symbol="AAPL" position="10.0" positionValue="1000.00"
+                currency="USD" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <CashReport>
+              <CashReportCurrency currency="USD" endingCash="1500.00" endingSettledCash="1500.00"/>
+            </CashReport>
+            <ConversionRates>
+              <ConversionRate reportDate="2026-06-29" fromCurrency="USD" toCurrency="CHF" rate="0.80759" />
+            </ConversionRates>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_conversion_rates)
+
+    aapl = positions.find { |position| position[:symbol] == "AAPL" }
+    usd_cash = positions.find { |position| position[:symbol] == "USD" && position[:description] == "Cash (USD)" }
+
+    assert_equal 0.80759, aapl[:fx_rate_to_base].to_f
+    assert_equal "CHF", aapl[:ibkr_base_currency]
+    assert_equal 0.80759, usd_cash[:fx_rate_to_base].to_f
+    assert_equal "CHF", usd_cash[:ibkr_base_currency]
+  end
+
+  test "parse_positions prefers usable fxRateToBase over ConversionRates" do
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "CHF").update!(default: true)
+
+    xml_with_both_rates = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <AccountInformation accountId="U9999999" currency="CHF"/>
+            <OpenPositions>
+              <OpenPosition symbol="AAPL" position="10.0" positionValue="1000.00"
+                currency="USD" fxRateToBase="0.80" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <ConversionRates>
+              <ConversionRate reportDate="2026-06-29" fromCurrency="USD" toCurrency="CHF" rate="0.90" />
+            </ConversionRates>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_both_rates)
+    aapl = positions.find { |position| position[:symbol] == "AAPL" }
+
+    assert_equal 0.80, aapl[:fx_rate_to_base].to_f
+    assert_equal "CHF", aapl[:ibkr_base_currency]
+  end
+
+  test "parse_positions uses ConversionRates when fxRateToBase points to non-default base" do
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "CHF").update!(default: true)
+    Currency.find_or_create_by!(code: "USD").update!(default: false)
+
+    xml_with_both_rates = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <AccountInformation accountId="U9999999" currency="USD"/>
+            <OpenPositions>
+              <OpenPosition symbol="AAPL" position="10.0" positionValue="1000.00"
+                currency="EUR" fxRateToBase="1.08" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <ConversionRates>
+              <ConversionRate reportDate="2026-06-29" fromCurrency="EUR" toCurrency="CHF" rate="0.92" />
+            </ConversionRates>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_both_rates)
+    aapl = positions.find { |position| position[:symbol] == "AAPL" }
+
+    assert_equal 0.92, aapl[:fx_rate_to_base].to_f
+    assert_equal "CHF", aapl[:ibkr_base_currency]
+  end
+
+  test "parse_positions ignores invalid fxRateToBase and uses ConversionRates" do
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "CHF").update!(default: true)
+
+    xml_with_invalid_direct_rate = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <AccountInformation accountId="U9999999" currency="CHF"/>
+            <OpenPositions>
+              <OpenPosition symbol="AAPL" position="10.0" positionValue="1000.00"
+                currency="USD" fxRateToBase="0.80junk" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <ConversionRates>
+              <ConversionRate reportDate="2026-06-29" fromCurrency="USD" toCurrency="CHF" rate="0.90" />
+            </ConversionRates>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_invalid_direct_rate)
+    aapl = positions.find { |position| position[:symbol] == "AAPL" }
+
+    assert_equal 0.90, aapl[:fx_rate_to_base].to_f
+    assert_equal "CHF", aapl[:ibkr_base_currency]
+  end
+
+  test "parse_positions ignores invalid ConversionRates" do
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "CHF").update!(default: true)
+    Currency.find_or_create_by!(code: "USD").update!(default: false)
+
+    xml_with_invalid_conversion_rate = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse>
+        <FlexStatements count="1">
+          <FlexStatement>
+            <AccountInformation accountId="U9999999" currency="USD"/>
+            <OpenPositions>
+              <OpenPosition symbol="AAPL" position="10.0" positionValue="1000.00"
+                currency="USD" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <ConversionRates>
+              <ConversionRate reportDate="2026-06-29" fromCurrency="USD" toCurrency="CHF" rate="Infinity" />
+            </ConversionRates>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    positions = @service.send(:parse_positions, xml_with_invalid_conversion_rate)
+    aapl = positions.find { |position| position[:symbol] == "AAPL" }
+
+    assert_nil aapl[:fx_rate_to_base]
+    assert_nil aapl[:ibkr_base_currency]
+  end
+
+  test "sync uses ConversionRates when fxRateToBase is missing" do
+    Currency.update_all(default: false)
+    Currency.find_or_create_by!(code: "CHF").update!(default: true)
+    Currency.find_or_create_by!(code: "USD").update!(default: false)
+
+    xml_with_conversion_rates = <<~XML
+      <?xml version="1.0" encoding="utf-8"?>
+      <FlexQueryResponse queryName="Balance Positions" type="AF">
+        <FlexStatements count="1">
+          <FlexStatement accountId="U9999999" fromDate="20260629" toDate="20260629">
+            <AccountInformation accountId="U9999999" currency="USD"/>
+            <OpenPositions>
+              <OpenPosition symbol="AAPL" description="Apple Inc"
+                position="10.0" positionValue="1000.00" currency="USD" levelOfDetail="SUMMARY"/>
+            </OpenPositions>
+            <CashReport>
+              <CashReportCurrency currency="USD" endingCash="1500.00" endingSettledCash="1500.00"/>
+            </CashReport>
+            <ConversionRates>
+              <ConversionRate reportDate="2026-06-29" fromCurrency="USD" toCurrency="CHF" rate="0.80759" />
+            </ConversionRates>
+          </FlexStatement>
+        </FlexStatements>
+      </FlexQueryResponse>
+    XML
+
+    stub_request(:get, %r{/SendRequest})
+      .to_return(status: 200, body: success_send_response)
+
+    stub_request(:get, %r{/GetStatement})
+      .to_return(status: 200, body: xml_with_conversion_rates)
+
+    @service.sync!
+
+    aapl_valuation = @connection.broker_positions.find_by(symbol: "AAPL").position_valuations.last
+    cash_valuation = @connection.broker_positions.find_by(symbol: "USD").position_valuations.last
+
+    assert_equal 0.80759, aapl_valuation.exchange_rate.to_f
+    assert_equal 807.59, aapl_valuation.value_in_default_currency.to_f
+    assert_equal 0.80759, cash_valuation.exchange_rate.to_f
+    assert_equal 1211.39, cash_valuation.value_in_default_currency.to_f
   end
 
   test "sync uses IBKR fxRateToBase when base currencies match" do

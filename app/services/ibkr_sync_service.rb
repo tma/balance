@@ -198,6 +198,7 @@ class IbkrSyncService < BrokerSyncService
 
     # Extract account base currency from AccountInformation section
     account_base_currency = doc.elements["//AccountInformation"]&.attributes&.[]("currency")
+    conversion_rates = parse_conversion_rates(doc)
 
     # IBKR Flex returns OpenPositions with OpenPosition elements
     # Filter for SUMMARY level only (excludes individual tax lots)
@@ -212,8 +213,18 @@ class IbkrSyncService < BrokerSyncService
         value: pos.attributes["positionValue"]&.to_d || pos.attributes["markValue"]&.to_d,
         currency: pos.attributes["currency"],
         exchange: pos.attributes["listingExchange"],
-        fx_rate_to_base: pos.attributes["fxRateToBase"]&.to_d,
-        ibkr_base_currency: account_base_currency
+        fx_rate_to_base: fx_rate_for(
+          pos.attributes["currency"],
+          decimal_rate(pos.attributes["fxRateToBase"]),
+          account_base_currency,
+          conversion_rates
+        ),
+        ibkr_base_currency: fx_rate_base_currency(
+          pos.attributes["currency"],
+          decimal_rate(pos.attributes["fxRateToBase"]),
+          account_base_currency,
+          conversion_rates
+        )
       }
     end
 
@@ -224,9 +235,18 @@ class IbkrSyncService < BrokerSyncService
       ending_cash = cash.attributes["endingCash"]&.to_d
       next if ending_cash.nil? || ending_cash.zero?
 
-      # Cash in its own currency has fx rate of 1.0 to itself
-      # Use fxRateToBase if available from cash report, otherwise it's same-currency
-      fx_rate = cash.attributes["fxRateToBase"]&.to_d || (currency == account_base_currency ? 1.0 : nil)
+      fx_rate = fx_rate_for(
+        currency,
+        decimal_rate(cash.attributes["fxRateToBase"]),
+        account_base_currency,
+        conversion_rates
+      )
+      fx_base_currency = fx_rate_base_currency(
+        currency,
+        decimal_rate(cash.attributes["fxRateToBase"]),
+        account_base_currency,
+        conversion_rates
+      )
 
       positions << {
         symbol: currency,
@@ -235,11 +255,56 @@ class IbkrSyncService < BrokerSyncService
         value: ending_cash,
         currency: currency,
         fx_rate_to_base: fx_rate,
-        ibkr_base_currency: account_base_currency
+        ibkr_base_currency: fx_base_currency
       }
     end
 
     positions
+  end
+
+  def parse_conversion_rates(doc)
+    rates = {}
+    doc.elements.each("//ConversionRate") do |rate|
+      from_currency = rate.attributes["fromCurrency"]
+      to_currency = rate.attributes["toCurrency"]
+      next if from_currency.blank? || to_currency.blank?
+
+      rates[[ from_currency, to_currency ]] = decimal_rate(rate.attributes["rate"])
+    end
+    rates.compact
+  end
+
+  def decimal_rate(value)
+    text = value.to_s.strip
+    return nil if text.blank?
+
+    rate = BigDecimal(text, exception: false)
+    return nil if rate.nil? || !rate.finite? || rate <= 0
+
+    rate
+  end
+
+  def fx_rate_for(currency, direct_rate, account_base_currency, conversion_rates)
+    default_currency = Currency.default_code
+    conversion_rate = conversion_rates[[ currency, default_currency ]]
+
+    return 1.0 if currency == default_currency
+    return direct_rate if direct_rate.present? && account_base_currency == default_currency
+    return conversion_rate if conversion_rate.present?
+
+    nil
+  end
+
+  def fx_rate_base_currency(currency, direct_rate, account_base_currency, conversion_rates)
+    default_currency = Currency.default_code
+    conversion_rate = conversion_rates[[ currency, default_currency ]]
+
+    return default_currency if currency == default_currency
+    return default_currency if direct_rate.present? && account_base_currency == default_currency
+    return default_currency if conversion_rate.present?
+    return account_base_currency if direct_rate.present? && account_base_currency.present?
+
+    nil
   end
 
   def position_for_sync(position_data, date:)

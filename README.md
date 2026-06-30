@@ -159,7 +159,13 @@ To connect your Interactive Brokers account, you need to create a Flex Query and
    **Cash Report** (optional, for cash balances):
    - Currency
    - Ending Cash
-   - FX Rate to Base
+   - FX Rate to Base (if available)
+
+   **Conversion Rates** (recommended for cash and multi-currency accounts):
+   - From Currency
+   - To Currency
+   - Rate
+   - Report Date
 
 6. Save the query and note the **Query ID** (shown in the Flex Queries list)
 
@@ -183,7 +189,13 @@ To connect your Interactive Brokers account, you need to create a Flex Query and
 
 #### Currency Conversion
 
-When your IBKR account's base currency matches Balance's default currency, the app uses IBKR's exchange rates directly. Otherwise, it fetches historical rates from [Frankfurter API](https://www.frankfurter.app/).
+Balance uses rates in this order:
+
+1. `FX Rate to Base` from the position or cash row, when IBKR base currency matches Balance's default currency
+2. `Conversion Rates` from the Flex Query response
+3. historical rates from [Frankfurter API](https://www.frankfurter.dev/)
+
+When possible, include `Conversion Rates` in the Flex Query so cash balances can be converted without relying on the external fallback.
 
 ### Stopping the Application
 
