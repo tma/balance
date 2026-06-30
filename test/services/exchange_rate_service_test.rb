@@ -4,7 +4,7 @@ require "webmock/minitest"
 class ExchangeRateServiceTest < ActiveSupport::TestCase
   setup do
     WebMock.disable_net_connect!
-    @base_url = "https://api.frankfurter.app"
+    @base_url = "https://api.frankfurter.dev/v1"
     @test_date = Date.new(2026, 1, 20)
   end
 
@@ -33,6 +33,27 @@ class ExchangeRateServiceTest < ActiveSupport::TestCase
     # Should not make any HTTP requests
     result = ExchangeRateService.rate("USD", "USD", date: @test_date)
     assert_equal 1.0, result
+  end
+
+  test "rate follows HTTPS redirects" do
+    old_url = "https://api.frankfurter.app/2026-01-20"
+    new_url = "#{@base_url}/2026-01-20"
+
+    stub_const(ExchangeRateService, :BASE_URL, "https://api.frankfurter.app") do
+      stub_request(:get, old_url)
+        .with(query: { from: "USD", to: "EUR" })
+        .to_return(status: 301, headers: { "Location" => new_url + "?from=USD&to=EUR" })
+      stub_request(:get, new_url)
+        .with(query: { from: "USD", to: "EUR" })
+        .to_return(
+          status: 200,
+          body: { base: "USD", date: "2026-01-20", rates: { "EUR" => 0.92 } }.to_json,
+          headers: { "Content-Type" => "application/json" }
+        )
+
+      result = ExchangeRateService.rate("USD", "EUR", date: @test_date)
+      assert_equal 0.92, result
+    end
   end
 
   test "rate returns nil on HTTP error" do

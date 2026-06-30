@@ -2,8 +2,8 @@ require "net/http"
 require "json"
 
 class ExchangeRateService
-  # Free API from frankfurter.app (no API key required)
-  BASE_URL = "https://api.frankfurter.app"
+  # Free API from Frankfurter (no API key required)
+  BASE_URL = "https://api.frankfurter.dev/v1"
 
   class << self
     # Fetch exchange rate for a specific date
@@ -32,7 +32,7 @@ class ExchangeRateService
       endpoint = date.strftime("%Y-%m-%d")
       uri = URI("#{BASE_URL}/#{endpoint}?from=#{from_currency}&to=#{to_currency}")
 
-      response = Net::HTTP.get_response(uri)
+      response = get_response(uri)
 
       if response.is_a?(Net::HTTPSuccess)
         data = JSON.parse(response.body)
@@ -51,6 +51,23 @@ class ExchangeRateService
     rescue StandardError => e
       Rails.logger.error "Exchange rate fetch failed: #{e.message}"
       nil
+    end
+
+    def get_response(uri, limit: 3)
+      raise "too many redirects" if limit <= 0
+
+      response = Net::HTTP.get_response(uri)
+      if response.is_a?(Net::HTTPRedirection)
+        location = response["location"]
+        raise "redirect missing location" if location.blank?
+
+        redirected_uri = URI(location)
+        raise "unsafe redirect scheme: #{redirected_uri.scheme}" unless redirected_uri.is_a?(URI::HTTPS)
+
+        return get_response(redirected_uri, limit: limit - 1)
+      end
+
+      response
     end
   end
 end

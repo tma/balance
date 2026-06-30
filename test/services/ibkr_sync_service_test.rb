@@ -24,7 +24,7 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
     WebMock.disable_net_connect!
 
     # Stub Frankfurter API for currency conversion
-    stub_request(:get, %r{api\.frankfurter\.app})
+    stub_request(:get, %r{api\.frankfurter\.dev})
       .to_return(status: 200, body: { rates: { "EUR" => 0.85, "USD" => 1.0 } }.to_json,
                  headers: { "Content-Type" => "application/json" })
   end
@@ -865,7 +865,7 @@ class IbkrSyncServiceTest < ActiveSupport::TestCase
       .to_return(status: 200, body: statement_with_fx_rates_and_account_info)
 
     # Stub the exchange rate service to return a specific rate
-    stub_request(:get, %r{api\.frankfurter\.app})
+    stub_request(:get, %r{api\.frankfurter\.dev})
       .to_return(status: 200, body: { rates: { "EUR" => 0.92 } }.to_json,
                  headers: { "Content-Type" => "application/json" })
 

@@ -48,7 +48,7 @@ class BrokerSyncJobTest < ActiveJob::TestCase
     WebMock.reset!
 
     # Stub Frankfurter API
-    stub_request(:get, %r{api\.frankfurter\.app})
+    stub_request(:get, %r{api\.frankfurter\.dev})
       .to_return(status: 200, body: { rates: { "EUR" => 0.85, "USD" => 1.0 } }.to_json,
                  headers: { "Content-Type" => "application/json" })
 
@@ -88,7 +88,7 @@ class BrokerSyncJobTest < ActiveJob::TestCase
   test "sync error records error on connection but does not raise" do
     WebMock.reset!
 
-    stub_request(:get, %r{api\.frankfurter\.app})
+    stub_request(:get, %r{api\.frankfurter\.dev})
       .to_return(status: 200, body: { rates: { "EUR" => 0.85, "USD" => 1.0 } }.to_json,
                  headers: { "Content-Type" => "application/json" })
 

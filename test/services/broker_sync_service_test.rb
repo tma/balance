@@ -56,7 +56,7 @@ class BrokerSyncServiceTest < ActiveSupport::TestCase
 
   test "sync_mapped_assets updates assets linked to positions" do
     # Stub exchange rate API
-    stub_request(:get, %r{api\.frankfurter\.app})
+    stub_request(:get, %r{api\.frankfurter\.dev})
       .to_return(status: 200, body: { rates: { "EUR" => 0.85 } }.to_json, headers: { "Content-Type" => "application/json" })
 
     connection = broker_connections(:one)
