@@ -124,6 +124,7 @@ class AssetTest < ActiveSupport::TestCase
     end
 
     valuation = asset.asset_valuations.find_by(date: Date.current.end_of_month)
+    assert_equal [ Date.current.end_of_month ], asset.asset_valuations.pluck(:date)
     assert_equal 600, asset.reload.value
     assert_equal 600, valuation.value
   ensure
