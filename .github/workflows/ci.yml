@@ -28,6 +28,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Install image processing runtime
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes libvips-dev
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -75,6 +78,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      - name: Install image processing runtime
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes libvips-dev
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
@@ -99,6 +105,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
+
+      - name: Install image processing runtime
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends --yes libvips-dev
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
