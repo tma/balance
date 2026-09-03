@@ -74,6 +74,7 @@ class Asset < ApplicationRecord
   # Sync value from broker positions
   # Creates/updates a valuation for the end of the current month
   def sync_from_broker_positions!
+    previous_valuation_date = valuation_date
     total = total_broker_value
 
     # If conversion fails, keep the existing asset value rather than writing a misleading zero.
@@ -84,6 +85,7 @@ class Asset < ApplicationRecord
     date = Date.current.end_of_month
 
     # Update asset value (round to whole numbers to avoid form change detection issues)
+    self.valuation_date = date
     self.value = total.round(0)
     calculate_default_currency_value
     save!
@@ -95,6 +97,8 @@ class Asset < ApplicationRecord
       value_in_default_currency: value_in_default_currency,
       exchange_rate: exchange_rate
     )
+  ensure
+    self.valuation_date = previous_valuation_date
   end
 
   private
