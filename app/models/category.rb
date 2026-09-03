@@ -2,13 +2,20 @@ class Category < ApplicationRecord
   has_many :transactions, dependent: :restrict_with_error
   has_many :budgets, dependent: :destroy
   has_many :category_patterns, dependent: :destroy
+  has_many :expense_profiles, dependent: :destroy
 
   enum :category_type, { income: "income", expense: "expense" }
+  enum :essentiality,
+       { essential: "essential", discretionary: "discretionary", mixed: "mixed", excluded: "excluded" },
+       prefix: true,
+       validate: { allow_nil: true }
 
   validates :name, presence: true, uniqueness: { scope: :category_type }
   validates :category_type, presence: true
+  validate :income_category_cannot_have_essentiality
 
   after_save :schedule_embedding_update, if: :embedding_attributes_changed?
+  before_validation :normalize_essentiality
 
   # Returns array of match patterns for categorization hints
   # Reads from CategoryPattern table (human-defined patterns)
@@ -87,6 +94,16 @@ class Category < ApplicationRecord
   end
 
   private
+
+  def normalize_essentiality
+    self.essentiality = nil if essentiality.blank?
+  end
+
+  def income_category_cannot_have_essentiality
+    return unless income? && essentiality.present?
+
+    errors.add(:essentiality, "is only available for expense categories")
+  end
 
   def embedding_attributes_changed?
     saved_change_to_name?

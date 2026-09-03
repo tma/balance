@@ -115,4 +115,20 @@ class OllamaServiceTest < ActiveSupport::TestCase
       OllamaService.embed("test text")
     end
   end
+
+  test "generate_json passes an optional JSON schema to Ollama" do
+    schema = { type: "object", required: [ "value" ] }
+    stub_request(:get, "#{@ollama_host}/api/tags")
+      .to_return(status: 200, body: { models: [] }.to_json, headers: { "Content-Type" => "application/json" })
+    request = stub_request(:post, "#{@ollama_host}/api/generate")
+      .with { |web_request| JSON.parse(web_request.body)["format"] == schema.deep_stringify_keys }
+      .to_return(
+        status: 200,
+        body: { response: { value: "ok" }.to_json }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    assert_equal({ "value" => "ok" }, OllamaService.generate_json("Return JSON", schema: schema))
+    assert_requested request
+  end
 end

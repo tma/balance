@@ -20,6 +20,15 @@
     <%= form.select :category_type, [["Income", "income"], ["Expense", "expense"]], {}, class: ui_input_class %>
   </div>
 
+  <div class="mb-4">
+    <%= form.label :essentiality, "Cost of living", class: ui_label_class %>
+    <%= form.select :essentiality,
+        [["Unclassified", nil], ["Essential", "essential"], ["Discretionary", "discretionary"], ["Mixed", "mixed"], ["Excluded", "excluded"]],
+        {},
+        class: ui_input_class %>
+    <p class="mt-1 text-xs <%= ui_text_muted_class %>">Used only for expense categories in the Cost of Living report.</p>
+  </div>
+
   <div class="flex space-x-4 mb-6">
     <%= form.submit "Save", class: ui_btn_primary_class + " cursor-pointer" %>
     <%= link_to "Cancel", admin_categories_path, class: ui_btn_secondary_class %>

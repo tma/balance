@@ -1,0 +1,19 @@
+whole_foods:
+  category: groceries
+  merchant_pattern: Whole Foods
+  essentiality: essential
+  cadence: monthly
+  source: human
+  status: confirmed
+  recurrence_confidence: high
+  confirmed_amount: 150.00
+  occurrence_count: 6
+  first_seen_on: 2026-01-01
+  last_seen_on: 2026-06-01
+  median_amount: 150.00
+  amount_cv: 0.05
+  interval_cv: 0.02
+  detected_cadence: monthly
+  detected_at: 2026-06-02 10:00:00
+  confirmed_at: 2026-06-02 10:00:00
+  review_flags: "[]"

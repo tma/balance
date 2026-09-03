@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_17_173033) do
+ActiveRecord::Schema[8.1].define(version: 2026_09_03_184433) do
   create_table "account_types", force: :cascade do |t|
     t.datetime "created_at", null: false
     t.boolean "invert_amounts_on_import", default: false, null: false
@@ -123,8 +123,10 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_173033) do
     t.string "category_type"
     t.datetime "created_at", null: false
     t.binary "embedding"
+    t.string "essentiality"
     t.string "name"
     t.datetime "updated_at", null: false
+    t.check_constraint "essentiality IS NULL OR essentiality IN ('essential', 'discretionary', 'mixed', 'excluded')", name: "categories_essentiality"
   end
 
   create_table "category_patterns", force: :cascade do |t|
@@ -146,6 +148,37 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_173033) do
     t.boolean "default", default: false, null: false
     t.datetime "updated_at", null: false
     t.index ["code"], name: "index_currencies_on_code", unique: true
+  end
+
+  create_table "expense_profiles", force: :cascade do |t|
+    t.decimal "amount_cv", precision: 8, scale: 4
+    t.string "cadence"
+    t.integer "category_id", null: false
+    t.decimal "confirmed_amount", precision: 15, scale: 2
+    t.datetime "confirmed_at"
+    t.datetime "created_at", null: false
+    t.datetime "detected_at"
+    t.string "detected_cadence"
+    t.string "essentiality"
+    t.date "first_seen_on"
+    t.decimal "interval_cv", precision: 8, scale: 4
+    t.date "last_seen_on"
+    t.decimal "median_amount", precision: 15, scale: 2
+    t.string "merchant_pattern", null: false
+    t.integer "occurrence_count", default: 0, null: false
+    t.string "recurrence_confidence"
+    t.text "review_flags"
+    t.string "source", default: "machine", null: false
+    t.string "status", default: "suggested", null: false
+    t.decimal "trailing_annual_amount", precision: 15, scale: 2
+    t.datetime "updated_at", null: false
+    t.index ["category_id"], name: "index_expense_profiles_on_category_id"
+    t.index ["merchant_pattern", "category_id"], name: "index_expense_profiles_on_merchant_pattern_and_category_id", unique: true
+    t.check_constraint "cadence IS NULL OR cadence IN ('monthly', 'quarterly', 'semiannual', 'annual')", name: "expense_profiles_cadence"
+    t.check_constraint "essentiality IS NULL OR essentiality IN ('essential', 'discretionary', 'excluded')", name: "expense_profiles_essentiality"
+    t.check_constraint "recurrence_confidence IS NULL OR recurrence_confidence IN ('high', 'medium', 'low')", name: "expense_profiles_recurrence_confidence"
+    t.check_constraint "source IN ('human', 'machine')", name: "expense_profiles_source"
+    t.check_constraint "status IN ('suggested', 'confirmed', 'dismissed', 'inactive')", name: "expense_profiles_status"
   end
 
   create_table "imports", force: :cascade do |t|
@@ -209,6 +242,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_17_173033) do
   add_foreign_key "broker_positions", "broker_connections"
   add_foreign_key "budgets", "categories"
   add_foreign_key "category_patterns", "categories"
+  add_foreign_key "expense_profiles", "categories"
   add_foreign_key "imports", "accounts"
   add_foreign_key "position_valuations", "broker_positions"
   add_foreign_key "transactions", "accounts"

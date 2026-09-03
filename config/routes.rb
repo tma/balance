@@ -43,6 +43,16 @@ Rails.application.routes.draw do
     end
   end
   resources :budgets
+  resources :expense_profiles, path: "expense-profiles", only: %i[ edit update ] do
+    member do
+      patch :dismiss
+      patch :deactivate
+    end
+    collection do
+      post :detect
+      post :bulk_confirm
+    end
+  end
 
   # Transaction import
   resources :imports, only: [ :index, :new, :create, :show, :destroy ] do
@@ -67,6 +77,7 @@ Rails.application.routes.draw do
     resources :categories do
       collection do
         post :regenerate_all
+        patch :update_essentialities
       end
       resources :category_patterns, only: [ :create, :destroy ], path: "patterns", as: :patterns do
         collection do

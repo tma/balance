@@ -22,6 +22,11 @@
         <span class="<%= ui_badge_danger_class %>">Expense</span>
       <% end %>
     </p>
+    <% if @category.expense? %>
+      <p class="<%= ui_text_class %> mt-2">
+        <strong>Cost of living:</strong> <%= @category.essentiality&.humanize || "Unclassified" %>
+      </p>
+    <% end %>
   </div>
 
   <div class="flex space-x-4">

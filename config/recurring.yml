@@ -36,6 +36,12 @@ production:
     queue: default
     schedule: every hour
 
+  # Refresh grouped expense streams after learned merchant patterns are available
+  daily_expense_profile_detection:
+    class: ExpenseProfileDetectionJob
+    queue: default
+    schedule: every day at 4am UTC
+
   # Daily data quality maintenance for categorization pipeline
   # Prunes stale patterns, detects drift, resolves conflicts
   daily_categorization_maintenance:

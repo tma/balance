@@ -22,6 +22,7 @@
           <tr>
             <th class="<%= ui_table_th_class %> text-left">Name</th>
             <th class="<%= ui_table_th_class %> text-left">Type</th>
+            <th class="<%= ui_table_th_class %> text-left">Cost of living</th>
             <th class="<%= ui_table_th_class %> text-right">Manual / Learned</th>
             <th class="<%= ui_table_th_class %> text-right w-24"></th>
           </tr>
@@ -36,6 +37,9 @@
                 <% else %>
                   <span class="<%= ui_badge_danger_class %>">Expense</span>
                 <% end %>
+              </td>
+              <td class="<%= ui_table_td_class %> <%= ui_text_muted_class %>">
+                <%= category.expense? ? (category.essentiality&.humanize || "Unclassified") : "—" %>
               </td>
               <td class="<%= ui_table_td_class %> text-right <%= ui_text_muted_class %> text-sm whitespace-nowrap">
                 <% human = category.human_patterns_count.to_i %>

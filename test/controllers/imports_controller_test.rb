@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ImportsControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     @account = accounts(:checking_account)
     @completed_import = imports(:one) # completed status
@@ -103,19 +105,21 @@ class ImportsControllerTest < ActionDispatch::IntegrationTest
     category = categories(:groceries)
     initial_count = Transaction.count
 
-    post confirm_import_path(@completed_import), params: {
-      transactions: {
-        "0" => {
-          selected: "1",
-          date: "2026-01-15",
-          description: "Coffee",
-          amount: "5.50",
-          transaction_type: "expense",
-          category_id: category.id,
-          duplicate_hash: "test_hash_1"
+    assert_enqueued_with(job: ExpenseProfileImportAnalysisJob, args: [ [ category.id ] ]) do
+      post confirm_import_path(@completed_import), params: {
+        transactions: {
+          "0" => {
+            selected: "1",
+            date: "2026-01-15",
+            description: "Coffee",
+            amount: "5.50",
+            transaction_type: "expense",
+            category_id: category.id,
+            duplicate_hash: "test_hash_1"
+          }
         }
       }
-    }
+    end
 
     assert_redirected_to imports_path
     assert_equal initial_count + 1, Transaction.count

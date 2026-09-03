@@ -42,9 +42,10 @@ class OllamaService
 
     # Generate a JSON response from Ollama
     # @param prompt [String] The prompt to send
+    # @param schema [Hash, nil] Optional JSON Schema for structured output
     # @return [Hash] The parsed JSON response
-    def generate_json(prompt)
-      response = generate(prompt, format: "json")
+    def generate_json(prompt, schema: nil)
+      response = generate(prompt, format: schema || "json")
       parse_json_response(response)
     end
 

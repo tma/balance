@@ -31,6 +31,13 @@ class DashboardController < ApplicationController
     @min_year = Transaction.minimum(:date)&.year || Date.current.year
     @max_year = Date.current.year
 
+    if params[:view] == "cost_of_living"
+      period = CostOfLivingPeriodService.new(data_complete_through: cost_of_living_through).call
+      @cost_of_living = CostOfLivingProjectionService.new(period: period).call
+      render "dashboard/cash_flow_cost_of_living"
+      return
+    end
+
     # Handle projected view
     if params[:view] == "projected"
       @projection = calculate_annual_projection
@@ -86,6 +93,17 @@ class DashboardController < ApplicationController
   end
 
   private
+
+  def cost_of_living_through
+    return if params[:through].blank?
+
+    month = Date.strptime(params[:through], "%Y-%m")
+    raise Date::Error if month >= Date.current.beginning_of_month
+
+    month
+  rescue Date::Error
+    raise ActionController::BadRequest, "Invalid Cost of Living month"
+  end
 
   # Compute signed income/expense totals based on category type (not transaction type).
   # For income categories: income transactions add, expense transactions subtract.

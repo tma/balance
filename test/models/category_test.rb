@@ -2,6 +2,22 @@ require "test_helper"
 
 class CategoryTest < ActiveSupport::TestCase
   include ActiveJob::TestHelper
+
+  test "income category cannot have cost essentiality" do
+    category = categories(:salary)
+    category.essentiality = "essential"
+
+    assert_not category.valid?
+    assert_includes category.errors[:essentiality], "is only available for expense categories"
+  end
+
+  test "blank essentiality is normalized to unclassified" do
+    category = categories(:groceries)
+
+    assert category.update(essentiality: "")
+    assert_nil category.reload.essentiality
+  end
+
   test "match_patterns_list returns empty array for new record" do
     category = Category.new(name: "Test", category_type: "expense")
     assert_equal [], category.match_patterns_list

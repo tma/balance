@@ -7,7 +7,9 @@ salary:
 groceries:
   name: groceries
   category_type: expense
+  essentiality: essential
 
 entertainment:
   name: entertainment
   category_type: expense
+  essentiality: discretionary

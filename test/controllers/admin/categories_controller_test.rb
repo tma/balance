@@ -1,6 +1,8 @@
 require "test_helper"
 
 class Admin::CategoriesControllerTest < ActionDispatch::IntegrationTest
+  include ActiveJob::TestHelper
+
   setup do
     @category = categories(:salary)
   end
@@ -38,10 +40,56 @@ class Admin::CategoriesControllerTest < ActionDispatch::IntegrationTest
     assert_redirected_to admin_category_url(@category)
   end
 
+  test "should update expense category essentiality and return to cost of living" do
+    category = categories(:groceries)
+
+    patch admin_category_url(category), params: {
+      category: { essentiality: "mixed" },
+      return_to: "cost_of_living"
+    }
+
+    assert_redirected_to cash_flow_url(view: "cost_of_living")
+    assert category.reload.essentiality_mixed?
+  end
+
+  test "should update all expense category essentialities in one request" do
+    groceries = categories(:groceries)
+    entertainment = categories(:entertainment)
+
+    assert_enqueued_with(job: ExpenseProfileDetectionJob) do
+      patch update_essentialities_admin_categories_url, params: {
+        essentialities: {
+          groceries.id => "mixed",
+          entertainment.id => "excluded"
+        }
+      }
+    end
+
+    assert_redirected_to cash_flow_url(view: "cost_of_living")
+    assert groceries.reload.essentiality_mixed?
+    assert entertainment.reload.essentiality_excluded?
+  end
+
   test "should destroy category" do
     # Create a new category to destroy (not used by transactions/budgets)
     category = Category.create!(name: "unused_category", category_type: "expense")
     assert_difference("Category.count", -1) do
+      delete admin_category_url(category)
+    end
+
+    assert_redirected_to admin_categories_url
+  end
+
+  test "destroying an unused category removes its generated profiles" do
+    category = Category.create!(name: "profile_only_category", category_type: "expense")
+    ExpenseProfile.create!(
+      category: category,
+      merchant_pattern: "Generated Pattern",
+      source: "machine",
+      status: "suggested"
+    )
+
+    assert_difference([ "Category.count", "ExpenseProfile.count" ], -1) do
       delete admin_category_url(category)
     end
 

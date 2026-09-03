@@ -152,6 +152,35 @@ puts "Master data loaded!"
 if Rails.env.development?
   puts "\nCreating development sample data..."
 
+  cost_classifications = {
+    "Rent" => "essential",
+    "Mortgage" => "essential",
+    "Utilities" => "essential",
+    "Groceries" => "essential",
+    "Dining" => "discretionary",
+    "Transportation" => "mixed",
+    "Gas" => "essential",
+    "Insurance" => "essential",
+    "Healthcare" => "essential",
+    "Entertainment" => "discretionary",
+    "Subscriptions" => "mixed",
+    "Clothing" => "discretionary",
+    "Education" => "mixed",
+    "Personal" => "discretionary",
+    "Travel" => "discretionary",
+    "Gifts" => "discretionary",
+    "Charity" => "discretionary",
+    "Taxes" => "essential",
+    "Fees" => "mixed",
+    "Maintenance" => "mixed",
+    "Savings" => "excluded",
+    "Other Expense" => "mixed"
+  }
+  cost_classifications.each do |name, essentiality|
+    category = expense_categories.fetch(name.downcase)
+    category.update!(essentiality: essentiality) if category.essentiality.nil?
+  end
+
   # ---------------------------------------------------------------------------
   # Accounts (one of each type, multiple currencies)
   # ---------------------------------------------------------------------------
@@ -1307,6 +1336,85 @@ if Rails.env.development?
 
   puts "  Created #{BrokerPosition.count} broker positions with #{PositionValuation.count} historical valuations"
 
+  puts "\nCreating cost of living profiles..."
+  [
+    {
+      category: expense_categories["mortgage"],
+      merchant_pattern: "Monthly mortgage payment",
+      essentiality: "essential",
+      cadence: "monthly",
+      confirmed_amount: 1850
+    },
+    {
+      category: expense_categories["utilities"],
+      merchant_pattern: "Electric bill",
+      essentiality: "essential",
+      cadence: "monthly",
+      confirmed_amount: 150
+    },
+    {
+      category: expense_categories["healthcare"],
+      merchant_pattern: "Health insurance premium",
+      essentiality: "essential",
+      cadence: "monthly",
+      confirmed_amount: 250
+    },
+    {
+      category: expense_categories["insurance"],
+      merchant_pattern: "Auto insurance",
+      essentiality: "essential",
+      cadence: "semiannual",
+      confirmed_amount: 650
+    }
+  ].each do |attributes|
+    profile = ExpenseProfile.find_or_initialize_by(
+      category: attributes[:category],
+      merchant_pattern: attributes[:merchant_pattern]
+    )
+    next unless profile.new_record?
+
+    profile.assign_attributes(
+      attributes.except(:category, :merchant_pattern).merge(
+        source: "human",
+        status: "confirmed",
+        recurrence_confidence: "high",
+        occurrence_count: attributes[:cadence] == "semiannual" ? 3 : 12,
+        median_amount: attributes[:confirmed_amount],
+        detected_cadence: attributes[:cadence],
+        detected_at: Time.current,
+        confirmed_at: Time.current,
+        review_flags: []
+      )
+    )
+    profile.save!
+  end
+
+  [
+    [ "Netflix", 15.99 ],
+    [ "Spotify", 10.99 ],
+    [ "New York Times", 12.99 ]
+  ].each do |merchant, amount|
+    profile = ExpenseProfile.find_or_initialize_by(
+      category: expense_categories["subscriptions"],
+      merchant_pattern: merchant
+    )
+    next unless profile.new_record?
+
+    profile.assign_attributes(
+      essentiality: "discretionary",
+      source: "machine",
+      status: "suggested",
+      recurrence_confidence: "high",
+      occurrence_count: 12,
+      median_amount: amount,
+      detected_cadence: "monthly",
+      trailing_annual_amount: amount * 12,
+      detected_at: Time.current,
+      review_flags: []
+    )
+    profile.save!
+  end
+
   puts "\nDevelopment sample data loaded!"
   puts "Summary:"
   puts "  - #{Account.count} accounts"
@@ -1317,6 +1425,7 @@ if Rails.env.development?
   puts "  - #{BrokerConnection.count} broker connections"
   puts "  - #{BrokerPosition.count} broker positions"
   puts "  - #{PositionValuation.count} position valuations"
+  puts "  - #{ExpenseProfile.count} cost of living profiles"
 end
 
 puts "\nSeed completed successfully!"

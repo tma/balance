@@ -5,7 +5,11 @@ class TransactionsController < ApplicationController
     @transactions = Transaction.includes(:account, :category).order(date: :desc, created_at: :desc)
 
     # Search - when searching, ignore date filters and search across all transactions
-    if params[:search].present?
+    if params[:cost_of_living] == "mixed_remainder"
+      mixed_remainder_ids = CostOfLivingProjectionService.new.call[:mixed_remainder_transaction_ids]
+      @transactions = @transactions.where(id: mixed_remainder_ids)
+      @filter_mode = :mixed_remainder
+    elsif params[:search].present?
       @search_query = params[:search]
       @transactions = @transactions.search(@search_query)
       @filter_mode = :search
@@ -126,6 +130,6 @@ class TransactionsController < ApplicationController
   end
 
   def filter_params
-    params.permit(:month, :start_date, :end_date, :account_id, :category_id, :search).to_h.compact_blank
+    params.permit(:month, :start_date, :end_date, :account_id, :category_id, :search, :cost_of_living).to_h.compact_blank
   end
 end

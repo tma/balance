@@ -20,6 +20,26 @@ class TransactionsControllerTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test "mixed remainder filter shows exact unmatched transactions" do
+    ExpenseProfile.delete_all
+    mixed = Category.create!(name: "Mixed drill-down", category_type: "expense", essentiality: "mixed")
+    remainder = Transaction.create!(
+      account: accounts(:checking_account),
+      category: mixed,
+      amount: 75,
+      transaction_type: "expense",
+      date: 1.month.ago.to_date,
+      description: "UNMATCHED MIXED COST"
+    )
+
+    get transactions_url(cost_of_living: "mixed_remainder")
+
+    assert_response :success
+    assert_select "h2", "Mixed Remainder Transactions"
+    assert_select "tr", text: /#{remainder.description}/
+    assert_select "a[href=?]", cash_flow_path(view: "cost_of_living"), text: "Back to Cost of Living"
+  end
+
   test "should get new" do
     get new_transaction_url
     assert_response :success

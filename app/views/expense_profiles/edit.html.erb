@@ -1,0 +1,52 @@
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Reports" %>
+    <%= ui_breadcrumb_item "Cost of Living", cash_flow_path(view: "cost_of_living") %>
+    <%= ui_breadcrumb_item "Edit expense profile", edit_expense_profile_path(@expense_profile) %>
+  <% end %>
+<% end %>
+
+<div class="max-w-2xl">
+  <h1 class="<%= ui_title_class %> mb-6">Edit expense profile</h1>
+
+  <div class="<%= ui_card_class %> p-6">
+    <p class="<%= ui_text_muted_class %> text-sm mb-6">
+      <%= @expense_profile.category.name %> · <%= pluralize(@expense_profile.occurrence_count, "matching transaction") %>
+    </p>
+
+    <%= form_with model: @expense_profile, class: "space-y-4" do |form| %>
+      <div>
+        <%= form.label :merchant_pattern, "Matching pattern", class: ui_label_class %>
+        <%= form.text_field :merchant_pattern, required: true, class: ui_input_class %>
+      </div>
+
+      <div>
+        <%= form.label :essentiality, class: ui_label_class %>
+        <%= form.select :essentiality,
+            [["Select…", nil], ["Essential", "essential"], ["Discretionary", "discretionary"], ["Excluded", "excluded"]],
+            {},
+            required: true,
+            class: ui_input_class %>
+      </div>
+
+      <div>
+        <%= form.label :cadence, class: ui_label_class %>
+        <%= form.select :cadence,
+            [["Not recurring", nil], ["Monthly", "monthly"], ["Quarterly", "quarterly"], ["Semiannual", "semiannual"], ["Annual", "annual"]],
+            {},
+            class: ui_input_class %>
+      </div>
+
+      <div>
+        <%= form.label :confirmed_amount, "Confirmed occurrence amount", class: ui_label_class %>
+        <%= form.number_field :confirmed_amount, step: 0.01, min: 0.01, class: ui_input_class %>
+        <p class="mt-1 text-xs <%= ui_text_muted_class %>">Required when cadence is recurring.</p>
+      </div>
+
+      <div class="flex flex-wrap gap-3 pt-2">
+        <%= form.submit "Save Profile", class: "#{ui_btn_primary_class} cursor-pointer" %>
+        <%= link_to "Cancel", cash_flow_path(view: "cost_of_living"), class: ui_btn_secondary_class %>
+      </div>
+    <% end %>
+  </div>
+</div>

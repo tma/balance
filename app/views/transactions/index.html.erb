@@ -43,6 +43,14 @@
         Found <span class="font-medium"><%= @transactions.size %></span> transaction<%= @transactions.size == 1 ? '' : 's' %> matching "<span class="font-medium"><%= @search_query %></span>"
       </p>
     </div>
+  <% elsif @filter_mode == :mixed_remainder %>
+    <div class="<%= ui_card_class %> mb-4 p-4 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 class="<%= ui_heading_class %>">Mixed Remainder Transactions</h2>
+        <p class="text-sm <%= ui_text_muted_class %>">Unmatched mixed-category spending currently outside the Cost of Living baseline.</p>
+      </div>
+      <%= link_to "Back to Cost of Living", cash_flow_path(view: "cost_of_living"), class: ui_btn_secondary_class %>
+    </div>
   <% else %>
     <!-- Month Navigation & Date Filter -->
     <div class="<%= ui_card_class %> mb-4 px-4 py-2">

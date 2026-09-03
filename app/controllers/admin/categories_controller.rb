@@ -32,7 +32,7 @@ class Admin::CategoriesController < ApplicationController
 
   def update
     if @category.update(category_params)
-      redirect_to admin_category_path(@category), notice: "Category was successfully updated.", status: :see_other
+      redirect_to category_redirect_path, notice: "Category was successfully updated.", status: :see_other
     else
       render :edit, status: :unprocessable_entity
     end
@@ -49,6 +49,21 @@ class Admin::CategoriesController < ApplicationController
     redirect_to admin_categories_path, notice: "All learned patterns cleared. Learning queued.", status: :see_other
   end
 
+  def update_essentialities
+    essentialities = params.permit(essentialities: {})[:essentialities]&.to_h || {}
+
+    Category.transaction do
+      essentialities.each do |category_id, essentiality|
+        Category.expense.find(category_id).update!(essentiality: essentiality.presence)
+      end
+    end
+    ExpenseProfileDetectionJob.perform_later
+
+    redirect_to cash_flow_path(view: "cost_of_living"),
+                notice: "Categories saved. Grouped expense-stream analysis has started.",
+                status: :see_other
+  end
+
   private
 
   def set_category
@@ -56,6 +71,12 @@ class Admin::CategoriesController < ApplicationController
   end
 
   def category_params
-    params.expect(category: [ :name, :category_type ])
+    params.expect(category: [ :name, :category_type, :essentiality ])
+  end
+
+  def category_redirect_path
+    return cash_flow_path(view: "cost_of_living") if params[:return_to] == "cost_of_living"
+
+    admin_category_path(@category)
   end
 end

@@ -1,0 +1,315 @@
+<% content_for :breadcrumbs do %>
+  <%= ui_breadcrumbs do %>
+    <%= ui_breadcrumb_first "Reports" %>
+    <%= ui_breadcrumb_item "Cash Flow", cash_flow_path %>
+    <%= ui_breadcrumb_item "Cost of Living", cash_flow_path(view: "cost_of_living") %>
+  <% end %>
+<% end %>
+
+<% report = @cost_of_living %>
+<% toolbar_button_class = "px-3 py-1.5 text-sm bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 #{ui_text_muted_class} font-medium transition whitespace-nowrap" %>
+<% manual_through = report[:period][:data_complete_through_source] == "manual" ? report[:period][:data_complete_through].strftime("%Y-%m") : nil %>
+
+<div class="space-y-6">
+  <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 py-3 -mx-4 px-4 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex flex-wrap items-center gap-2">
+      <%= link_to "Projected", cash_flow_path(view: "projected"),
+          class: "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-violet-100 dark:hover:bg-violet-900/30 hover:text-violet-600 dark:hover:text-violet-400 mr-2" %>
+      <span class="px-3 py-1.5 text-sm font-medium bg-emerald-500 text-white mr-2">Cost of Living</span>
+      <%= link_to "Year", cash_flow_path,
+          class: "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 mr-2" %>
+    </div>
+    <div class="flex items-center gap-2 overflow-x-auto max-w-full">
+      <% if report[:period][:data_complete_through_source] == "manual" %>
+        <%= link_to "Auto",
+            cash_flow_path(view: "cost_of_living"),
+            class: "#{ui_link_class} text-sm whitespace-nowrap",
+            title: "Use coverage-based cutoff" %>
+      <% end %>
+      <%= form_with url: cash_flow_path, method: :get, class: "flex items-center gap-2 shrink-0" do |form| %>
+        <%= form.hidden_field :view, value: "cost_of_living" %>
+        <%= form.label :through, "Data Complete Through", class: "sr-only" %>
+        <%= form.select :through,
+            options_for_select(
+              report[:period][:available_months].map { |month| [month.strftime("%B %Y"), month.strftime("%Y-%m")] },
+              report[:period][:data_complete_through].strftime("%Y-%m")
+            ),
+            {},
+            class: ui_input_sm_class,
+            onchange: "this.form.requestSubmit()" %>
+      <% end %>
+      <%= button_to "Refresh Suggestions",
+          detect_expense_profiles_path(through: manual_through),
+          class: toolbar_button_class %>
+    </div>
+  </div>
+
+  <p class="text-xs <%= ui_text_muted_class %>">
+    Data window: <%= report[:period][:window_start].strftime("%B %Y") %>–<%= report[:period][:window_end].strftime("%B %Y") %>.
+    <% if report[:period][:data_complete_through_source] == "manual" %>
+      Manual cutoff.
+    <% elsif report[:period][:limiting_accounts].any? %>
+      Automatic from coverage for <%= report[:period][:limiting_accounts].map(&:name).to_sentence %>.
+    <% else %>
+      Automatic from tracked account coverage.
+    <% end %>
+  </p>
+
+  <% if !report[:setup_started] %>
+    <div class="<%= ui_alert_warning_class %>">
+      <strong>Setup required.</strong> Your existing transactions are unchanged.
+      Classify at least one expense category below, then refresh grouped suggestions when you are ready.
+    </div>
+  <% elsif !report[:complete] %>
+    <div class="<%= ui_alert_warning_class %>">
+      <strong>Review needed.</strong>
+      <% if report[:unclassified_categories].any? %>
+        Classify
+        <%= safe_join(report[:unclassified_categories].map { |entry|
+              link_to(entry[:category].name, "#category-classification-#{entry[:category].id}", class: ui_link_class)
+            }, ", ") %>
+        in Section 1.
+      <% end %>
+      <% if report[:open_suggestion_count].positive? %>
+        Decide on <%= pluralize(report[:open_suggestion_count], "grouped stream") %> in Section 2.
+      <% end %>
+    </div>
+  <% end %>
+
+  <% if report[:provisional] && report[:included_months].any? %>
+    <div class="<%= ui_alert_warning_class %>">
+      Provisional estimate based on <%= pluralize(report[:included_months].size, "completed month") %>.
+    </div>
+  <% end %>
+
+  <% if report[:pending_conversion_count].positive? %>
+    <div class="<%= ui_alert_error_class %>">
+      <%= pluralize(report[:pending_conversion_count], "expense") %> excluded while currency conversion is pending.
+    </div>
+  <% end %>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div class="<%= ui_card_class %> p-6">
+      <p class="<%= ui_text_muted_class %> text-sm">Minimum monthly income required</p>
+      <p class="<%= ui_display_number_class %> mt-2"><%= format_currency(report[:monthly], precision: 0) %></p>
+      <p class="<%= ui_text_subtle_class %> text-xs mt-2">Expense baseline, not tax-adjusted gross income.</p>
+    </div>
+    <div class="<%= ui_card_class %> p-6">
+      <p class="<%= ui_text_muted_class %> text-sm">Annual essential costs</p>
+      <p class="<%= ui_display_number_class %> mt-2"><%= format_currency(report[:annual], precision: 0) %></p>
+      <p class="<%= ui_text_subtle_class %> text-xs mt-2">12 months ending <%= report[:period][:data_complete_through].strftime("%B %Y") %>.</p>
+    </div>
+    <div class="<%= ui_card_class %> p-6">
+      <p class="<%= ui_text_muted_class %> text-sm">Breakdown</p>
+      <div class="mt-3 space-y-2 <%= ui_text_class %>">
+        <div class="flex justify-between"><span>Fixed commitments</span><strong><%= format_currency(report[:fixed_annual], precision: 0) %></strong></div>
+        <div class="flex justify-between"><span>Essential variable</span><strong><%= format_currency(report[:variable_annual], precision: 0) %></strong></div>
+        <% if report[:mixed_remainder_annual].nonzero? %>
+          <div class="flex justify-between <%= ui_text_muted_class %>">
+            <%= link_to "Mixed Remainder (Not Included)", transactions_path(cost_of_living: "mixed_remainder"), class: ui_link_class %>
+            <strong><%= format_currency(report[:mixed_remainder_annual], precision: 0) %></strong>
+          </div>
+        <% end %>
+      </div>
+      <p class="<%= ui_text_subtle_class %> text-xs mt-3"><%= report[:completeness] %>% of expense spending contributes a final classification.</p>
+    </div>
+  </div>
+
+  <div class="<%= ui_card_class %> p-6">
+    <%= form_with url: update_essentialities_admin_categories_path, method: :patch do |form| %>
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <div>
+          <h2 class="<%= ui_heading_class %>">1. Classify expense categories</h2>
+          <p class="<%= ui_text_muted_class %> text-sm">
+            <%= report[:classified_category_count] %>/<%= report[:total_category_count] %> classified.
+            Choose the default for spending not covered by a confirmed profile; profiles can override it.
+            Mixed keeps its unmatched remainder visible but outside the baseline.
+          </p>
+        </div>
+        <%= form.submit "Save Categories", class: "#{ui_btn_primary_class} #{ui_btn_sm_class} cursor-pointer" %>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2">
+        <% report[:categories].each do |category| %>
+          <div id="category-classification-<%= category.id %>" class="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,12rem)] gap-2 sm:items-center min-w-0 py-2 scroll-mt-4">
+            <%= label_tag "essentiality_category_#{category.id}", "Cost classification for #{category.name}", class: "sr-only" %>
+            <%= link_to category.name,
+                transactions_path(
+                  category_id: category.id,
+                  start_date: report[:date_range][:from],
+                  end_date: report[:date_range][:to]
+                ),
+                class: "#{ui_link_class} text-sm min-w-0 truncate",
+                title: "View #{category.name} transactions" %>
+            <%= select_tag "essentialities[#{category.id}]",
+                options_for_select(
+                  [["Unclassified", nil], ["Essential", "essential"], ["Discretionary", "discretionary"], ["Mixed", "mixed"], ["Excluded", "excluded"]],
+                  category.essentiality
+                ),
+                id: "essentiality_category_#{category.id}",
+                class: "#{ui_input_sm_class} w-full min-w-0" %>
+          </div>
+        <% end %>
+      </div>
+    <% end %>
+  </div>
+
+  <div class="<%= ui_card_table_class %>">
+    <div class="<%= ui_card_header_class %> flex items-center justify-between gap-4">
+      <div>
+        <h2 class="<%= ui_heading_class %>">2. Review grouped expense streams</h2>
+        <p class="<%= ui_text_muted_class %> text-sm">Repeated transactions are collapsed into one merchant/category decision.</p>
+      </div>
+      <% if report[:bulk_eligible_profiles].any? %>
+        <%= button_to "Confirm #{report[:bulk_eligible_profiles].size} High-Confidence",
+            bulk_confirm_expense_profiles_path,
+            class: "#{ui_btn_primary_class} #{ui_btn_sm_class}",
+            form: { data: { turbo_confirm: "Confirm #{report[:bulk_eligible_profiles].size} profiles affecting #{format_currency(report[:bulk_eligible_annual], precision: 0)} per year?" } } %>
+      <% end %>
+    </div>
+
+    <% if report[:review_queue].any? %>
+      <div class="divide-y divide-slate-100">
+        <% report[:review_queue].each do |profile| %>
+          <div class="p-4">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div class="font-medium <%= ui_text_class %>"><%= profile.merchant_pattern %></div>
+                <div class="text-sm <%= ui_text_muted_class %>">
+                  <%= profile.category.name %> · <%= pluralize(profile.occurrence_count, "transaction") %>
+                  <% if profile.first_seen_on && profile.last_seen_on %>
+                    · <%= profile.first_seen_on.strftime("%b %Y") %>–<%= profile.last_seen_on.strftime("%b %Y") %>
+                  <% end %>
+                </div>
+                <div class="mt-2 flex flex-wrap gap-2">
+                  <span class="<%= ui_badge_info_class %>"><%= profile.detected_cadence&.humanize || "Cadence unknown" %></span>
+                  <span class="<%= ui_badge_class %>" title="Based on occurrence count and consistency of intervals">
+                    <%= profile.recurrence_confidence ? "#{profile.recurrence_confidence.humanize} recurrence confidence" : "Recurrence confidence unavailable" %>
+                  </span>
+                  <% profile.review_flags.each do |flag| %>
+                    <span class="<%= ui_badge_warning_class %>"><%= flag.humanize %></span>
+                  <% end %>
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-semibold <%= ui_text_class %>"><%= format_currency(profile.projected_annual_impact, precision: 0) %>/year</div>
+                <%= link_to "View Transactions", transactions_path(search: profile.merchant_pattern, category_id: profile.category_id), class: "#{ui_link_class} text-sm" %>
+              </div>
+            </div>
+
+            <% if profile.status_suggested? %>
+              <%= form_with model: profile,
+                  namespace: "expense_profile_#{profile.id}",
+                  class: "mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3 items-end min-w-0" do |form| %>
+                <div class="min-w-0">
+                  <%= form.label :merchant_pattern, "Pattern", class: ui_label_class %>
+                  <%= form.text_field :merchant_pattern, class: "#{ui_input_sm_class} w-full min-w-0" %>
+                </div>
+                <div class="min-w-0">
+                  <%= form.label :essentiality, class: ui_label_class %>
+                  <%= form.select :essentiality,
+                      [["Select…", nil], ["Essential", "essential"], ["Discretionary", "discretionary"], ["Excluded", "excluded"]],
+                      { selected: profile.essentiality },
+                      required: true,
+                      class: "#{ui_input_sm_class} w-full min-w-0" %>
+                </div>
+                <div class="min-w-0">
+                  <%= form.label :cadence, class: ui_label_class %>
+                  <%= form.select :cadence, [["Not recurring", nil], ["Monthly", "monthly"], ["Quarterly", "quarterly"], ["Semiannual", "semiannual"], ["Annual", "annual"]], { selected: profile.detected_cadence }, class: "#{ui_input_sm_class} w-full min-w-0" %>
+                </div>
+                <div class="min-w-0">
+                  <%= form.label :confirmed_amount, "Amount", class: ui_label_class %>
+                  <%= form.number_field :confirmed_amount, value: profile.median_amount, step: 0.01, min: 0.01, class: "#{ui_input_sm_class} w-full min-w-0" %>
+                </div>
+                <div class="grid grid-cols-2 gap-2 sm:col-span-2 xl:col-span-1">
+                  <%= form.submit "Confirm", class: "#{ui_btn_primary_class} #{ui_btn_sm_class} w-full cursor-pointer" %>
+                  <%= link_to "Dismiss", dismiss_expense_profile_path(profile),
+                      data: { turbo_method: :patch },
+                      class: "#{ui_btn_ghost_class} #{ui_btn_sm_class} text-center" %>
+                </div>
+              <% end %>
+            <% else %>
+              <div class="mt-4 flex gap-2">
+                <%= link_to "Edit Values", edit_expense_profile_path(profile), class: "#{ui_btn_secondary_class} #{ui_btn_sm_class}" %>
+                <%= button_to "Deactivate", deactivate_expense_profile_path(profile), method: :patch, class: "#{ui_btn_danger_class} #{ui_btn_sm_class}" %>
+              </div>
+            <% end %>
+          </div>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="<%= ui_empty_class %> <%= ui_text_muted_class %>">No grouped expense streams need review.</p>
+    <% end %>
+  </div>
+
+  <div>
+    <h2 class="<%= ui_heading_class %>">3. Baseline breakdown</h2>
+    <p class="<%= ui_text_muted_class %> text-sm">Calculated from your confirmed categories and expense profiles.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="<%= ui_card_table_class %>">
+      <div class="<%= ui_card_header_class %>"><h2 class="<%= ui_heading_class %>">Fixed commitments</h2></div>
+      <% if report[:fixed_profiles].any? %>
+        <div class="overflow-x-auto">
+          <table class="min-w-full">
+          <thead class="<%= ui_table_header_class %>"><tr><th class="<%= ui_table_th_class %>">Merchant</th><th class="<%= ui_table_th_class %>">Cadence</th><th class="<%= ui_table_th_class %> text-right">Recent</th><th class="<%= ui_table_th_class %> text-right">Annual</th><th class="<%= ui_table_th_class %>">Confidence</th><th class="<%= ui_table_th_class %>"></th></tr></thead>
+          <tbody>
+            <% report[:fixed_profiles].each do |profile| %>
+              <tr class="<%= ui_table_row_class %>">
+                <td class="<%= ui_table_td_class %> <%= ui_text_class %>">
+                  <%= link_to profile.merchant_pattern,
+                      transactions_path(search: profile.merchant_pattern, category_id: profile.category_id),
+                      class: ui_link_class %>
+                  <div class="<%= ui_text_muted_class %> text-xs"><%= profile.category.name %></div>
+                </td>
+                <td class="<%= ui_table_td_class %> <%= ui_text_muted_class %>"><%= profile.cadence.humanize %></td>
+                <td class="<%= ui_table_td_class %> <%= ui_text_class %> text-right"><%= format_currency(profile.confirmed_amount) %></td>
+                <td class="<%= ui_table_td_class %> <%= ui_text_class %> text-right font-medium"><%= format_currency(profile.annualized_amount, precision: 0) %></td>
+                <td class="<%= ui_table_td_class %> <%= ui_text_muted_class %>"><%= profile.recurrence_confidence&.humanize || "Manual" %></td>
+                <td class="<%= ui_table_td_class %> text-right"><%= link_to "Edit", edit_expense_profile_path(profile), class: ui_link_class %></td>
+              </tr>
+            <% end %>
+          </tbody>
+          </table>
+        </div>
+      <% else %>
+        <p class="<%= ui_empty_class %> <%= ui_text_muted_class %>">No confirmed essential commitments yet.</p>
+      <% end %>
+    </div>
+
+    <div class="<%= ui_card_table_class %>">
+      <div class="<%= ui_card_header_class %>"><h2 class="<%= ui_heading_class %>">Essential variable costs</h2></div>
+      <% if report[:variable_categories].any? %>
+        <table class="min-w-full">
+          <thead class="<%= ui_table_header_class %>"><tr><th class="<%= ui_table_th_class %>">Category</th><th class="<%= ui_table_th_class %> text-right">Annual</th></tr></thead>
+          <tbody>
+            <% report[:variable_categories].each do |entry| %>
+              <tr class="<%= ui_table_row_class %>">
+                <td class="<%= ui_table_td_class %>">
+                  <%= link_to entry[:category].name,
+                      transactions_path(
+                        category_id: entry[:category].id,
+                        start_date: report[:date_range][:from],
+                        end_date: report[:date_range][:to]
+                      ),
+                      class: ui_link_class %>
+                </td>
+                <td class="<%= ui_table_td_class %> <%= ui_text_class %> text-right font-medium"><%= format_currency(entry[:annual], precision: 0) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% else %>
+        <p class="<%= ui_empty_class %> <%= ui_text_muted_class %>">No essential variable spending in the amount window.</p>
+      <% end %>
+    </div>
+  </div>
+
+  <p class="<%= ui_text_subtle_class %> text-xs">
+    Amount window:
+    <%= report[:date_range][:from]&.strftime("%b %Y") || "no data" %>–<%= report[:date_range][:to]&.strftime("%b %Y") || "no data" %>.
+    Recurrence detection uses up to 36 completed months.
+    <% if report[:excluded_months].any? %><%= report[:excluded_months].size %> incomplete month(s) excluded from amounts.<% end %>
+  </p>
+</div>

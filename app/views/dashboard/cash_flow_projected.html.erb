@@ -13,6 +13,9 @@
       <%# Projected tab (active) %>
       <span class="px-3 py-1.5 text-sm font-medium bg-violet-500 text-white mr-2">Projected</span>
 
+      <%= link_to "Cost of Living", cash_flow_path(view: "cost_of_living"),
+          class: "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 hover:text-emerald-600 dark:hover:text-emerald-400 mr-2" %>
+
       <%# Year tab (link back) %>
       <%= link_to "Year", cash_flow_path(year: @selected_year),
           class: "px-3 py-1.5 text-sm #{ui_text_muted_class} bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 mr-2" %>

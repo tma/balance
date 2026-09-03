@@ -69,6 +69,21 @@ A personal finance budgeting application to track income, expenses, budgets, and
   - Transaction form shows AI-suggested category with accept/dismiss controls
   - Suggestion fetched via Stimulus controller calling `suggest_category` endpoint
 - Reduces LLM calls by ~70-80% compared to pure LLM categorization
+- **Cost Classification:**
+  - The configured `OLLAMA_MODEL` suggests whether expense streams are essential, discretionary, or excluded; category essentiality is set by the user
+  - Candidate streams reuse existing Manual/Learned category patterns instead of adding a second merchant extraction pipeline
+  - Recurrence candidates are grouped by category and normalized merchant; cadence is calculated deterministically from transaction dates
+  - Amount variability is shown as evidence but does not disqualify a recurring stream
+  - The LLM receives only a candidate identifier, merchant, category, and aggregate recurrence evidence
+  - Structured JSON responses require valid candidate identifiers and enum values; malformed or incomplete results remain unclassified
+  - Model recurrence hints are advisory and never assign cadence
+  - Users review category defaults once and grouped merchant/category expense streams, never individual historical transactions
+  - Repeated transactions collapse into one suggestion showing count, date range, typical amount, cadence, confidence, and annual impact
+  - One-time purchases normally follow their confirmed category default; material possible annual commitments in mixed or unclassified categories are surfaced
+  - Learned cost classifications require user confirmation before they affect reports
+  - Bulk acceptance is limited to high-confidence recurrence that agrees with a confirmed category default; high-impact profiles require individual review
+  - Deterministic recurrence evidence and manual overrides take precedence over LLM suggestions
+  - Classification setup, deterministic recurrence, manual profiles, and reporting remain available when Ollama is unavailable
 
 ### 6. Budgets
 - Set recurring budgets per expense category
@@ -81,7 +96,7 @@ A personal finance budgeting application to track income, expenses, budgets, and
 - View budget status for any month/year
 
 ### 7. Dashboard
-Split into two views:
+Cash Flow reporting includes:
 
 #### Cash Flow View (root path)
 - **Year Navigation:**
@@ -107,6 +122,78 @@ Split into two views:
 - **Budget Status** - Two-column layout for monthly and yearly budgets with progress bars
   - Budgets follow the navigation context (selected year/month)
   - Budgets link to filtered transaction list for category and time range
+
+#### Cost of Living View
+- Available from the Cash Flow navigation at `/cash-flow?view=cost_of_living`
+- Answers how much income is required to cover the user's essential baseline:
+  - **Fixed commitments** - confirmed essential recurring expense streams
+  - **Essential variable costs** - non-recurring essential spending based on category defaults and merchant-level overrides
+  - **Cost of living baseline** - fixed commitments plus essential variable costs, shown monthly and annually
+- Uses the most recent 12 completed months for amounts and up to 36 completed months for recurrence evidence
+- The amount and recurrence windows end at a shared Data Complete Through month
+- Data Complete Through defaults to the latest fully completed month supported by every active account with transaction-frequency tracking; untracked accounts do not constrain it
+- Users can override Data Complete Through for a static report view or return to the automatic coverage-based cutoff
+- A non-default cutoff is represented by `through=YYYY-MM` in the Cost of Living URL; the automatic coverage default keeps the clean URL
+- Changing the cutoff is GET-only and does not mutate expense-profile evidence; imports and explicit Refresh Suggestions runs perform profile analysis
+- The report always discloses the effective 12-month window and whether its cutoff is automatic or manual
+- Detects incomplete months once from all transactions in the amount window, then applies the exclusions to amount aggregation and monthly displays; recurrence keeps all eligible 36-month transactions
+- Never pads months before the user's transaction coverage; fewer than six included months produce a provisional result
+- A fixed commitment requires a confirmed essential profile, cadence, and confirmed occurrence amount
+- Profiles in excluded categories never contribute to fixed commitments
+- Fixed commitments annualize the confirmed occurrence amount by cadence:
+  - Monthly x 12
+  - Quarterly x 4
+  - Semiannual x 2
+  - Annual x 1
+- Automatic cadence evidence uses these median interval bands:
+  - Monthly: 25-35 days, at least 3 occurrences
+  - Quarterly: 75-105 days, at least 3 occurrences
+  - Semiannual: 150-215 days, at least 3 occurrences
+  - Annual: 330-400 days, at least 2 occurrences
+- High recurrence confidence requires at least 3 occurrences, interval coefficient of variation no greater than 0.15, and a current stream
+- Medium recurrence confidence allows interval coefficient of variation no greater than 0.30; two-occurrence annual streams are always medium
+- Lower-confidence candidates receive no automatic cadence; weekly and biweekly detection is outside v1
+- Cadence detection uses expense-direction, non-refund, converted transactions; unique dates form consecutive intervals and a stream is current when it is not overdue
+- Overdue candidates may be medium confidence but never high confidence
+- Recency is overdue after 1.5 times the cadence's upper interval; overdue confirmed commitments stay included with their confirmed values and a review flag
+- Amount changes of at least 20%, cadence-band changes, and overdue streams return confirmed profiles for review without silently changing the baseline
+- Essential variable annual cost is the signed total across included completed months divided by included months and multiplied by 12
+- The median included-month value is supplementary context only; it does not drive the annual headline
+- Category defaults distinguish essential, discretionary, mixed, excluded, and unclassified expenses
+- Existing expense categories start unclassified and require one-time confirmation; income categories remain unclassified and ineligible
+- The report renders once at least one expense category is confirmed and never derives costs from unconfirmed defaults
+- Merchant-level expense profiles can override category defaults for mixed categories or exceptions
+- Classification precedence is excluded category, longest matching confirmed profile, then confirmed category default
+- Each transaction matches at most one profile and fixed-commitment transactions are excluded from variable totals
+- Detection, confirmation, and reporting assign transactions to the longest matching pattern, breaking equal-length ties by lowest profile ID
+- Overlapping confirmed recurring profiles annualize only the longest winning pattern; shorter profiles are flagged as superseded
+- Initial setup reviews expense categories once, then grouped profiles ordered by projected annual impact
+- Candidates use existing category patterns plus unmatched transactions grouped by exact description; no second LLM merchant-normalization pass is added
+- A suggested stream enters review when it has medium/high automatic cadence, or when an unmatched stream in an unclassified or mixed category is at least 1% of trailing annual expense outflow
+- Bulk acceptance requires high recurrence confidence and agreement with a confirmed category default; profiles at least 5% of trailing annual expense outflow require individual review
+- Threshold outflow is positive expense-direction default-currency spending after shared amount-window exclusions; refunds do not reduce the denominator
+- Confirmation shows the number of profiles and annual amount affected
+- Dismissed profiles stay dismissed; inactive profiles do not affect the baseline
+- Confirmed profiles remain effective until explicitly changed or made inactive
+- Detection refreshes evidence from stored profile patterns even if their source category pattern is removed, and never changes confirmed, dismissed, or inactive status
+- Unreviewed annual impact includes annualized signed spending from unclassified or mixed categories plus non-overlapping queued suggestions; recurring suggestions use median occurrence amount by cadence and no-cadence suggestions use trailing signed spend
+- Classified-spend percentage uses classified eligible expense outflow divided by total eligible expense outflow; it is baseline coverage, not a completion target
+- Unmatched mixed-category spending is an expected neutral remainder shown persistently in the breakdown, not an actionable warning
+- The mixed remainder links to the exact unmatched transactions behind it using the same projection window and profile assignments
+- Actionable warnings are reserved for unclassified categories and queued suggestions
+- The report shows unreviewed annual impact, baseline coverage, lookback period, excluded months, confidence, low-data warnings, and supporting transactions
+- Savings and transfers are excluded; refunds reduce variable costs but do not create recurrence events
+- Transactions missing default-currency conversion are excluded and disclosed as pending conversion
+- "Minimum monthly income required" equals annual essential cost divided by 12 and is described as an expense baseline, not a tax-adjusted gross-income target
+
+##### Existing Database Rollout
+- The migration adds nullable `categories.essentiality` and a new empty `expense_profiles` table; it does not rewrite categories, transactions, budgets, or existing cash-flow results
+- Existing expense categories remain unclassified so the release never silently decides what is essential
+- The first Cost of Living visit shows guided setup; after one category is confirmed it renders the baseline while preserving unclassified-impact disclosure
+- The daily detection job builds grouped suggestions from existing history, and users can run the same detection immediately with **Refresh Suggestions**
+- Detection and the report tolerate unavailable Ollama and pending currency conversion; manual category/profile setup remains usable
+- Re-running migrations, seeds, or detection is idempotent and does not overwrite confirmed, dismissed, or inactive profiles
+- Rolling back removes only Cost of Living classifications and profiles; original financial data remains intact
 
 #### Net Worth View
 - **Summary Cards:**
@@ -143,7 +230,7 @@ Split into two views:
   - **Currencies** - ISO 4217 codes (e.g., USD, EUR, GBP)
   - **Account Types** - name (e.g., checking, savings, credit, cash)
   - **Asset Types** - name, is_liability flag (e. g., property, mortgage)
-  - **Categories** - name, category_type (income/expense), category patterns (manual/learned)
+  - **Categories** - name, category_type (income/expense), cost-of-living essentiality, category patterns (manual/learned)
 - Seed file populates defaults
 - Admin UI to add/edit/delete master data
 
@@ -169,15 +256,38 @@ AssetGroup
 Category
 - name:string
 - category_type:string (income, expense)
+- essentiality:string (essential, discretionary, mixed, excluded, or null while unreviewed; expense categories only)
 - embedding:binary (vector embedding for semantic matching)
 
 CategoryPattern
 - category_id:references
 - pattern:string (e.g., "AMAZON", "WHOLE FOODS")
-- source:string (manual, learned)
+- source:string (human, machine; displayed as Manual, Learned)
 - confidence:decimal (0.0-1.0, for learned patterns)
 - match_count:integer (how many transactions matched)
 - unique index on [pattern, source, category_id]
+
+ExpenseProfile
+- category_id:references
+- merchant_pattern:string (word-boundary match against transaction descriptions)
+- essentiality:string (essential, discretionary, excluded, or null while suggested)
+- cadence:string (monthly, quarterly, semiannual, annual; optional)
+- source:string (human, machine; displayed as Manual, Learned)
+- status:string (suggested, confirmed, dismissed, inactive)
+- recurrence_confidence:string (high, medium, low)
+- confirmed_amount:decimal (required for confirmed recurring profiles)
+- trailing_annual_amount:decimal
+- occurrence_count:integer
+- first_seen_on:date
+- last_seen_on:date
+- median_amount:decimal
+- amount_cv:decimal
+- interval_cv:decimal
+- detected_cadence:string
+- detected_at:datetime
+- confirmed_at:datetime
+- review_flags:text JSON array (amount_change, cadence_change, overdue, superseded)
+- unique index on [merchant_pattern, category_id]
 
 # User Data
 Account
@@ -254,7 +364,7 @@ PositionValuation
 - Minimal, clean aesthetic
 
 ## Pages
-1. **Cash Flow** (root path) - 12-month income/expense overview, budget status
+1. **Cash Flow** (root path) - 12-month income/expense overview, projected year, cost of living baseline, budget status
 2. **Net Worth** - Assets, liabilities, and net worth summary
 3. **Transactions** - List with filters (account, category, month/date range), add/edit forms
 4. **Import Transactions** - Upload bank statements, preview and import extracted transactions
@@ -294,7 +404,7 @@ PositionValuation
   - `OLLAMA_MODEL` - LLM model to use (default: llama3.1:8b)
   - `OLLAMA_EMBEDDING_MODEL` - Embedding model (default: mxbai-embed-large)
   - `OLLAMA_EMBEDDING_CONFIDENCE` - Cosine similarity threshold (default: 0.75)
-  - `OLLAMA_TIMEOUT` - Request timeout in seconds (default: 120)
+  - `OLLAMA_TIMEOUT` - Request timeout in seconds (default: 600)
 
 ## Implementation Notes
 - Use Rails scaffold generators where appropriate
@@ -314,8 +424,12 @@ PositionValuation
 - Transaction exchange rates captured at transaction date for accurate historical reporting
 - Transaction import uses Ollama LLM for extraction and categorization
 - Import services: OllamaService, CsvParserService, CsvMappingAnalyzerService, DeterministicCsvParserService, DuplicateDetectionService
-- Categorization services: CategoryMatchingService (3-phase pipeline), CategoryPatternExtractionJob (learns patterns from history)
-- Background jobs: TransactionEmbeddingJob, CategoryEmbeddingJob, CategoryPatternExtractionJob (hourly), CategorizationMaintenanceJob (daily), EmbeddingModelMigrationJob
+- Categorization services: CategoryMatchingService (3-phase pipeline), CategoryPatternExtractionJob (learns patterns from history), ExpenseProfileDetectionService (existing merchant patterns, deterministic recurrence evidence, and Ollama-assisted suggestions)
+- Projection services: CostOfLivingProjectionService (fixed commitments and essential variable baseline)
+- Expense profile suggestions validate the exact JSON schema and do not trust model-provided confidence
+- `rails cost_of_living:benchmark` runs the exact production suggestion prompt against labeled synthetic candidates using the configured local Ollama model
+- ExpenseProfileDetectionJob runs daily after pattern extraction and after completed imports, batches up to 10 candidates per model call, and limits model classification to 50 new or changed candidates per run
+- Background jobs: TransactionEmbeddingJob, CategoryEmbeddingJob, CategoryPatternExtractionJob (hourly), ExpenseProfileDetectionJob (daily and after import), CategorizationMaintenanceJob (daily), EmbeddingModelMigrationJob
 - Broker integration uses factory pattern (BrokerSyncService) for multi-broker support
 - IBKR uses Flex Web Service API (2-step: SendRequest → GetStatement)
 - IbkrSyncService handles API calls, XML parsing, and asset value sync

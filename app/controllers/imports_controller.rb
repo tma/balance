@@ -172,9 +172,7 @@ class ImportsController < ApplicationController
     # Trigger pattern learning for categories used in this import
     if imported_count > 0
       category_ids = @import.transactions.where.not(category_id: nil).distinct.pluck(:category_id)
-      category_ids.each do |cat_id|
-        CategoryPatternExtractionJob.perform_later(category_id: cat_id)
-      end
+      ExpenseProfileImportAnalysisJob.perform_later(category_ids)
     end
 
     if errors.any?
