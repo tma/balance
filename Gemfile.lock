@@ -84,7 +84,7 @@ GEM
     bindex (0.8.1)
     bootsnap (1.26.0)
       msgpack (~> 1.5)
-    brakeman (8.0.6)
+    brakeman (8.1.0)
       racc
     builder (3.3.0)
     bundler-audit (0.9.3)
@@ -105,7 +105,7 @@ GEM
       bigdecimal
       rexml
     crass (1.0.7)
-    csv (3.3.5)
+    csv (3.3.6)
     date (3.5.1)
     debug (1.11.1)
       irb (~> 1.10)
@@ -125,13 +125,13 @@ GEM
     globalid (1.4.0)
       activesupport (>= 6.1)
     hashdiff (1.2.1)
-    httparty (0.24.2)
+    httparty (0.24.3)
       csv
       mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
     i18n (1.15.2)
       concurrent-ruby (~> 1.0)
-    image_processing (2.1.0)
+    image_processing (2.2.0)
     importmap-rails (2.2.3)
       actionpack (>= 6.0.0)
       activesupport (>= 6.0.0)
@@ -176,7 +176,7 @@ GEM
       drb (~> 2.0)
       prism (~> 1.5)
     msgpack (1.8.5)
-    multi_xml (0.8.1)
+    multi_xml (0.9.1)
       bigdecimal (>= 3.1, < 5)
     net-imap (0.6.7)
       date
@@ -310,12 +310,11 @@ GEM
     ruby-vips (2.3.0)
       ffi (~> 1.12)
       logger
-    rubyzip (3.6.0)
+    rubyzip (3.7.0)
     securerandom (0.4.1)
-    selenium-webdriver (4.49.0)
+    selenium-webdriver (4.50.0)
       base64 (~> 0.2)
       logger (~> 1.4)
-      rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
     solid_cable (4.1.0)
@@ -394,7 +393,7 @@ DEPENDENCIES
   capybara
   debug
   httparty
-  image_processing (~> 2.1)
+  image_processing (~> 2.2)
   importmap-rails
   jbuilder
   kamal
