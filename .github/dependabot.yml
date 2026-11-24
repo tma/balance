@@ -44,3 +44,8 @@ updates:
         applies-to: security-updates
         patterns:
           - "*"
+    ignore:
+      - dependency-name: "ruby"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "library/ruby"
+        update-types: ["version-update:semver-major"]
