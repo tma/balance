@@ -7,6 +7,11 @@ updates:
     open-pull-requests-limit: 10
     groups:
       bundler-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      bundler-security:
+        applies-to: security-updates
         patterns:
           - "*"
   - package-ecosystem: github-actions
@@ -16,5 +21,26 @@ updates:
     open-pull-requests-limit: 10
     groups:
       github-actions-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      github-actions-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directories:
+      - "/"
+      - "/.devcontainer"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    groups:
+      docker-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+      docker-security:
+        applies-to: security-updates
         patterns:
           - "*"

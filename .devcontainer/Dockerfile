@@ -1,5 +1,5 @@
 # Dev Container for Balance Rails App
-# Ruby 3.4.8 with SQLite and development tools
+# Ruby with SQLite and development tools. Dependabot updates the image tag.
 
 FROM ruby:3.4.8-slim
 
