@@ -1,7 +1,7 @@
 # Dev Container for Balance Rails App
 # Ruby with SQLite and development tools. Dependabot updates the image tag.
 
-FROM ruby:3.4.8-slim
+FROM ruby:4.0.0-slim
 
 # Install system dependencies
 RUN apt-get update -qq && \
