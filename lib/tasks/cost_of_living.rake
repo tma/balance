@@ -1,8 +1,8 @@
 namespace :cost_of_living do
   desc "Benchmark Cost of Living Ollama prompt with synthetic candidates"
   task benchmark: :environment do
-    unless OllamaService.available?
-      puts "Error: Ollama is not available. Benchmark requires real model calls."
+    unless LlmService.available?
+      puts "Error: LLM server is not available. Benchmark requires real model calls."
       exit 1
     end
 

@@ -81,7 +81,7 @@ puts "=" * 60
 puts "CSV Import Test Suite"
 puts "=" * 60
 
-unless OllamaService.available?
+unless LlmService.available?
   puts "\n✗ Ollama is not available. Please start Ollama first."
   exit 1
 end

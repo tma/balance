@@ -1,8 +1,8 @@
 namespace :llm do
   desc "Benchmark LLM models for Balance tasks (CSV mapping, categorization, etc.)"
   task benchmark: :environment do
-    unless OllamaService.available?
-      puts "Error: Ollama is not available. Benchmark requires a running Ollama instance."
+    unless LlmService.available?
+      puts "Error: LLM server is not available. Benchmark requires a running LLM server."
       exit 1
     end
 

@@ -55,7 +55,7 @@ class CategoryMatchingServiceTest < ActiveSupport::TestCase
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     service = CategoryMatchingService.new(transactions)
     service.categorize
@@ -71,7 +71,7 @@ class CategoryMatchingServiceTest < ActiveSupport::TestCase
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     # Return embedding identical to groceries (similarity = 1.0)
     stub_request(:post, "#{@ollama_host}/api/embeddings")
@@ -91,7 +91,7 @@ class CategoryMatchingServiceTest < ActiveSupport::TestCase
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     # Return very different embedding (orthogonal - low similarity)
     orthogonal_vector = Array.new(768) { |i| (i % 2 == 0) ? 1.0 : -1.0 }
@@ -115,7 +115,7 @@ class CategoryMatchingServiceTest < ActiveSupport::TestCase
 
     # Stub Ollama model check to succeed but embeddings to fail
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     stub_request(:post, "#{@ollama_host}/api/embeddings")
       .to_return(status: 500, body: "Internal Server Error")
@@ -134,7 +134,7 @@ class CategoryMatchingServiceTest < ActiveSupport::TestCase
     ]
 
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     progress_reports = []
     progress_callback = ->(current, total, message:) { progress_reports << { current: current, total: total } }

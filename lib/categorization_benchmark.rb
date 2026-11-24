@@ -358,9 +358,9 @@ class CategorizationBenchmark
 
     puts "Computing embeddings for #{missing} categories..."
     Category.where(embedding: nil).find_each do |cat|
-      vector = OllamaService.embed(cat.embedding_text)
+      vector = LlmService.embed(cat.embedding_text)
       cat.update_column(:embedding, vector.pack("f*"))
-    rescue OllamaService::Error => e
+    rescue LlmService::Error => e
       puts "  Warning: Failed to embed '#{cat.name}': #{e.message}"
     end
     puts "Done."
@@ -387,7 +387,7 @@ class CategorizationBenchmark
       end
 
       descriptions.each do |desc|
-        vector = OllamaService.embed(desc)
+        vector = LlmService.embed(desc)
         Transaction.create!(
           account: account,
           category: category,
@@ -399,7 +399,7 @@ class CategorizationBenchmark
         )
         created += 1
         print "\r  #{created}/#{total} embedded..."
-      rescue OllamaService::Error => e
+      rescue LlmService::Error => e
         puts "\n  Warning: Failed to embed '#{desc}': #{e.message}"
       end
     end

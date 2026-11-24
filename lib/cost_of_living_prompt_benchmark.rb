@@ -71,7 +71,7 @@ class CostOfLivingPromptBenchmark
   end
 
   def run
-    raise "Configured model #{model.inspect} is unavailable" unless OllamaService.model_available?
+    raise "Configured model #{model.inspect} is unavailable" unless LlmService.model_available?
 
     runs = Array.new(rounds) { run_round }
     result = score(runs)
@@ -84,7 +84,7 @@ class CostOfLivingPromptBenchmark
   def run_round
     CASES.each_slice(BATCH_SIZE).each_with_object({}) do |batch, output|
       candidates = batch.map { |entry| entry.except(:expected_essentiality, :expected_recurrence_hint) }
-      response = OllamaService.generate_json(
+      response = LlmService.generate_json(
         ExpenseProfileDetectionService.classification_prompt(candidates),
         schema: ExpenseProfileDetectionService.classification_schema(candidates.pluck(:candidate_id))
       )

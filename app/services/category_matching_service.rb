@@ -30,7 +30,7 @@ class CategoryMatchingService
   def categorize
     return if transactions.empty?
 
-    unless OllamaService.embedding_model_available?
+    unless LlmService.embedding_model_available?
       Rails.logger.warn "CategoryMatchingService: Embedding model not available, skipping all categorization"
       return
     end
@@ -109,7 +109,7 @@ class CategoryMatchingService
   # then falls back to category embeddings (coarse, always available).
   # @return [Hash] { category: Category or nil, candidates: Array<Category> or nil }
   def find_by_embedding(description, type)
-    query_vector = OllamaService.embed(description)
+    query_vector = LlmService.embed(description)
 
     # Search transaction embeddings first (fine-grained, user history)
     txn_candidates = nearest_transaction_neighbors(query_vector, type, k: TOP_K_TRANSACTION_NEIGHBORS)
@@ -130,7 +130,7 @@ class CategoryMatchingService
     all_candidates = (txn_candidates.map { |c| c[:category] } +
                       cat_candidates.map { |c| c[:category] }).uniq
     { category: nil, candidates: all_candidates, query_vector: query_vector }
-  rescue OllamaService::Error => e
+  rescue LlmService::Error => e
     Rails.logger.warn "CategoryMatchingService: Embedding failed for '#{description}': #{e.message}"
     { category: nil, candidates: nil, query_vector: nil }
   end
@@ -180,11 +180,11 @@ class CategoryMatchingService
     return nil if candidates.empty?
 
     prompt = build_llm_prompt(txn, candidates, query_vector: query_vector)
-    response = OllamaService.generate_json(prompt)
+    response = LlmService.generate_json(prompt)
     category_name = parse_llm_response(response)
 
     find_category_by_name(category_name, txn[:transaction_type])
-  rescue OllamaService::Error => e
+  rescue LlmService::Error => e
     Rails.logger.warn "CategoryMatchingService: LLM categorization failed: #{e.message}"
     nil
   end
@@ -219,7 +219,7 @@ class CategoryMatchingService
     cached = @transaction_embeddings_cache[type]
     return [] if cached.nil? || cached.empty?
 
-    query_vector ||= OllamaService.embed(description)
+    query_vector ||= LlmService.embed(description)
 
     cached
       .filter_map { |t|
@@ -228,7 +228,7 @@ class CategoryMatchingService
       }
       .sort_by { |e| -e[:similarity] }
       .first(limit)
-  rescue OllamaService::Error
+  rescue LlmService::Error
     []
   end
 

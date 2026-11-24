@@ -16,7 +16,7 @@ class CategoryEmbeddingJobTest < ActiveJob::TestCase
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     stub_request(:post, "#{@ollama_host}/api/embeddings")
       .to_return(status: 200, body: { embedding: mock_vector }.to_json, headers: { "Content-Type" => "application/json" })
@@ -53,7 +53,7 @@ class CategoryEmbeddingJobTest < ActiveJob::TestCase
 
     # Stub Ollama to return embedding model available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json, headers: { "Content-Type" => "application/json" })
 
     # Capture the request to verify embedding_text is used
     embedding_request = stub_request(:post, "#{@ollama_host}/api/embeddings")

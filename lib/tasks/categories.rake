@@ -1,51 +1,58 @@
 namespace :categories do
-  desc "Compute embeddings for all categories (requires Ollama with embedding model (default: mxbai-embed-large))"
+  desc "Recompute category and transaction embeddings with the configured model"
   task compute_embeddings: :environment do
-    unless OllamaService.available?
-      puts "Error: Ollama is not available at #{Rails.application.config.ollama.host}"
-      puts "Please ensure Ollama is running and try again."
+    unless LlmService.available?
+      puts "Error: LLM server is not available at #{Rails.application.config.ollama.host}"
       exit 1
     end
 
-    unless OllamaService.embedding_model_available?
+    unless LlmService.embedding_model_available?
       model = Rails.application.config.ollama.embedding_model
       puts "Error: Embedding model '#{model}' is not available"
-      puts "Please run: ollama pull #{model}"
       exit 1
     end
 
-    categories = Category.all
-    puts "Computing embeddings for #{categories.count} categories..."
-    puts
+    Category.update_all(embedding: nil)
+    Transaction.update_all(embedding: nil)
 
     success_count = 0
     error_count = 0
 
+    categories = Category.all
+    puts "Computing embeddings for #{categories.count} categories..."
     categories.each do |category|
       print "  #{category.name} (#{category.category_type})... "
-
-      begin
-        vector = OllamaService.embed(category.embedding_text)
-        category.update_column(:embedding, vector.pack("f*"))
-        puts "done (#{vector.size} dimensions)"
-        success_count += 1
-      rescue OllamaService::Error => e
-        puts "FAILED: #{e.message}"
-        error_count += 1
-      end
+      vector = LlmService.embed(category.embedding_text)
+      category.update_column(:embedding, vector.pack("f*"))
+      puts "done (#{vector.size} dimensions)"
+      success_count += 1
+    rescue LlmService::Error => e
+      puts "FAILED: #{e.message}"
+      error_count += 1
     end
 
-    puts
-    puts "Completed: #{success_count} successful, #{error_count} failed"
+    transactions = Transaction.where.not(description: [ nil, "" ])
+    puts "Computing embeddings for #{transactions.count} transactions..."
+    transactions.find_each do |transaction|
+      vector = LlmService.embed(transaction.description)
+      transaction.update_column(:embedding, vector.pack("f*"))
+      success_count += 1
+    rescue LlmService::Error => e
+      puts "  FAILED transaction #{transaction.id}: #{e.message}"
+      error_count += 1
+    end
 
+    puts "Completed: #{success_count} successful, #{error_count} failed"
     exit 1 if error_count > 0
   end
 
-  desc "Clear all category embeddings"
+  desc "Clear category and transaction embeddings"
   task clear_embeddings: :environment do
-    count = Category.where.not(embedding: nil).count
+    category_count = Category.where.not(embedding: nil).count
+    transaction_count = Transaction.where.not(embedding: nil).count
     Category.update_all(embedding: nil)
-    puts "Cleared embeddings from #{count} categories"
+    Transaction.update_all(embedding: nil)
+    puts "Cleared embeddings from #{category_count} categories and #{transaction_count} transactions"
   end
 
   desc "Show embedding status for all categories"

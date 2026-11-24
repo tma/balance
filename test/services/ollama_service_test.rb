@@ -10,118 +10,30 @@ class OllamaServiceTest < ActiveSupport::TestCase
     WebMock.allow_net_connect!
   end
 
-  test "config uses environment variables with defaults" do
-    config = Rails.application.config.ollama
-
-    assert_respond_to config, :host
-    assert_respond_to config, :model
-    assert_respond_to config, :timeout
-    assert_respond_to config, :embedding_model
-    assert_respond_to config, :embedding_confidence_threshold
-
-    # Check defaults are set
-    assert_not_nil config.host
-    assert_not_nil config.model
-    assert_kind_of Integer, config.timeout
-    assert_equal "mxbai-embed-large", config.embedding_model
-    assert_equal 0.75, config.embedding_confidence_threshold
-  end
-
-  test "available? returns true when Ollama responds" do
+  test "available? uses the native tags endpoint" do
     stub_request(:get, "#{@ollama_host}/api/tags")
       .to_return(status: 200, body: { models: [] }.to_json, headers: { "Content-Type" => "application/json" })
 
     assert OllamaService.available?
   end
 
-  test "available? returns false when Ollama is unreachable" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_timeout
-
-    assert_not OllamaService.available?
-  end
-
-  test "model_available? returns true when model is present" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "llama3.1:8b" } ] }.to_json, headers: { "Content-Type" => "application/json" })
-
-    assert OllamaService.model_available?
-  end
-
-  test "model_available? returns false when model is missing" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "other-model" } ] }.to_json, headers: { "Content-Type" => "application/json" })
-
-    assert_not OllamaService.model_available?
-  end
-
-  test "embedding_model_available? returns true when embedding model is present" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json, headers: { "Content-Type" => "application/json" })
-
-    assert OllamaService.embedding_model_available?
-  end
-
-  test "embedding_model_available? returns false when embedding model is missing" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "llama3.1:8b" } ] }.to_json, headers: { "Content-Type" => "application/json" })
-
-    assert_not OllamaService.embedding_model_available?
-  end
-
-  test "error classes are defined" do
-    assert_kind_of Class, OllamaService::Error
-    assert_kind_of Class, OllamaService::TimeoutError
-    assert_kind_of Class, OllamaService::UnavailableError
-    assert_kind_of Class, OllamaService::ParseError
-
-    # Check inheritance
-    assert OllamaService::TimeoutError < OllamaService::Error
-    assert OllamaService::UnavailableError < OllamaService::Error
-    assert OllamaService::ParseError < OllamaService::Error
-  end
-
-  test "embed returns embedding vector" do
+  test "embed uses the native embeddings endpoint" do
     mock_vector = [ 0.1, 0.2, 0.3 ]
-
     stub_request(:get, "#{@ollama_host}/api/tags")
       .to_return(status: 200, body: { models: [] }.to_json, headers: { "Content-Type" => "application/json" })
-
     stub_request(:post, "#{@ollama_host}/api/embeddings")
+      .with { |request| JSON.parse(request.body)["prompt"] == "test text" }
       .to_return(status: 200, body: { embedding: mock_vector }.to_json, headers: { "Content-Type" => "application/json" })
 
-    result = OllamaService.embed("test text")
-
-    assert_equal mock_vector, result
+    assert_equal mock_vector, OllamaService.embed("test text")
   end
 
-  test "embed raises UnavailableError when Ollama is not available" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 500, body: "Internal Server Error")
-
-    assert_raises OllamaService::UnavailableError do
-      OllamaService.embed("test text")
-    end
-  end
-
-  test "embed raises Error on API failure" do
-    stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [] }.to_json, headers: { "Content-Type" => "application/json" })
-
-    stub_request(:post, "#{@ollama_host}/api/embeddings")
-      .to_return(status: 500, body: "Internal Server Error")
-
-    assert_raises OllamaService::Error do
-      OllamaService.embed("test text")
-    end
-  end
-
-  test "generate_json passes an optional JSON schema to Ollama" do
+  test "generate_json sends a native format payload" do
     schema = { type: "object", required: [ "value" ] }
     stub_request(:get, "#{@ollama_host}/api/tags")
       .to_return(status: 200, body: { models: [] }.to_json, headers: { "Content-Type" => "application/json" })
     request = stub_request(:post, "#{@ollama_host}/api/generate")
-      .with { |web_request| JSON.parse(web_request.body)["format"] == schema.deep_stringify_keys }
+      .with { |request| JSON.parse(request.body)["format"] == schema.deep_stringify_keys }
       .to_return(
         status: 200,
         body: { response: { value: "ok" }.to_json }.to_json,

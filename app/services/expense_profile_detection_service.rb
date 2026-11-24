@@ -400,13 +400,13 @@ class ExpenseProfileDetectionService
       .order(trailing_annual_amount: :desc)
       .limit(MAX_LLM_CANDIDATES)
       .to_a
-    return if profiles.empty? || !OllamaService.model_available?
+    return if profiles.empty? || !LlmService.model_available?
 
     profiles.each_slice(LLM_BATCH_SIZE) { |batch| classify_batch(batch) }
   end
 
   def classify_batch(profiles)
-    response = OllamaService.generate_json(
+    response = LlmService.generate_json(
       classification_prompt(profiles),
       schema: self.class.classification_schema(profiles.map { |profile| profile.id.to_s })
     )
@@ -428,7 +428,7 @@ class ExpenseProfileDetectionService
 
       profile.update!(essentiality: suggestion["essentiality"])
     end
-  rescue OllamaService::Error => e
+  rescue LlmService::Error => e
     Rails.logger.warn "ExpenseProfileDetectionService: classification failed: #{e.message}"
   end
 

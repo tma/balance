@@ -1,8 +1,8 @@
 namespace :categorization do
   desc "Bootstrap categorization from existing transaction history"
   task bootstrap: :environment do
-    unless OllamaService.available?
-      puts "Error: Ollama is not available"
+    unless LlmService.available?
+      puts "Error: LLM server is not available"
       exit 1
     end
 
@@ -26,8 +26,8 @@ namespace :categorization do
 
   desc "Re-embed everything after changing the embedding model"
   task migrate_embeddings: :environment do
-    unless OllamaService.available?
-      puts "Error: Ollama is not available"
+    unless LlmService.available?
+      puts "Error: LLM server is not available"
       exit 1
     end
 
@@ -37,10 +37,10 @@ namespace :categorization do
     puts "EmbeddingModelMigrationJob enqueued. Monitor with: rails solid_queue:monitor"
   end
 
-  desc "Benchmark categorization accuracy with synthetic data (requires Ollama)"
+  desc "Benchmark categorization accuracy with synthetic data (requires the LLM server)"
   task benchmark: :environment do
-    unless OllamaService.available?
-      puts "Error: Ollama is not available. Benchmark requires real model calls."
+    unless LlmService.available?
+      puts "Error: LLM server is not available. Benchmark requires real model calls."
       exit 1
     end
 

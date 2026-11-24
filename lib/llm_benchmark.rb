@@ -590,20 +590,28 @@ class LlmBenchmark
 
   private
 
+  def llama_cpp?
+    Rails.application.config.llm_backend == "llama_cpp"
+  end
+
   def ollama_available?
-    response = HTTParty.get("#{@ollama_host}/api/tags", timeout: 5)
+    response = HTTParty.get("#{@ollama_host}#{llama_cpp? ? "/v1/models" : "/api/tags"}", timeout: 5)
     response.success?
   rescue StandardError
     false
   end
 
   def model_available?(model)
-    response = HTTParty.get("#{@ollama_host}/api/tags", timeout: 5)
+    response = HTTParty.get("#{@ollama_host}#{llama_cpp? ? "/v1/models" : "/api/tags"}", timeout: 5)
     return false unless response.success?
 
-    models = response.parsed_response["models"] || []
-    model_base = model.split(":").first
-    models.any? { |m| m["name"]&.start_with?(model_base) }
+    if llama_cpp?
+      models = response.parsed_response["data"] || []
+      models.any? { |m| m["id"] == model }
+    else
+      models = response.parsed_response["models"] || []
+      models.any? { |m| m["name"]&.start_with?(model) }
+    end
   rescue StandardError
     false
   end
@@ -611,11 +619,22 @@ class LlmBenchmark
   def generate(model, prompt, format: "json")
     start_time = Time.now
 
-    body = { model: model, prompt: prompt, stream: false }
-    body[:format] = format if format
+    if llama_cpp?
+      body = {
+        model: model,
+        messages: [ { role: "user", content: prompt } ],
+        stream: false
+      }
+      body[:response_format] = { type: "json_object" } if format == "json"
+      path = "/v1/chat/completions"
+    else
+      body = { model: model, prompt: prompt, stream: false }
+      body[:format] = format if format
+      path = "/api/generate"
+    end
 
     response = HTTParty.post(
-      "#{@ollama_host}/api/generate",
+      "#{@ollama_host}#{path}",
       body: body.to_json,
       headers: { "Content-Type" => "application/json" },
       timeout: 300
@@ -624,7 +643,11 @@ class LlmBenchmark
     elapsed = Time.now - start_time
 
     if response.success?
-      text = response.parsed_response["response"]
+      text = if llama_cpp?
+        response.parsed_response.dig("choices", 0, "message", "content")
+      else
+        response.parsed_response["response"]
+      end
       if format == "json"
         parsed = JSON.parse(text) rescue nil
         { success: true, response: parsed, raw: text, time: elapsed }

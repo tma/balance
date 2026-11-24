@@ -1,16 +1,10 @@
-require "httparty"
-
 class OllamaService
-  class Error < StandardError; end
-  class TimeoutError < Error; end
-  class UnavailableError < Error; end
-  class ParseError < Error; end
+  Error = LlmService::Error
+  TimeoutError = LlmService::TimeoutError
+  UnavailableError = LlmService::UnavailableError
+  ParseError = LlmService::ParseError
 
   class << self
-    # Generate a response from Ollama
-    # @param prompt [String] The prompt to send
-    # @param format [String, nil] Optional format (e.g., "json")
-    # @return [String] The generated response
     def generate(prompt, format: nil)
       raise UnavailableError, "Ollama is not available" unless available?
 
@@ -40,18 +34,10 @@ class OllamaService
       raise UnavailableError, "Cannot connect to Ollama: #{e.message}"
     end
 
-    # Generate a JSON response from Ollama
-    # @param prompt [String] The prompt to send
-    # @param schema [Hash, nil] Optional JSON Schema for structured output
-    # @return [Hash] The parsed JSON response
     def generate_json(prompt, schema: nil)
-      response = generate(prompt, format: schema || "json")
-      parse_json_response(response)
+      LlmService.parse_json_response(generate(prompt, format: schema || "json"))
     end
 
-    # Generate an embedding vector for text
-    # @param text [String] The text to embed
-    # @return [Array<Float>] The embedding vector
     def embed(text)
       raise UnavailableError, "Ollama is not available" unless available?
 
@@ -73,126 +59,27 @@ class OllamaService
       raise UnavailableError, "Cannot connect to Ollama: #{e.message}"
     end
 
-    # Attempt to parse JSON, with repair for truncated responses
-    # @param response [String] The JSON string to parse
-    # @return [Hash, Array] The parsed JSON
-    def parse_json_response(response)
-      JSON.parse(response)
-    rescue JSON::ParserError => e
-      # Try to repair truncated JSON
-      repaired = repair_truncated_json(response)
-      begin
-        JSON.parse(repaired)
-      rescue JSON::ParserError
-        # Log the original response for debugging
-        Rails.logger.error "Failed to parse Ollama JSON response: #{response.truncate(500)}"
-        raise ParseError, "Failed to parse Ollama response as JSON: #{e.message}"
-      end
-    end
-
-    # Attempt to repair truncated JSON by closing open brackets/braces
-    # @param json_str [String] The potentially truncated JSON
-    # @return [String] The repaired JSON string
-    def repair_truncated_json(json_str)
-      return json_str if json_str.blank?
-
-      # Track open brackets and braces
-      stack = []
-      in_string = false
-      escape_next = false
-
-      json_str.each_char do |char|
-        if escape_next
-          escape_next = false
-          next
-        end
-
-        case char
-        when "\\"
-          escape_next = true if in_string
-        when '"'
-          in_string = !in_string unless escape_next
-        when "{", "["
-          stack.push(char) unless in_string
-        when "}"
-          stack.pop if !in_string && stack.last == "{"
-        when "]"
-          stack.pop if !in_string && stack.last == "["
-        end
-      end
-
-      # Close any remaining open structures
-      repaired = json_str.dup
-
-      # If we're in a string, close it
-      if in_string
-        repaired += '"'
-      end
-
-      # Close remaining brackets/braces in reverse order
-      stack.reverse_each do |open_char|
-        repaired += (open_char == "{" ? "}" : "]")
-      end
-
-      repaired
-    end
-
-    # Check if Ollama is available and responding
-    # @return [Boolean]
     def available?
-      response = HTTParty.get(
-        "#{config.host}/api/tags",
-        timeout: 5
-      )
+      response = HTTParty.get("#{config.host}/api/tags", timeout: 5)
       response.success?
     rescue StandardError
       false
     end
 
-    # Check if the configured model is available
-    # @return [Boolean]
     def model_available?
-      return false unless available?
-
-      response = HTTParty.get(
-        "#{config.host}/api/tags",
-        timeout: 5
-      )
-
-      return false unless response.success?
-
-      models = response.parsed_response["models"] || []
-      models.any? { |m| m["name"]&.start_with?(config.model) }
-    rescue StandardError
-      false
+      listed_model?(config.model)
     end
 
-    # Check if the configured embedding model is available
-    # @return [Boolean]
     def embedding_model_available?
-      return false unless available?
-
-      response = HTTParty.get(
-        "#{config.host}/api/tags",
-        timeout: 5
-      )
-
-      return false unless response.success?
-
-      models = response.parsed_response["models"] || []
-      models.any? { |m| m["name"]&.start_with?(config.embedding_model) }
-    rescue StandardError
-      false
+      listed_model?(config.embedding_model)
     end
 
-    # Pull the configured model
-    # @return [Boolean] true if successful
     def pull_model
       response = HTTParty.post(
         "#{config.host}/api/pull",
         body: { name: config.model }.to_json,
         headers: { "Content-Type" => "application/json" },
-        timeout: 600 # Model downloads can take a while
+        timeout: 600
       )
       response.success?
     rescue StandardError
@@ -203,6 +90,18 @@ class OllamaService
 
     def config
       Rails.application.config.ollama
+    end
+
+    def listed_model?(name)
+      return false unless available?
+
+      response = HTTParty.get("#{config.host}/api/tags", timeout: 5)
+      return false unless response.success?
+
+      models = response.parsed_response["models"] || []
+      models.any? { |model| model["name"]&.start_with?(name) }
+    rescue StandardError
+      false
     end
   end
 end

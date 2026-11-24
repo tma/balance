@@ -23,13 +23,13 @@ class CsvMappingAnalyzerService
       sample_csv = ([ header ] + sample_rows).join("\n")
 
       prompt = build_prompt(sample_csv)
-      response = OllamaService.generate_json(prompt)
+      response = LlmService.generate_json(prompt)
 
       mapping = parse_response(response)
       validate_mapping!(mapping, header)
 
       mapping
-    rescue OllamaService::Error => e
+    rescue LlmService::Error => e
       raise AnalysisError, "LLM analysis failed: #{e.message}"
     end
 

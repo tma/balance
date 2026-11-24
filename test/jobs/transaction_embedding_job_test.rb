@@ -18,7 +18,7 @@ class TransactionEmbeddingJobTest < ActiveSupport::TestCase
     embedding = Array.new(768) { |i| i * 0.001 }
 
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json,
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json,
                  headers: { "Content-Type" => "application/json" })
 
     stub_request(:post, "#{@ollama_host}/api/embeddings")
@@ -38,7 +38,7 @@ class TransactionEmbeddingJobTest < ActiveSupport::TestCase
     @transaction.update_column(:embedding, embedding.pack("f*"))
 
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json,
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json,
                  headers: { "Content-Type" => "application/json" })
 
     # Should not call embeddings API

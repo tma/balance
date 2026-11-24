@@ -3,7 +3,7 @@ require "csv"
 class TransactionImportJob < ApplicationJob
   queue_as :default
 
-  retry_on OllamaService::Error, wait: :polynomially_longer, attempts: 3
+  retry_on LlmService::Error, wait: :polynomially_longer, attempts: 3
 
   def perform(import_id)
     import = Import.find(import_id)
@@ -23,7 +23,7 @@ class TransactionImportJob < ApplicationJob
       import.mark_failed!("Format analysis error: #{e.message}")
     rescue DeterministicCsvParserService::ParseError => e
       import.mark_failed!("Transaction parsing error: #{e.message}")
-    rescue OllamaService::Error => e
+    rescue LlmService::Error => e
       import.mark_failed!("AI service error: #{e.message}")
     rescue StandardError => e
       import.mark_failed!("Unexpected error: #{e.message}")

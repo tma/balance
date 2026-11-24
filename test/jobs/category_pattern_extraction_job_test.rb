@@ -132,7 +132,7 @@ class CategoryPatternExtractionJobTest < ActiveSupport::TestCase
 
   def stub_ollama_available
     stub_request(:get, "#{@ollama_host}/api/tags")
-      .to_return(status: 200, body: { models: [ { name: "#{Rails.application.config.ollama.embedding_model}:latest" } ] }.to_json,
+      .to_return(status: 200, body: { models: [ { name: Rails.application.config.ollama.embedding_model } ] }.to_json,
                  headers: { "Content-Type" => "application/json" })
   end
 end

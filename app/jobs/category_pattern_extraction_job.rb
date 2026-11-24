@@ -63,7 +63,7 @@ class CategoryPatternExtractionJob < ApplicationJob
   end
 
   def extract_merchant_names(descriptions)
-    return [] unless OllamaService.available?
+    return [] unless LlmService.available?
 
     prompt = <<~PROMPT
       Extract the merchant/company name from each transaction description.
@@ -76,11 +76,11 @@ class CategoryPatternExtractionJob < ApplicationJob
       ["MERCHANT1", "MERCHANT2", ...]
     PROMPT
 
-    response = OllamaService.generate_json(prompt)
+    response = LlmService.generate_json(prompt)
     # LLM may return a plain array or wrap it in a hash like {"merchants" => [...]}
     result = response.is_a?(Hash) ? response.values.flatten : Array(response)
     result.map { |r| r.is_a?(String) ? r.strip : nil }.compact
-  rescue OllamaService::Error => e
+  rescue LlmService::Error => e
     Rails.logger.warn "CategoryPatternExtractionJob: LLM extraction failed: #{e.message}"
     []
   end
